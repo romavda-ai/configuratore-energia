@@ -91,11 +91,10 @@
 </head>
 <body>
 <div class="wrap">
-  <h1 data-text-key="pageTitle">Simulatore Comparazione Energia Fastweb</h1>
+  <h1 data-text-key="pageTitle">SIMULATORE FASTWEB ENERGIA</h1>
   <div class="grid">
 
     <div class="card">
-      <div class="pill"><span data-text-key="pillInfo">🔧 Valori modificabili (verde scuro) + campi condizionali (MONO/MULTI, 1/2 mesi)</span></div>
       <button class="adminBtn" id="adminOpen" type="button">Admin PUN / Parametri</button>
       <div class="hr"></div>
 
@@ -141,11 +140,11 @@
 
   <div class="row monthRefRow">
     <div>
-      <label data-text-key="lblMese1">Mese di riferimento</label>
+      <label data-text-key="lblMese1">1° Mese fatturato</label>
       <select id="mese1" class="edit"></select>
     </div>
     <div>
-      <label data-text-key="lblAnno1">Anno di riferimento</label>
+      <label data-text-key="lblAnno1">Anno</label>
       <select id="anno1" class="edit"></select>
     </div>
   </div>
@@ -170,7 +169,7 @@
   <div id="consumiMono" style="display:none;margin-top:10px">
     <div class="row">
       <div>
-        <label data-text-key="lblKwh1Tot">totale mese (kWh)</label>
+        <label data-text-key="lblKwh1Tot">Totale 1° mese </label>
         <input id="kwh1_tot" class="edit" inputmode="decimal" />
       </div>
       <div></div>
@@ -179,7 +178,7 @@
 
   <div class="row" style="margin-top:10px">
     <div>
-      <label data-text-key="lblSpesaAtt1">Spesa attuale con il tuo operatore (€)</label>
+      <label data-text-key="lblSpesaAtt1">Spesa attuale 1° Mese (€)</label>
       <input id="spesaAtt1" class="edit" inputmode="decimal" />
     </div>
     <div></div>
@@ -191,11 +190,11 @@
 
   <div class="row monthRefRow">
     <div>
-      <label data-text-key="lblMese2">Secondo mese di riferimento</label>
+      <label data-text-key="lblMese2">2° Mese fatturato</label>
       <select id="mese2" class="edit"></select>
     </div>
     <div>
-      <label data-text-key="lblAnno2">Anno di riferimento</label>
+      <label data-text-key="lblAnno2">Anno</label>
       <select id="anno2" class="edit"></select>
     </div>
   </div>
@@ -220,7 +219,7 @@
   <div id="kwh2totWrap" style="display:none;margin-top:10px">
     <div class="row">
       <div>
-        <label data-text-key="lblKwh2Tot">totale 2° mese (kWh)</label>
+        <label data-text-key="lblKwh2Tot">Totale 2° mese (kWh)</label>
         <input id="kwh2_tot" class="edit" inputmode="decimal" />
       </div>
       <div></div>
@@ -229,7 +228,7 @@
 
   <div class="row" style="margin-top:10px">
     <div>
-      <label data-text-key="lblSpesaAtt2">Spesa attuale con il tuo operatore (€)</label>
+      <label data-text-key="lblSpesaAtt2">Spesa attuale 2° Mese (€)</label>
       <input id="spesaAtt2" class="edit" inputmode="decimal" />
     </div>
     <div></div>
@@ -245,7 +244,7 @@
 
 
       <div class="hint">
-        Nota: la tabella PUN (sheet <b>PUN</b>) è stata incorporata nel codice. Spread, perdite, dispacciamento e capacity seguono le stesse formule dell’Excel.
+  
       </div>
     </div>
 
@@ -286,12 +285,12 @@
 
       <div class="kpi" id="kpiBim" style="display:none">
         <div class="box">
-          <div class="t" data-text-key="ttlAttBim">Totale spesa attuale (bimestre)</div>
+          <div class="t" data-text-key="ttlAttBim">Totale spesa attuale (Bim)</div>
           <div class="v" id="out_att_bim">—</div>
           <div class="muted small">Somma 1°+2° mese</div>
         </div>
         <div class="box">
-          <div class="t" data-text-key="ttlFwBim">Totale stimato con Fastweb (bimestre)</div>
+          <div class="t" data-text-key="ttlFwBim">Totale stimato con Fastweb (Bim)</div>
           <div class="v fwYellow" id="out_fw_bim">—</div>
           <div class="muted small">Somma 1°+2° mese</div>
         </div>
@@ -339,9 +338,6 @@
       </div>
 
 
-      <div class="hint">
-        Suggerimento: se vuoi che la pagina sia “identica” anche come impaginazione, dimmelo e la preparo con lo stesso layout (celle, bordi, colori) del foglio <b>SIMULATORE</b>.
-      </div>
     </div>
 
   </div>
@@ -502,8 +498,8 @@ const TEXT_DEFAULT = {
   ttlEsito1: "Risultato confronto (1° mese)",
   ttlFw2: "Spesa stimata con Fastweb",
   ttlEsito2: "Risultato confronto",
-  ttlAttBim: "Totale spesa attuale (bimestre)",
-  ttlFwBim: "Totale stimato con Fastweb (bimestre)",
+  ttlAttBim: "Totale spesa attuale (Bim)",
+  ttlFwBim: "Totale stimato con Fastweb (Bim)",
   ttlEsitoBim: "Risultato confronto totale",
   ttlDettagli: "Dettaglio calcolo (valori utilizzati)"
 };
@@ -719,12 +715,12 @@ function setup() {
   setIfExists("anno2","2026");
 
   // esempi kWh
-  document.getElementById("kwh1_f1").value = "162";
-  document.getElementById("kwh1_f2").value = "17";
-  document.getElementById("kwh1_f3").value = "14";
+  document.getElementById("kwh1_f1").value = "";
+  document.getElementById("kwh1_f2").value = "";
+  document.getElementById("kwh1_f3").value = "";
 
   // spesa attuale esempio
-  document.getElementById("spesaAtt1").value = "46,61";
+  document.getElementById("spesaAtt1").value = "";
 
   // listeners
   document.querySelectorAll("input,select").forEach(el => el.addEventListener("input", render));
