@@ -1,0 +1,2269 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Configuratore Fastweb Energia</title>
+  <style>
+    :root {
+      /* Brand */
+      --vodafone:#e60000;
+      --fastweb:#6f2c91;
+
+      /* UI */
+      --bg:#f6f7f9;
+      --card:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --border:rgba(17,24,39,.10);
+
+      /* Editable fields (keep green) */
+      --green:#2f7d32;
+      --greenText:#eaffea;
+
+      /* Warnings / highlights (keep yellow for FW total) */
+      --warn:#ffcc00;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#ffffff, var(--bg));color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    .wrap{max-width:1100px;margin:0 auto;padding:22px}
+    h1{font-size:20px;margin:0 0 14px}
+    .grid{display:grid;grid-template-columns:1fr;gap:14px}
+    @media(min-width:980px){.grid{grid-template-columns: 420px 1fr;}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(17,24,39,.08)}
+    .row{display:grid;grid-template-columns: 1fr 1fr;gap:10px}
+    .row3{display:grid;grid-template-columns: 1fr 1fr 1fr;gap:10px}
+    label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
+    .lbl-strong{color:#000 !important;font-weight:800 !important;}
+
+    [data-text-key="ttlFw1"],[data-text-key="ttlEsito1"],[data-text-key="ttlFw2"],[data-text-key="ttlEsito2"],[data-text-key="ttlAttBim"],[data-text-key="ttlFwBim"],[data-text-key="ttlEsitoBim"],[data-text-key="ttlDettagli"]{color:#000 !important;font-weight:800 !important;}
+
+    .box .t.lbl-strong{color:#000 !important;font-weight:800 !important;}
+    .box .t{color:var(--muted);font-weight:700;}
+    input, select{width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--border);background:#ffffff;color:var(--text);outline:none;appearance:none;-webkit-appearance:none;-moz-appearance:none;box-shadow:0 1px 8px rgba(17,24,39,.05)}
+select option{color:var(--text);background:#ffffff}
+
+    .edit{background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(249,250,251,.98));color:var(--text);border:1px solid rgba(17,24,39,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.75), 0 1px 10px rgba(17,24,39,.06)}
+.edit:focus{border-color:rgba(230,0,0,.55);box-shadow:0 0 0 3px rgba(230,0,0,.14), inset 0 1px 0 rgba(255,255,255,.75), 0 1px 10px rgba(17,24,39,.06)}
+    input.edit::placeholder{color:rgba(107,114,128,.9)}
+    .hint{font-size:12px;color:var(--muted);margin-top:8px}
+    .pill{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:12px}
+    .kpi{display:grid;grid-template-columns: 1fr;gap:10px}
+    @media(min-width:700px){.kpi{grid-template-columns: 1fr 1fr;}}
+    .kpi .box{padding:12px;border:1px solid var(--border);border-radius:14px;background:#f9fafb}
+    .kpi .t{color:var(--muted);font-size:12px}
+    .kpi .v{font-size:22px;margin-top:6px}
+    .hr{height:1px;background:var(--border);margin:14px 0}
+    table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    td{padding:10px 12px;background:#f8fafc;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    td:first-child{border-left:1px solid var(--border);border-radius:12px 0 0 12px}
+    td:last-child{border-right:1px solid var(--border);border-radius:0 12px 12px 0}
+    .right{text-align:right}
+    .muted{color:var(--muted)}
+    .warn{color:var(--warn)}
+    .small{font-size:12px}
+
+    .brandNote{display:flex;align-items:center;gap:10px;margin:-4px 0 14px;color:var(--muted);font-size:12px}
+    .brandDot{width:6px;height:6px;border-radius:999px;background:var(--fastweb);box-shadow:8px 0 0 var(--vodafone)}
+    .brandNote a{color:inherit;text-decoration:none;border-bottom:1px dotted rgba(107,114,128,.7)}
+    .siteFooter{margin:18px 0 0;padding:14px 16px;border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,.6);color:var(--muted);font-size:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+    .siteFooter strong{color:var(--text)}
+
+  
+    .statusBox{transition:background .2s,border-color .2s}
+    .statusBox.save{background:rgba(47,125,50,.22);border-color:rgba(47,125,50,.55)}
+    .statusBox.up{background:rgba(210,43,43,.18);border-color:rgba(210,43,43,.55)}
+    .statusBox.none{background:rgba(255,255,255,.06);border-color:var(--border)}
+    .esitoLabel{font-size:12px;color:var(--muted);margin-top:2px}
+    .deltaBig{font-size:28px;line-height:1.05;margin-top:6px}
+
+  
+    .esitoLabel{font-size:16px;font-weight:700;color:var(--text);margin-top:6px}
+    .fwYellow{color:#ffd54a}
+    .span2{grid-column:1 / -1}
+    .adminRow{display:flex;gap:10px;align-items:center;margin-bottom:0}
+    .adminBtn.ghost{background:#ffffff;border:1px solid var(--border);color:var(--text)}
+    .adminBtn{margin-left:auto;background:rgba(111,44,145,.10);border:1px solid rgba(111,44,145,.25);color:var(--text);padding:8px 10px;border-radius:12px;cursor:pointer}
+    .adminBtn:hover{background:rgba(111,44,145,.16)}
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);padding:18px;z-index:9998}
+    .modal.open{display:flex}
+    .modalCard{width:min(920px,100%);background:rgba(255,255,255,.96);border:1px solid rgba(17,24,39,.14);border-radius:18px;box-shadow:0 18px 60px rgba(0,0,0,.22);padding:16px;color:var(--text)}
+    .modalHeader{display:flex;align-items:center;gap:10px}
+    .modalHeader h2{font-size:16px;margin:0}
+    .closeBtn{margin-left:auto;background:rgba(249,250,251,.9);border:1px solid rgba(17,24,39,.14);color:var(--text);border-radius:12px;padding:8px 10px;cursor:pointer}
+    .tabs{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+    .tab{padding:8px 10px;border:1px solid var(--border);border-radius:12px;background:#f3f4f6;cursor:pointer}
+    .tab.active{background:rgba(111,44,145,.10);border-color:rgba(111,44,145,.25)}
+    .pane{display:none;margin-top:12px}
+    .pane.active{display:block}
+    textarea{width:100%;min-height:260px;padding:10px 11px;border-radius:12px;border:1px solid var(--border);background:#ffffff;color:var(--text)}
+    .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(180deg, rgba(17,24,39,.06), rgba(17,24,39,.03));border:1px solid rgba(17,24,39,.18);color:var(--text);padding:12px 14px;border-radius:14px;cursor:pointer;text-decoration:none;font-weight:600;user-select:none;box-shadow:0 2px 10px rgba(17,24,39,.06);transition:transform .06s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease}
+    .btn:hover{background:linear-gradient(180deg, rgba(17,24,39,.08), rgba(17,24,39,.04));border-color:rgba(17,24,39,.24);box-shadow:0 8px 22px rgba(17,24,39,.10)}
+    .btn:active{transform:translateY(1px);box-shadow:0 4px 14px rgba(17,24,39,.08)}
+    .btn:focus{outline:2px solid rgba(111,44,145,.35);outline-offset:2px}
+    
+    .btn.primary{background:rgba(47,125,50,.22);border-color:rgba(47,125,50,.45)}
+    .btn.danger{background:rgba(210,43,43,.14);border-color:rgba(210,43,43,.35)}
+    .msg{margin-top:8px;font-size:12px;color:var(--muted)}
+
+  
+    .annualLine{font-size:13px}
+
+  .warnPill{background:rgba(255,204,0,.10);border-color:rgba(255,204,0,.35);color:var(--warn)}
+  
+    
+    .btn.gray{background:linear-gradient(180deg,#f3f4f6,#e5e7eb);color:#111827;border:1px solid rgba(17,24,39,.18);box-shadow:0 8px 18px rgba(17,24,39,.08)}
+    .btn.gray:hover{filter:brightness(.98)}
+    .btn.gray:active{transform:translateY(1px)}
+    .locked{opacity:.85}
+    input[readonly].locked{cursor:not-allowed}
+.btnRow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+@media(max-width:560px){.btnRow{grid-template-columns:1fr}}
+    .linkBtn{display:inline-flex;align-items:center;justify-content:center;min-width:unset;width:100%;text-decoration:none}
+
+  .monthGroup{border:1px solid var(--border);border-radius:14px;padding:12px;background:#ffffff;margin-top:12px}
+    .monthTitle{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;margin-bottom:10px}
+    .monthBadge{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:8px;border:1px solid var(--border);background:#f3f4f6;color:var(--text);font-weight:700}
+  
+    #bimModal{z-index:9999;}
+    #bimModal .modalCard{position:relative;}
+    #bimModal .x{border:none;background:transparent;font-size:18px;font-weight:900;color:#111;cursor:pointer;}
+
+  
+/* --- PATCH v40: BIM modal layout --- */
+.bimGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end}
+@media (max-width:560px){.bimGrid{grid-template-columns:1fr}}
+#bimModal .modalCard{max-width:640px;width:calc(100% - 32px)}
+
+
+/* hide PUN medio label */
+.punMedioLabel{display:none!important}
+
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    @media (max-width:720px){.grid2{grid-template-columns:1fr}}
+    
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 data-text-key="pageTitle">SIMULATORE FASTWEB ENERGIA</h1>
+  <div class="brandNote"><span class="brandDot" aria-hidden="true"></span><span><strong>Wincom Srl</strong> • Vodafone Excellent Partner • <a href="https://wincomitalia.it" target="_blank" rel="noopener">wincomitalia.it</a></span></div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="adminRow"><button class="adminBtn" id="adminOpen" type="button">Admin PUN / Parametri</button><button class="adminBtn ghost" id="btnClearAll" type="button">Cancella</button></div>
+      <div class="hr"></div>
+
+      <div class="row">
+        <div>
+          <label data-text-key="lblClienteVodafone">Cliente Vodafone?</label>
+          <select id="cltVodafone" class="edit">
+            <option value="SI">SI</option>
+            <option value="NO">NO</option>
+          </select>
+        </div>
+        <div>
+          <label data-text-key="lblTipologiaFasce">Tipo di contatore</label>
+          <select id="fasce" class="edit">
+            <option value="MULTI">MULTI</option>
+            <option value="MONO">MONO</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label data-text-key="lblMensilita">Mensilità Fattura</label>
+          <select id="mensilita" class="edit">
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
+        </div>
+  <div>
+          <label data-text-key="lblOffertaEconomica">Offerta economica</label>
+          <select id="offertaEconomica" class="edit">
+            <option value="FLEX">Flex</option>
+            <option value="FIX">Fix</option>
+          </select>
+        </div>
+</div>
+
+      
+<div class="hr"></div>
+
+<div class="monthGroup" id="grpM1">
+  
+
+  <div class="row monthRefRow">
+    <div>
+      <label data-text-key="lblMese1">1° Mese fatturato</label>
+      <select id="mese1" class="edit"></select>
+    </div>
+    <div>
+      <label data-text-key="lblAnno1">Anno</label>
+      <select id="anno1" class="edit"></select>
+    </div>
+  </div>
+
+  <div id="consumiMulti" style="display:none;margin-top:10px">
+    <div class="row3">
+      <div>
+        <label data-text-key="lblF1_m1">Fascia F1 (kWh)</label>
+        <input id="kwh1_f1" class="edit" inputmode="decimal" />
+      </div>
+      <div>
+        <label data-text-key="lblF2_m1">Fascia F2 (kWh)</label>
+        <input id="kwh1_f2" class="edit" inputmode="decimal" />
+      </div>
+      <div>
+        <label data-text-key="lblF3_m1">Fascia F3 (kWh)</label>
+        <input id="kwh1_f3" class="edit" inputmode="decimal" />
+      </div>
+    </div>
+  </div>
+
+  <div id="consumiMono" style="display:none;margin-top:10px">
+    <div class="row">
+      <div>
+        <label data-text-key="lblKwh1Tot">Totale 1° mese </label>
+        <input id="kwh1_tot" class="edit" inputmode="decimal" />
+      </div>
+      <div></div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:10px">
+    <div>
+      <label data-text-key="lblSpesaAtt1">Spesa attuale 1° Mese (€)</label>
+      <input id="spesaAtt1" class="edit" inputmode="decimal" />
+    </div>
+    <div></div>
+  </div>
+</div>
+
+<!-- Bimestre helper -->
+<div id="bimHelper" style="display:none;margin:12px 0">
+  <button class="btn gray" id="btnBimSpesa" type="button">Inserisci spesa bimestrale</button>
+  <div class="hint" style="margin-top:6px;color:var(--muted);font-size:12px">
+    Inserisci quota consumi e quota fissa: il totale fattura verrà ripartito sui 2 mesi in base ai kWh.
+  </div>
+</div>
+<div class="monthGroup" id="grpM2" style="display:none">
+  
+
+  <div class="row monthRefRow">
+    <div>
+      <label data-text-key="lblMese2">2° Mese fatturato</label>
+      <select id="mese2" class="edit"></select>
+    </div>
+    <div>
+      <label data-text-key="lblAnno2">Anno</label>
+      <select id="anno2" class="edit"></select>
+    </div>
+  </div>
+
+  <div id="consumiMulti2" style="display:none;margin-top:10px">
+    <div class="row3">
+      <div>
+        <label data-text-key="lblF1_m2">Fascia F1 (kWh)</label>
+        <input id="kwh2_f1" class="edit" inputmode="decimal" />
+      </div>
+      <div>
+        <label data-text-key="lblF2_m2">Fascia F2 (kWh)</label>
+        <input id="kwh2_f2" class="edit" inputmode="decimal" />
+      </div>
+      <div>
+        <label data-text-key="lblF3_m2">Fascia F3 (kWh)</label>
+        <input id="kwh2_f3" class="edit" inputmode="decimal" />
+      </div>
+    </div>
+  </div>
+
+  <div id="kwh2totWrap" style="display:none;margin-top:10px">
+    <div class="row">
+      <div>
+        <label data-text-key="lblKwh2Tot">Totale 2° mese (kWh)</label>
+        <input id="kwh2_tot" class="edit" inputmode="decimal" />
+      </div>
+      <div></div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:10px">
+    <div>
+      <label data-text-key="lblSpesaAtt2">Spesa attuale 2° Mese (€)</label>
+      <input id="spesaAtt2" class="edit" inputmode="decimal" />
+    </div>
+    <div></div>
+  </div>
+</div>
+
+
+
+      <div class="btnRow">
+        <a class="btn linkBtn" href="https://www.fastweb.it/downloads/PDF/business/energia/cte_fastweb_energia_fix.pdf?rel=20241001" target="_blank" rel="noopener">Scarica CTE FIX</a>
+        <a class="btn linkBtn" href="https://www.fastweb.it/downloads/PDF/business/energia/cte_fastweb_energia_flex.pdf?rel=20241001" target="_blank" rel="noopener">Scarica CTE FLEX</a>
+      </div>
+
+
+      <div class="hint">
+  
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="pill warn" id="punWarn" class="pill warnPill" style="display:none">⚠️ Non è presente nessun PUN per il mese selezionato.</div>
+      <div class="hr" id="punWarnHr" style="display:none"></div>
+      <div class="kpi">
+        <div class="box">
+          <div class="t" data-text-key="ttlFw1">Spesa stimata con Fastweb (1° mese)</div>
+          <div class="v fwYellow" id="out_fw1">—</div>
+          <div class="muted small" id="out_fw1_detail"></div>
+        </div>
+        <div class="box statusBox none" id="box_esito1">
+          <div class="t" data-text-key="ttlEsito1">Risultato confronto (1° mese)</div>
+          <div class="deltaBig" id="out_delta1">—</div>
+          <div class="esitoLabel" id="out_esito1">—</div>
+          <div class="muted small annualLine">Δ annuo stimato: <span id="out_delta1_year">—</span></div>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="kpi" id="kpi2" style="display:none">
+        <div class="box">
+          <div class="t" data-text-key="ttlFw2">Spesa stimata con Fastweb</div>
+          <div class="v fwYellow" id="out_fw2">—</div>
+          <div class="muted small" id="out_fw2_detail"></div>
+        </div>
+        <div class="box statusBox none" id="box_esito2">
+          <div class="t" data-text-key="ttlEsito2">Risultato confronto</div>
+          <div class="deltaBig" id="out_delta2">—</div>
+          <div class="esitoLabel" id="out_esito2">—</div>
+          <div class="muted small annualLine">Δ annuo stimato: <span id="out_delta2_year">—</span></div>
+        </div>
+      </div>
+
+      <div class="hr" id="hrBim" style="display:none"></div>
+
+      <div class="kpi" id="kpiBim" style="display:none">
+        <div class="box">
+          <div class="t" data-text-key="ttlAttBim">Totale spesa attuale (Bim)</div>
+          <div class="v" id="out_att_bim">—</div>
+          <div class="muted small">Somma 1°+2° mese</div>
+        </div>
+        <div class="box">
+          <div class="t" data-text-key="ttlFwBim">Totale stimato con Fastweb (Bim)</div>
+          <div class="v fwYellow" id="out_fw_bim">—</div>
+          <div class="muted small">Somma 1°+2° mese</div>
+        </div>
+        <div class="box statusBox none span2" id="box_esito_bim">
+          <div class="t" data-text-key="ttlEsitoBim">Risultato confronto totale</div>
+          <div class="deltaBig" id="out_delta_bim">—</div>
+          <div class="esitoLabel" id="out_esito_bim">—</div>
+          <div class="muted small annualLine">Δ annuo stimato: <span id="out_delta_bim_year">—</span></div>
+        </div>
+</div>
+
+      <div class="hr"></div>
+
+      
+      <div class="muted small" data-text-key="ttlDettagli">Dettaglio calcolo (valori utilizzati)</div>
+
+      <div class="monthGroup" id="detM1" style="margin-top:10px">
+        <div class="monthTitle">
+          <span class="monthBadge">1</span>
+          <span id="det_m1_label">—</span>
+        </div>
+
+        <table style="margin:0">
+          <tbody>
+            <tr><td>Costo energia</td><td class="right" id="d_ckw1">—</td><td class="muted right">€/KWh</td></tr>
+            <tr><td>Costo commercializzazione</td><td class="right" id="d_fee">—</td><td class="muted right">€/mese</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="monthGroup" id="detM2" style="margin-top:12px;display:none">
+        <div class="monthTitle">
+          <span class="monthBadge">2</span>
+          <span id="det_m2_label">—</span>
+        </div>
+
+        <table style="margin:0">
+          <tbody>
+            <tr><td>Costo energia</td><td class="right" id="d_ckw2">—</td><td class="muted right">€/KWh</td></tr>
+            <tr><td>Costo commercializzazione</td><td class="right" id="d_fee2">—</td><td class="muted right">€/mese</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+
+    </div>
+
+  </div>
+</div>
+
+
+<div class="modal" id="adminModal" aria-hidden="true">
+  <div class="modalCard">
+    <div class="modalHeader">
+      <h2>Backhand (Admin) — PUN e Parametri</h2>
+      <button class="closeBtn" id="adminClose" type="button">Chiudi</button>
+    </div>
+
+    <div id="adminLock">
+      <div class="hr"></div>
+      <div class="row">
+        <div>
+          <label>Password</label>
+          <input id="adminPwd" class="edit" type="password" placeholder="Inserisci password" />
+        </div>
+        <div style="align-self:end">
+          <button class="btn primary" id="adminUnlock" type="button">Sblocca</button>
+        </div>
+      </div>
+      <div class="msg" id="adminMsg">Inserisci la password per modificare PUN e parametri di calcolo (salvataggio in questo browser).</div>
+    </div>
+
+    <div id="adminArea" style="display:none">
+      <div class="tabs">
+        <div class="tab active" data-pane="panePun">PUN (JSON)</div>
+        <div class="tab" data-pane="paneCfg">Parametri (Spread/Disp/Capacity)</div>
+        <div class="tab" data-pane="paneTxt">Testi</div>
+        <div class="tab" data-pane="panePdf">PDF</div>
+      </div>
+
+      <div class="pane active" id="panePun">
+        <label>Dataset PUN (array JSON)</label>
+        <textarea id="punEditor" spellcheck="false"></textarea>
+        <div class="msg">Campi richiesti per ogni riga: <b>mese</b>, <b>anno</b>, <b>pun</b>, <b>f1</b>, <b>f2</b>, <b>f3</b>. Esempio: {"mese":"Novembre","anno":2025,"pun":0.1418,"f1":0.14905,"f2":0.13566,"f3":0.12135}</div>
+      </div>
+
+      <div class="pane" id="paneCfg">
+        <div class="row">
+          <div>
+            <label>Spread (€/kWh)</label>
+            <input id="cfgSpread" class="edit" inputmode="decimal" />
+          </div>
+          <div>
+            <label>Dispacciamento (€/kWh)</label>
+            <input id="cfgDisp" class="edit" inputmode="decimal" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Capacità mercato (€/kWh)</label>
+            <input id="cfgCap" class="edit" inputmode="decimal" />
+          </div>
+          <div>
+            <label>Aumento capacity mercato (€/kWh)</label>
+            <input id="cfgCapAum" class="edit" inputmode="decimal" />
+          </div>
+        </div>
+        <div class="msg">Nota: come in Excel, quando il mese è "FIX" spread e perdite vengono annullati. Gli altri parametri restano applicati.</div>
+      </div>
+
+      
+      <div class="pane" id="paneTxt">
+        <label>Testi configuratore (JSON)</label>
+        <textarea id="txtEditor" spellcheck="false"></textarea>
+        <div class="msg">
+          Qui puoi modificare tutti i testi visibili (titoli, label, ecc.). Salvataggio in questo browser.
+          <br/>Formato: chiave → testo. Esempio: {"title":"Simulatore Comparazione Energia Fastweb"}
+        </div>
+      </div>
+
+      
+      <div class="pane" id="panePdf">
+        <label>Testi PDF (JSON)</label>
+        <textarea id="pdfTxtEditor" spellcheck="false"></textarea>
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label>Scala testo PDF (es. 1.0 = default)</label>
+            <input id="pdfFontScale" class="edit" type="number" step="0.05" min="0.70" max="1.60" />
+          </div>
+          <div style="align-self:end;display:flex;gap:10px">
+            <label style="display:flex;align-items:center;gap:10px;margin:0">
+              <input id="pdfBoldAll" type="checkbox" style="width:auto" />
+              Grassetto per tutti i testi PDF
+            </label>
+          </div>
+        </div>
+        <div class="msg">
+          Qui puoi personalizzare i testi usati nel PDF (intro, note, call-to-action CTE, ecc.) e lo stile globale del testo.
+          <br/>Esempio: {"intro":"Facendo seguito alle intercorse intese...","ctaCte":"Per maggiori dettagli, consulta le CTE..."}
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="adminReset" type="button">Ripristina default</button>
+        <button class="btn primary" id="adminSave" type="button">Salva e applica</button>
+      </div>
+      <div class="msg" id="adminMsg2"></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// --- Config file support (GitHub Pages workflow) ---
+// Se presente, ./config.json viene caricato all'avvio e applicato a tutti.
+// Dal pannello Admin, al click su "Salva e applica" viene anche scaricato automaticamente un nuovo config.json.
+const CONFIG_FILE = "./config.json";
+
+function downloadJSON(filename, obj){
+  const json = JSON.stringify(obj, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function tryLoadConfigFile(){
+  try{
+    const res = await fetch(CONFIG_FILE + "?ts=" + Date.now(), { cache: "no-store" });
+    if(!res.ok) return false; // 404 ecc.
+    const cfgFile = await res.json();
+
+    // Supporta:
+    // 1) nuovo formato: { pun:[...], cfg:{...}, txt:{...} }
+    // 2) legacy: array PUN puro
+    if(Array.isArray(cfgFile)){
+      localStorage.setItem("FW_PUN_DATA", JSON.stringify(cfgFile));
+      return true;
+    }
+
+    if(cfgFile && typeof cfgFile === "object"){
+      if(Array.isArray(cfgFile.pun)) localStorage.setItem("FW_PUN_DATA", JSON.stringify(cfgFile.pun));
+      if(cfgFile.cfg && typeof cfgFile.cfg === "object") localStorage.setItem("FW_CFG", JSON.stringify(cfgFile.cfg));
+      if(cfgFile.txt && typeof cfgFile.txt === "object") localStorage.setItem("FW_TEXTS", JSON.stringify(cfgFile.txt));
+      if(cfgFile.pdf && typeof cfgFile.pdf === "object") localStorage.setItem("FW_PDF_CFG", JSON.stringify(cfgFile.pdf));
+      return true;
+    }
+    return false;
+  }catch(e){
+    return false;
+  }
+}
+
+const PUN_DEFAULT = [{"mese": "FIX", "anno": 2025, "pun": 0.165, "f1": 0.165, "f2": 0.165, "f3": 0.165}, {"mese": "Gennaio", "anno": 2025, "pun": 0.14303, "f1": 0.15832, "f2": 0.15161, "f3": 0.12854}, {"mese": "Febbraio", "anno": 2025, "pun": 0.15036, "f1": 0.15764, "f2": 0.15895, "f3": 0.13991}, {"mese": "Marzo", "anno": 2025, "pun": 0.12055, "f1": 0.12168, "f2": 0.13486, "f3": 0.11165}, {"mese": "Aprile", "anno": 2025, "pun": 0.09985, "f1": 0.09584, "f2": 0.11508, "f3": 0.09505}, {"mese": "Maggio", "anno": 2025, "pun": 0.09358, "f1": 0.08909, "f2": 0.11064, "f3": 0.08711}, {"mese": "Giugno", "anno": 2025, "pun": 0.11178, "f1": 0.11306, "f2": 0.12676, "f3": 0.10363}, {"mese": "Luglio", "anno": 2025, "pun": 0.11313, "f1": 0.10896, "f2": 0.12676, "f3": 0.10849}, {"mese": "Agosto", "anno": 2025, "pun": 0.10879, "f1": 0.10558, "f2": 0.11797, "f3": 0.10604}, {"mese": "Settembre", "anno": 2025, "pun": 0.10959, "f1": 0.10558, "f2": 0.12093, "f3": 0.10188}, {"mese": "Ottobre", "anno": 2025, "pun": 0.11104, "f1": 0.11783, "f2": 0.12166, "f3": 0.09948}, {"mese": "Novembre", "anno": 2025, "pun": 0.11709, "f1": 0.12959, "f2": 0.12402, "f3": 0.10551}, {"mese": "Dicembre", "anno": 2025, "pun": 0.11549, "f1": 0.13009, "f2": 0.11998, "f3": 0.10452}, {"mese": "FIX", "anno": 2026, "pun": 0.165, "f1": 0.165, "f2": 0.165, "f3": 0.165}, {"mese": "Gennaio", "anno": 2026, "pun": 0.13266, "f1": 0.15126, "f2": 0.1374, "f3": 0.11829}];
+
+
+function loadPUN(){
+  try{
+    const raw = localStorage.getItem("FW_PUN_DATA");
+    if(!raw) return PUN_DEFAULT;
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : PUN_DEFAULT;
+  }catch(e){ return PUN_DEFAULT; }
+}
+let PUN = loadPUN();
+
+const CONFIG_DEFAULT = { spread:0.037, disp:0.01172, cap:0.01358, capAum:0.0011, perditaFactor:0.1 };
+function loadCFG(){
+  try{
+    const raw = localStorage.getItem("FW_CFG");
+    if(!raw) return CONFIG_DEFAULT;
+    const c = JSON.parse(raw);
+    return { ...CONFIG_DEFAULT, ...(c||{}) };
+  }catch(e){ return CONFIG_DEFAULT; }
+}
+let CFG = loadCFG();
+
+
+const PDF_TEXT_DEFAULT = {
+  // Header
+  pillText: "PROPOSTA COMMERCIALE",
+  title: "OFFERTA ENERGIA – FASTWEB",
+  subtitle: "Documento di sintesi (simulazione)",
+
+  // Sezioni
+  sectionCustomerTitle: "Dati cliente",
+  sectionParamsTitle: "Parametri simulazione",
+  summaryTitle: "Riepilogo economico",
+  detailTitle: "Dettaglio simulazione",
+
+  // Label box sinistra
+  lblCompany: "Ragione sociale",
+  lblPiva: "P. IVA",
+  lblAddress: "Indirizzo POD",
+  lblPod: "Id POD",
+
+  // Label box destra
+  lblOffer: "Offerta economica",
+  lblVodafone: "Cliente Vodafone",
+  lblPeriod: "Periodo",
+  lblMeter: "Tipo contatore",
+
+  // Intro
+  intro1: "Facendo seguito alle intercorse intese, riportiamo di seguito le condizioni a lei riservate.",
+  intro2: "In caso di accettazione dell'offerta, provvederemo a sottoporre alla sua firma il modulo che riporterà le condizioni concordate.",
+
+  // Riepilogo: colonne
+  sumAtt: "Totale spesa attuale",
+  sumFw: "Totale stimato Fastweb",
+  sumSaving: "Risparmio",
+  sumIncrease: "Aumento",
+  annualSaving: "Risparmio annuale",
+  annualIncrease: "Aumento annuale",
+
+  // Tabella: intestazioni
+  colPeriod: "Periodo",
+  colKwh: "kWh Tot.",
+  colAtt: "Spesa attuale",
+  colFw: "Spesa Fastweb",
+  colAvg: "Costo medio €/kWh",
+
+  // CTE
+  ctaLine: "Per maggiori informazioni sulle condizioni tecnico-economiche proposte:",
+  ctaLinkText: "Clicca qui per consultare la CTE",
+  // Contatti agente
+  contactIntro: "Per maggiori informazioni e per confermare l’adesione all’offerta, puoi contattarmi ai seguenti recapiti:",
+  contactCompany: "Wincom srl",
+  contactPartner: "Vodafone Excellent Partner",
+
+  // Footer (Wincom)
+footerLine1: "Wincom Srl • Via Tempio del Cielo 1/3 • 00144 Roma (RM)",
+footerLine2: "Tel. +39 06 50758 • info@wincomitalia.com • certificata@pec.mywincom.it",
+footerLine3: "P.IVA 05616631007 • REA RM - 907457 • Capitale Sociale € 10.400",
+
+// File
+  filename: "Offerta_Fastweb_Energia"
+};
+const PDF_STYLE_DEFAULT = { fontScale: 1.00, boldAll: false };
+const TEXT_DEFAULT = {
+  pageTitle: "Simulatore Comparazione Energia Fastweb",
+  pillInfo: "🔧 Valori modificabili (verde scuro) + campi condizionali (MONO/MULTI, 1/2 mesi)",
+  ttlFw1: "Spesa stimata con Fastweb (1° mese)",
+  ttlEsito1: "Risultato confronto (1° mese)",
+  ttlFw2: "Spesa stimata con Fastweb",
+  ttlEsito2: "Risultato confronto",
+  ttlAttBim: "Totale spesa attuale (Bim)",
+  ttlFwBim: "Totale stimato con Fastweb (Bim)",
+  ttlEsitoBim: "Risultato confronto totale",
+  ttlDettagli: "Dettaglio calcolo (valori utilizzati)"
+};
+
+function loadTXT(){
+  try{
+    const raw = localStorage.getItem("FW_TEXTS");
+    if(!raw) return TEXT_DEFAULT;
+    const t = JSON.parse(raw);
+    return { ...TEXT_DEFAULT, ...(t||{}) };
+  }catch(e){ return TEXT_DEFAULT; }
+}
+
+
+function loadPDFCFG(){
+  try{
+    const raw = localStorage.getItem("FW_PDF_CFG");
+    if(!raw) return { txt: PDF_TEXT_DEFAULT, style: PDF_STYLE_DEFAULT };
+    const obj = JSON.parse(raw) || {};
+    const txt = { ...PDF_TEXT_DEFAULT, ...(obj.txt||{}) };
+    const style = { ...PDF_STYLE_DEFAULT, ...(obj.style||{}) };
+    // sanitize
+    style.fontScale = Number(style.fontScale);
+    if(!isFinite(style.fontScale) || style.fontScale<=0) style.fontScale = 1.0;
+    style.boldAll = !!style.boldAll;
+    return { txt, style };
+  }catch(e){ return { txt: PDF_TEXT_DEFAULT, style: PDF_STYLE_DEFAULT }; }
+}
+
+let TXT = loadTXT();
+let PDFCFG = loadPDFCFG();
+
+// Expose PDF config to PDF generator
+window.getConfigForPdf = function(){
+  return {
+    pdfTxt: (PDFCFG && PDFCFG.txt) ? PDFCFG.txt : PDF_TEXT_DEFAULT,
+    pdfFontScale: (PDFCFG && PDFCFG.style) ? PDFCFG.style.fontScale : 1,
+    pdfBoldAll: (PDFCFG && PDFCFG.style) ? PDFCFG.style.boldAll : false
+  };
+};
+window.PDF_TXT = (PDFCFG && PDFCFG.txt) ? PDFCFG.txt : PDF_TEXT_DEFAULT;
+
+
+
+function ensureTextKeys(){
+  let i = 1;
+  const candidates = document.querySelectorAll("h1, label, .t, .hint, .pill span, table td:first-child");
+  candidates.forEach(el=>{
+    if(!el.getAttribute("data-text-key")){
+      el.setAttribute("data-text-key", "auto_" + (i++));
+    }
+  });
+}
+
+function exportTexts(){
+  const out = {};
+  document.querySelectorAll("[data-text-key]").forEach(el=>{
+    const k = el.getAttribute("data-text-key");
+    if(k) out[k] = el.textContent;
+  });
+  return out;
+}
+
+function applyTexts(){
+  const STRONG_KEYS = new Set([
+    // labels (left form)
+    "lblClienteVodafone","lblTipologiaFasce","lblMensilita","lblOffertaEconomica",
+    "lblMese1","lblAnno1","lblF1_m1","lblF2_m1","lblF3_m1","lblKwh1Tot","lblSpesaAtt1",
+    "lblMese2","lblAnno2","lblF1_m2","lblF2_m2","lblF3_m2","lblKwh2Tot","lblSpesaAtt2",
+    // titles/right side
+    "ttlFw1","ttlEsito1","ttlFw2","ttlEsito2","ttlAttBim","ttlFwBim","ttlEsitoBim","ttlDettagli"
+  ]);
+  document.querySelectorAll("[data-text-key]").forEach(el=>{
+    const k = el.getAttribute("data-text-key");
+    if(k && TXT[k] !== undefined && TXT[k] !== null){
+      el.textContent = String(TXT[k]);
+    }
+    // enforce bold+black for selected keys
+    if(k && STRONG_KEYS.has(k)){
+      el.classList.add("lbl-strong");
+    }else{
+      el.classList.remove("lbl-strong");
+    }
+  });
+}
+
+
+function computeMonths(){ return [...new Set(PUN.map(r => r.mese))]; }
+function computeYears(){ return [...new Set(PUN.map(r => r.anno))].sort((a,b)=>a-b); }
+
+
+function euro(n) {
+  if (n === null || n === undefined || Number.isNaN(n)) return "—";
+  return n.toLocaleString("it-IT", { style:"currency", currency:"EUR" });
+}
+function num(v) {
+  if (v === null || v === undefined) return 0;
+  if (typeof v === "number") return v;
+  // accetta "1.234,56" oppure "1234.56"
+  const s = String(v).trim().replace(/\./g,"").replace(",",".");
+  const x = parseFloat(s);
+  return Number.isFinite(x) ? x : 0;
+}
+
+function setText(id, value){ const el=document.getElementById(id); if(el) el.textContent = value; }
+
+
+function setStatusClass(boxEl, esito) {
+  if (!boxEl) return;
+  boxEl.classList.remove("save","up","none");
+  if (esito === "Risparmio") boxEl.classList.add("save");
+  else if (esito === "Aumento") boxEl.classList.add("up");
+  else boxEl.classList.add("none");
+}
+
+function getRow(mese, anno) {
+  return PUN.find(r => r.mese === mese && r.anno === anno) || null;
+}
+
+function hasPUN(mese, anno){
+  return !!getRow(mese, anno);
+}
+
+// replica: =INDEX(PUN!D:D, MATCH(1, (PUN!B:B=mese)*(PUN!C:C=anno), 0))
+function punMedio(mese, anno) {
+  const r = getRow(mese, anno);
+  return r ? r.pun : 0;
+}
+function punF(mese, anno, fascia) {
+  const r = getRow(mese, anno);
+  if (!r) return 0;
+  if (fascia === 1) return r.f1;
+  if (fascia === 2) return r.f2;
+  if (fascia === 3) return r.f3;
+  return 0;
+}
+
+function calcMonth({ mese, anno, isVodafone, fasce, kwh, spesaAttuale }) {
+  // Excel:
+  // spread = IF(mese="FIX",0,0.037)
+  const spread = (mese === "FIX") ? 0 : CFG.spread;
+  // perdita rete = IF(mese="FIX",0,(pun*0.1))
+  const pun = punMedio(mese, anno);
+  const perdita = (mese === "FIX") ? 0 : (pun * CFG.perditaFactor);
+  const disp = CFG.disp;
+  const cap = CFG.cap;
+  const capAum = CFG.capAum;
+  const capAddeb = cap + capAum;
+
+  // costo per kWh (F20/J20): SUM(pun,spread,perdita,disp,cap,capAum)  (F18 si annulla come in Excel)
+  const costoKw = pun + spread + perdita + disp + cap + capAum;
+
+  // B21/M21: SUM(spread..capAum) (F18/J18 si annulla)
+  const extra = spread + perdita + disp + cap + capAum;
+
+  const fee = isVodafone ? 5 : 20;
+
+  let spesaFW = 0;
+  let kwhTot = 0;
+
+  if (fasce === "MULTI") {
+    const f1 = punF(mese, anno, 1);
+    const f2 = punF(mese, anno, 2);
+    const f3 = punF(mese, anno, 3);
+    const k1 = num(kwh.f1), k2 = num(kwh.f2), k3 = num(kwh.f3);
+    kwhTot = k1 + k2 + k3;
+    spesaFW = fee + ((f1 + extra) * k1) + ((f2 + extra) * k2) + ((f3 + extra) * k3);
+  } else {
+    kwhTot = num(kwh.tot);
+    spesaFW = fee + (kwhTot * costoKw);
+  }
+
+  const delta = Math.abs(num(spesaAttuale) - spesaFW);
+  const esito = (num(spesaAttuale) - spesaFW) > 0 ? "Risparmio" : ((num(spesaAttuale) - spesaFW) === 0 ? "Nessun Risparmio" : "Aumento");
+
+  return { pun, spread, perdita, disp, cap, capAum, capAddeb, costoKw, extra, fee, kwhTot, spesaFW, delta, esito };
+}
+
+function ripartisciBimestrale(spesaBim, kwh1, kwh2) {
+  // Excel:
+  // N16 = IF((N10=0)*OR(Q10=0),0,(N13*N10)/(N10+Q10))
+  // Q16 = IF((N10=0)*OR(Q10=0),0,(N13*Q10)/(N10+Q10))
+  const n10 = num(kwh1);
+  const q10 = num(kwh2);
+  if (n10 === 0 || q10 === 0) return { m1:0, m2:0 };
+  const tot = n10 + q10;
+  return {
+    m1: (num(spesaBim) * n10) / tot,
+    m2: (num(spesaBim) * q10) / tot
+  };
+}
+
+function setup() {
+  const mese1 = document.getElementById("mese1");
+  const mese2 = document.getElementById("mese2");
+  const anno1 = document.getElementById("anno1");
+  const anno2 = document.getElementById("anno2");
+  const offertaEl = document.getElementById("offertaEconomica");
+
+  function populateMonthYear(){
+    const MONTHS_ALL = computeMonths();
+    const MONTHS = (offertaEl && offertaEl.value==="FLEX") ? MONTHS_ALL.filter(m=>m!=="FIX") : MONTHS_ALL;
+    const YEARS = computeYears();
+
+    mese1.innerHTML = "";
+    mese2.innerHTML = "";
+    anno1.innerHTML = "";
+    anno2.innerHTML = "";
+
+    for (const m of MONTHS) {
+      const o1 = document.createElement("option"); o1.value=m; o1.textContent=m; mese1.appendChild(o1);
+      const o2 = document.createElement("option"); o2.value=m; o2.textContent=m; mese2.appendChild(o2);
+    }
+    for (const y of YEARS) {
+      const o1=document.createElement("option"); o1.value=y; o1.textContent=y; anno1.appendChild(o1);
+      const o2=document.createElement("option"); o2.value=y; o2.textContent=y; anno2.appendChild(o2);
+    }
+  }
+
+  function applyOfferta(){
+    const isFix = (offertaEl && offertaEl.value === "FIX");
+    for (const row of document.querySelectorAll(".monthRefRow")) {
+      row.style.display = isFix ? "none" : "";
+    }
+    if (isFix) {
+      // forza FIX 2026
+      if ([...mese1.options].some(o=>o.value==="FIX")) mese1.value = "FIX";
+      if ([...mese2.options].some(o=>o.value==="FIX")) mese2.value = "FIX";
+      if ([...anno1.options].some(o=>String(o.value)==="2026")) anno1.value = "2026";
+      if ([...anno2.options].some(o=>String(o.value)==="2026")) anno2.value = "2026";
+    }
+  }
+
+  populateMonthYear();
+  applyOfferta();
+
+  if (offertaEl) {
+    offertaEl.addEventListener("change", () => {
+      populateMonthYear();
+      applyOfferta();
+      compute();
+    });
+  }
+
+  // default "come file"
+  document.getElementById("cltVodafone").value = "SI";
+  document.getElementById("fasce").value = "MULTI";
+  document.getElementById("mensilita").value = "1";
+
+  // prova a settare mesi/anni se esistono, altrimenti usa la prima opzione disponibile
+  const setIfExists = (sel, val) => {
+    const el = document.getElementById(sel);
+    if ([...el.options].some(o => o.value === val)) el.value = val;
+  };
+  setIfExists("mese1","Novembre");
+  setIfExists("anno1","2025");
+  setIfExists("mese2","Gennaio");
+  setIfExists("anno2","2026");
+
+  // esempi kWh
+  document.getElementById("kwh1_f1").value = "";
+  document.getElementById("kwh1_f2").value = "";
+  document.getElementById("kwh1_f3").value = "";
+
+  // spesa attuale esempio
+  document.getElementById("spesaAtt1").value = "";
+
+  // listeners
+  document.querySelectorAll("input,select").forEach(el => el.addEventListener("input", render));
+  document.querySelectorAll("select").forEach(el => el.addEventListener("change", render));
+
+  render();
+}
+
+
+function render() {
+  const isVodafone = document.getElementById("cltVodafone").value === "SI";
+  const fasce = document.getElementById("fasce").value;
+  const mens = parseInt(document.getElementById("mensilita").value,10);
+  const offerta = document.getElementById("offertaEconomica") ? document.getElementById("offertaEconomica").value : "FLEX";
+  const mese1_raw = document.getElementById("mese1").value;
+  const anno1_raw = parseInt(document.getElementById("anno1").value,10);
+  const mese2_raw = document.getElementById("mese2").value;
+  const anno2_raw = parseInt(document.getElementById("anno2").value,10);
+
+  const mese1 = (offerta === "FIX") ? "FIX" : mese1_raw;
+  const anno1 = (offerta === "FIX") ? 2026 : anno1_raw;
+  const mese2 = (offerta === "FIX") ? "FIX" : mese2_raw;
+  const anno2 = (offerta === "FIX") ? 2026 : anno2_raw;
+
+  const missing1 = !hasPUN(mese1, anno1);
+  const missing2 = (mens===2) ? !hasPUN(mese2, anno2) : false;
+
+  const warnEl = document.getElementById("punWarn");
+  const warnHr = document.getElementById("punWarnHr");
+  const showWarn = missing1 || missing2;
+
+  warnEl.style.display = showWarn ? "inline-flex" : "none";
+  warnHr.style.display = showWarn ? "block" : "none";
+
+  if(showWarn){
+    // messaggio specifico
+    if(missing1 && missing2) warnEl.textContent = "⚠️ Non è presente nessun PUN per i mesi selezionati.";
+    else if(missing1) warnEl.textContent = "⚠️ Non è presente nessun PUN per il 1° mese selezionato.";
+    else warnEl.textContent = "⚠️ Non è presente nessun PUN per il 2° mese selezionato.";
+
+    // nascondi riquadri risultati e dettagli
+    document.querySelectorAll(".kpi, table, #detM1, #detM2").forEach(el=> el.style.display="none");
+    return;
+  } else {
+    // ripristina visibilità
+    document.querySelectorAll(".kpi").forEach(el=> el.style.display="grid");
+    document.querySelectorAll("table").forEach(el=> el.style.display="table");
+    document.getElementById("detM1").style.display="block";
+    if(parseInt(document.getElementById("mensilita").value,10)===2) document.getElementById("detM2").style.display="block";
+  }
+// UI condizionale
+  document.getElementById("kpi2").style.display = (mens===2) ? "grid" : "none";
+  document.getElementById("kpiBim").style.display = (mens===2) ? "grid" : "none";
+  document.getElementById("hrBim").style.display = (mens===2) ? "block" : "none";
+
+  // raggruppa i campi del mese 2
+  const grpM2 = document.getElementById("grpM2");
+  if (grpM2) grpM2.style.display = (mens===2) ? "block" : "none";
+
+  document.getElementById("consumiMulti").style.display = (fasce==="MULTI") ? "block" : "none";
+  document.getElementById("consumiMono").style.display  = (fasce==="MONO")  ? "block" : "none";
+  document.getElementById("consumiMulti2").style.display = (mens===2 && fasce==="MULTI") ? "block" : "none";
+  document.getElementById("kwh2totWrap").style.display   = (mens===2 && fasce==="MONO")  ? "block" : "none";
+
+  // Raccogli kWh
+  const kwh1 = (fasce==="MULTI")
+    ? { f1: document.getElementById("kwh1_f1").value, f2: document.getElementById("kwh1_f2").value, f3: document.getElementById("kwh1_f3").value }
+    : { tot: document.getElementById("kwh1_tot").value };
+
+  const kwh2 = (fasce==="MULTI")
+    ? { f1: document.getElementById("kwh2_f1").value, f2: document.getElementById("kwh2_f2").value, f3: document.getElementById("kwh2_f3").value }
+    : { tot: document.getElementById("kwh2_tot").value };
+
+  const spesaAtt1 = num(document.getElementById("spesaAtt1").value);
+  const spesaAtt2 = num(document.getElementById("spesaAtt2").value);
+
+  // Calcoli
+  const m1 = calcMonth({ mese:mese1, anno:anno1, isVodafone, fasce, kwh:kwh1, spesaAttuale:spesaAtt1 });
+  document.getElementById("out_fw1").textContent = euro(m1.spesaFW);
+  document.getElementById("out_fw1_detail").textContent = `Fee ${isVodafone?5:20} € • kWh ${m1.kwhTot.toFixed(2)} • costo/kWh ${m1.costoKw.toFixed(5)}`;
+  document.getElementById("out_delta1").textContent = euro(m1.delta);
+  document.getElementById("out_esito1").textContent = m1.esito;
+  document.getElementById("out_delta1_year").textContent = euro(m1.delta * 12);
+  setStatusClass(document.getElementById("box_esito1"), m1.esito);
+
+  
+  document.getElementById("det_m1_label").textContent = `${mese1} ${anno1}`;
+  document.getElementById("d_fee").textContent = (isVodafone ? 5 : 20).toFixed(0);
+setText("d_pun1", m1.pun.toFixed(5));
+  document.getElementById("d_ckw1").textContent = m1.costoKw.toFixed(5);
+if (mens === 2) {
+    const m2 = calcMonth({ mese:mese2, anno:anno2, isVodafone, fasce, kwh:kwh2, spesaAttuale:spesaAtt2 });
+    document.getElementById("out_fw2").textContent = euro(m2.spesaFW);
+    document.getElementById("out_fw2_detail").textContent = `Fee ${isVodafone?5:20} € • kWh ${m2.kwhTot.toFixed(2)} • costo/kWh ${m2.costoKw.toFixed(5)}`;
+    document.getElementById("out_delta2").textContent = euro(m2.delta);
+    document.getElementById("out_esito2").textContent = m2.esito;
+    document.getElementById("out_delta2_year").textContent = euro(m2.delta * 12);
+    setStatusClass(document.getElementById("box_esito2"), m2.esito);
+
+    
+    document.getElementById("det_m2_label").textContent = `${mese2} ${anno2}`;
+    document.getElementById("d_fee2").textContent = (isVodafone ? 5 : 20).toFixed(0);
+    document.getElementById("detM2").style.display = "block";
+setText("d_pun2", m2.pun.toFixed(5));
+    document.getElementById("d_ckw2").textContent = m2.costoKw.toFixed(5);
+const attBim = spesaAtt1 + spesaAtt2;         // H31
+    const fwBim  = m1.spesaFW + m2.spesaFW;       // H33
+    const deltaBim = Math.abs(attBim - fwBim);    // H35 valore
+    const esitoBim = (attBim - fwBim) > 0 ? "Risparmio" : ((attBim - fwBim) === 0 ? "Nessun Risparmio" : "Aumento"); // H35 testo
+
+    document.getElementById("out_att_bim").textContent = euro(attBim);
+    document.getElementById("out_fw_bim").textContent = euro(fwBim);
+    document.getElementById("out_esito_bim").textContent = esitoBim;
+    document.getElementById("out_delta_bim").textContent = euro(deltaBim);
+    document.getElementById("out_delta_bim_year").textContent = euro(deltaBim * 6);
+    setStatusClass(document.getElementById("box_esito_bim"), esitoBim);
+} else {
+document.getElementById("detM2").style.display = "none";
+    // reset stati 2° mese / bimestre
+    setStatusClass(document.getElementById("box_esito2"), "");
+    setStatusClass(document.getElementById("box_esito_bim"), "");
+  }
+}
+
+
+
+// --- Clear inputs ---
+function clearAllFormInputs(){
+  // Clear all INPUT fields in configurator (exclude modals/admin/pdf/bimestre)
+  document.querySelectorAll("input").forEach(inp=>{
+    const inModal = inp.closest && (inp.closest("#adminModal") || inp.closest("#pdfModal") || inp.closest("#bimModal"));
+    if(inModal) return;
+    if((inp.type||"").toLowerCase()==="password") return;
+    // keep readonly fields? clear anyway as requested
+    inp.value = "";
+    inp.dispatchEvent(new Event("input", {bubbles:true}));
+  });
+  // Also reset bimestre state (if any)
+  clearBimAutoSpese("clear-all");
+}
+// --- Admin (Backhand) ---
+function openAdmin(){
+  document.getElementById("adminModal").classList.add("open");
+}
+function closeAdmin(){
+  document.getElementById("adminModal").classList.remove("open");
+}
+function setAdminMsg(t){ document.getElementById("adminMsg").textContent = t; }
+function setAdminMsg2(t){ document.getElementById("adminMsg2").textContent = t; }
+
+function refreshFromStorage(){
+  PUN = loadPUN();
+  CFG = loadCFG();
+  TXT = loadTXT();
+}
+
+function fillAdminFields(){
+  document.getElementById("punEditor").value = JSON.stringify(PUN, null, 2);
+  document.getElementById("txtEditor").value = JSON.stringify({ ...exportTexts(), ...(TXT||{}) }, null, 2);
+  document.getElementById("cfgSpread").value = String(CFG.spread).replace(".",",");
+  document.getElementById("cfgDisp").value = String(CFG.disp).replace(".",",");
+  document.getElementById("cfgCap").value = String(CFG.cap).replace(".",",");
+  document.getElementById("cfgCapAum").value = String(CFG.capAum).replace(".",",");
+  // PDF
+  const pdfObj = (PDFCFG && typeof PDFCFG==="object") ? PDFCFG : {txt:PDF_TEXT_DEFAULT, style:PDF_STYLE_DEFAULT};
+  document.getElementById("pdfTxtEditor").value = JSON.stringify(pdfObj.txt || PDF_TEXT_DEFAULT, null, 2);
+  document.getElementById("pdfFontScale").value = (pdfObj.style && pdfObj.style.fontScale!=null) ? String(pdfObj.style.fontScale) : "1.00";
+  document.getElementById("pdfBoldAll").checked = !!(pdfObj.style && pdfObj.style.boldAll);
+}
+
+function applyNewData(){
+  // ricarica PUN/CFG e ripopola dropdown mantenendo se possibile le selezioni
+  const prev = {
+    mese1: document.getElementById("mese1").value,
+    anno1: document.getElementById("anno1").value,
+    mese2: document.getElementById("mese2").value,
+    anno2: document.getElementById("anno2").value,
+  };
+  refreshFromStorage();
+  ensureTextKeys();
+  applyTexts();
+
+  const mese1 = document.getElementById("mese1");
+  const mese2 = document.getElementById("mese2");
+  const anno1 = document.getElementById("anno1");
+  const anno2 = document.getElementById("anno2");
+
+  // repopola
+  const MONTHS = computeMonths();
+  const YEARS = computeYears();
+  mese1.innerHTML=""; mese2.innerHTML=""; anno1.innerHTML=""; anno2.innerHTML="";
+  for(const m of MONTHS){ const o1=document.createElement("option"); o1.value=m; o1.textContent=m; mese1.appendChild(o1);
+                          const o2=document.createElement("option"); o2.value=m; o2.textContent=m; mese2.appendChild(o2); }
+  for(const y of YEARS){ const o1=document.createElement("option"); o1.value=y; o1.textContent=y; anno1.appendChild(o1);
+                         const o2=document.createElement("option"); o2.value=y; o2.textContent=y; anno2.appendChild(o2); }
+
+  // ripristina selezioni se esistono
+  if (MONTHS.includes(prev.mese1)) mese1.value = prev.mese1;
+  if (YEARS.map(String).includes(String(prev.anno1))) anno1.value = prev.anno1;
+  if (MONTHS.includes(prev.mese2)) mese2.value = prev.mese2;
+  if (YEARS.map(String).includes(String(prev.anno2))) anno2.value = prev.anno2;
+
+  render();
+}
+
+function bindAdmin(){
+  const openBtn = document.getElementById("adminOpen");
+  const clearBtn = document.getElementById("btnClearAll");
+  const closeBtn = document.getElementById("adminClose");
+  const unlockBtn = document.getElementById("adminUnlock");
+  const saveBtn = document.getElementById("adminSave");
+  const resetBtn = document.getElementById("adminReset");
+
+  if(openBtn) openBtn.addEventListener("click", () => { fillAdminFields(); openAdmin(); });
+  if(closeBtn) closeBtn.addEventListener("click", closeAdmin);
+  document.getElementById("adminModal").addEventListener("click", (e)=>{ if(e.target.id==="adminModal") closeAdmin(); });
+
+  // tabs
+  document.querySelectorAll(".tab").forEach(t=>{
+    t.addEventListener("click", ()=>{
+      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+      document.querySelectorAll(".pane").forEach(x=>x.classList.remove("active"));
+      t.classList.add("active");
+      document.getElementById(t.dataset.pane).classList.add("active");
+    });
+  });
+
+  if(unlockBtn) unlockBtn.addEventListener("click", ()=>{
+    const pwd = document.getElementById("adminPwd").value || "";
+    if(pwd === "Santarelli86!"){
+      document.getElementById("adminLock").style.display = "none";
+      document.getElementById("adminArea").style.display = "block";
+      setAdminMsg("OK.");
+      setAdminMsg2("");
+    } else {
+      setAdminMsg("Password errata.");
+    }
+  });
+
+  if(saveBtn) saveBtn.addEventListener("click", ()=>{
+    try{
+      const data = JSON.parse(document.getElementById("punEditor").value);
+      if(!Array.isArray(data)) throw new Error("PUN deve essere un array JSON.");
+      // sanity check minimo
+      for(const r of data){
+        if(!r || typeof r !== "object") throw new Error("Riga PUN non valida.");
+        if(!("mese" in r) || !("anno" in r) || !("pun" in r) || !("f1" in r) || !("f2" in r) || !("f3" in r)){
+          throw new Error("Ogni riga deve avere mese, anno, pun, f1, f2, f3.");
+        }
+      }
+      const cfg = {
+        spread: num(document.getElementById("cfgSpread").value),
+        disp: num(document.getElementById("cfgDisp").value),
+        cap: num(document.getElementById("cfgCap").value),
+        capAum: num(document.getElementById("cfgCapAum").value),
+      };
+      // Testi
+let txt = null;
+try{
+  txt = JSON.parse(document.getElementById("txtEditor").value || "{}");
+  if(!txt || typeof txt !== "object" || Array.isArray(txt)) throw new Error("Testi deve essere un oggetto JSON (chiave → testo).");
+}catch(e){
+  throw new Error("Testi non validi: " + (e && e.message ? e.message : String(e)));
+}
+
+localStorage.setItem("FW_PUN_DATA", JSON.stringify(data));
+localStorage.setItem("FW_CFG", JSON.stringify(cfg));
+localStorage.setItem("FW_TEXTS", JSON.stringify(txt));
+
+// PDF
+let pdfTxt = null;
+try{
+  pdfTxt = JSON.parse(document.getElementById("pdfTxtEditor").value || "{}");
+  if(!pdfTxt || typeof pdfTxt !== "object" || Array.isArray(pdfTxt)) throw new Error("Testi PDF deve essere un oggetto JSON.");
+}catch(e){
+  throw new Error("Testi PDF non validi: " + (e && e.message ? e.message : String(e)));
+}
+const pdfStyle = {
+  fontScale: Number(document.getElementById("pdfFontScale").value || 1),
+  boldAll: !!document.getElementById("pdfBoldAll").checked,
+};
+localStorage.setItem("FW_PDF_CFG", JSON.stringify({ txt: pdfTxt, style: pdfStyle }));
+
+// Scarica automaticamente il file da ricaricare su GitHub (stessa cartella della v11)
+downloadJSON("config.json", { pun: data, cfg, txt, pdf: { txt: pdfTxt, style: pdfStyle } });
+
+setAdminMsg2("Salvato e applicato. Scaricato anche config.json (caricalo su GitHub nella cartella della v11).");
+applyNewData();}catch(err){
+      setAdminMsg2("Errore: " + (err && err.message ? err.message : String(err)));
+    }
+  });
+
+  if(resetBtn) resetBtn.addEventListener("click", ()=>{
+    localStorage.removeItem("FW_PUN_DATA");
+    localStorage.removeItem("FW_CFG");
+    localStorage.removeItem("FW_TEXTS");
+    refreshFromStorage();
+  applyTexts();
+    fillAdminFields();
+    applyNewData();
+    setAdminMsg2("Ripristinati i default.");
+  });
+}
+
+
+async function init(){
+  // se esiste config.json lo uso come base "globale" (poi localStorage resta come cache)
+  await tryLoadConfigFile();
+  // rilegge i valori (da localStorage o default)
+  PUN = loadPUN();
+  CFG = loadCFG();
+  TXT = loadTXT();
+
+  ensureTextKeys();
+  bindAdmin();
+  applyTexts();
+  setup();
+}
+init();
+</script>
+
+<!-- === PDF OFFERTA (Wincom) === -->
+<script src="/configuratore-energia/assets/jspdf.umd.min.js"></script>
+
+<style>
+/* Pulsante PDF dentro lo stesso blocco Actions dei CTE */
+.btnRow .pdfBtn{grid-column:1 / -1;width:100%}
+
+/* Confronto totale: contenuto centrato ma testo allineato a sinistra */
+#box_esito_bim{
+  align-items:center;
+}
+#box_esito_bim .t,
+#box_esito_bim .deltaBig,
+#box_esito_bim .esitoLabel,
+#box_esito_bim .annualLine{
+  width:min(560px, 100%);
+  text-align:left;
+}
+
+/* Modal dark coerente con UI */
+#pdfModal.modal-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(17,24,39,0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+#pdfModal.modal-overlay.active{ display:flex; }
+
+#pdfModal .modal-box{
+  width:min(560px, calc(100% - 28px));
+  background:rgba(255,255,255,.92);
+  border:1px solid rgba(17,24,39,.14);
+  border-radius:18px;
+  padding:22px;
+  color:var(--text);
+  box-shadow:0 24px 80px rgba(0,0,0,.25);
+}
+#pdfModal .modal-box h3{ margin:0 0 14px 0; font-size:20px; }
+#pdfModal .modal-box .sub{ color:var(--muted); font-size:13px; margin-bottom:14px; }
+
+#pdfModal .modal-box input{width:100%;padding:12px 12px;border-radius:12px;border:1px solid rgba(17,24,39,.14);background:rgba(243,244,246,.95);color:var(--text);outline:none;}
+#pdfModal .modal-box input::placeholder{ color:rgba(107,114,128,.85); }
+
+#pdfModal .modal-box .row{ display:flex; gap:10px; margin-top:12px; }
+#pdfModal .modal-box .row button{
+  flex:1;
+  padding:12px 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.12);
+  cursor:pointer;
+}
+#pdfModal .modal-box .print-btn{background:linear-gradient(180deg, rgba(0,150,0,.92), rgba(0,150,0,.80));color:#ffffff;border:1px solid rgba(0,120,0,.45);border-radius:14px;padding:12px 14px;font-weight:800;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.16);transition:transform .06s ease, box-shadow .18s ease}
+#pdfModal .modal-box .print-btn:hover{ background:rgba(47,125,50,1); }
+#pdfModal .modal-box .cancel-btn{background:linear-gradient(180deg, rgba(17,24,39,.06), rgba(17,24,39,.03));color:var(--text);border:1px solid rgba(17,24,39,.16);border-radius:14px;padding:12px 14px;font-weight:700;cursor:pointer;box-shadow:0 2px 10px rgba(17,24,39,.06);transition:transform .06s ease, box-shadow .18s ease}
+#pdfModal .modal-box .cancel-btn:hover{ background:rgba(255,255,255,.12); }
+</style>
+
+<script>
+(function(){
+  const CTE_FIX_URL = "https://www.fastweb.it/downloads/PDF/business/energia/cte_fastweb_energia_fix.pdf?rel=20241001";
+  const CTE_FLEX_URL = "https://www.fastweb.it/downloads/PDF/business/energia/cte_fastweb_energia_flex.pdf?rel=20241001";
+
+  function qs(sel, root=document){ return root.querySelector(sel); }
+  function qsa(sel, root=document){ return Array.from(root.querySelectorAll(sel)); }
+  function textById(id){ const el=document.getElementById(id); return el? el.innerText.trim() : ""; }
+  function valById(id){ const el=document.getElementById(id); return el? el.value : ""; }
+
+  function toggleAnnualLinesForMonths(){
+    const m = valById("mensilita");
+    const hide = (m === "2");
+    // SOLO nei box dei singoli mesi
+    qsa("#box_esito1 .annualLine, #box_esito2 .annualLine").forEach(el=>{
+      el.style.display = hide ? "none" : "";
+    });
+  }
+
+  function ensurePdfButtonInActions(){
+    // il blocco azioni coi CTE è il div .btnRow (due link CTE)
+    const actions = qs(".btnRow");
+    if(!actions) return;
+
+    // evita duplicati
+    if(actions.querySelector(".pdfBtn")) return;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn pdfBtn";
+    btn.textContent = "Stampa PDF Offerta";
+    btn.addEventListener("click", ()=> openPdfModal());
+    actions.insertBefore(btn, actions.firstChild);
+  }
+
+  function openPdfModal(){
+    const modal = document.getElementById("pdfModal");
+    if(!modal) return;
+    modal.classList.add("open");
+    // focus primo input
+    setTimeout(()=> {
+      const i = modal.querySelector("#pdf_company");
+      if(i) i.focus();
+    }, 50);
+  }
+  function closePdfModal(){
+    const modal = document.getElementById("pdfModal");
+    if(!modal) return;
+    modal.classList.remove("open");
+  }
+
+// --- Bimestre helper ---
+function parseItNumber(v){
+  if(v===null||v===undefined) return NaN;
+  const s=String(v).trim();
+  if(!s) return NaN;
+  return Number(s.replace(/\./g," ").replace(/\s/g,"").replace(",","."));
+}// === BIMESTRE: stato ripartizione spesa (quota consumi + quota fissa) ===
+const BIM_STATE = {
+  active: false,
+  quotaConsumi: 0,
+  quotaFissa: 0,
+  total: 0
+};
+
+function clearBimAutoSpese(reason){
+  BIM_STATE.active = false;
+  BIM_STATE.quotaConsumi = 0;
+  BIM_STATE.quotaFissa = 0;
+  BIM_STATE.total = 0;
+
+  // se i campi spesa sono stati auto-compilati (bimestre), svuotali
+  const i1=document.getElementById("spesaAtt1");
+  const i2=document.getElementById("spesaAtt2");
+  if(i1) i1.value = "";
+  if(i2) i2.value = "";
+
+  // pulisci anche i campi della modale bimestrale
+  const qc=document.getElementById("bim_quota_consumi");
+  const qf=document.getElementById("bim_quota_fissa");
+  if(qc) qc.value = "";
+  if(qf) qf.value = "";
+}
+
+function recalcBimAutoSpeseIfActive(){
+  if(!BIM_STATE.active) return;
+  const total = BIM_STATE.total;
+  if(!(total>0)) return;
+
+  const k1 = getKwhMonth(1);
+  const k2 = getKwhMonth(2);
+  if(!(k1>0) || !(k2>0)) return;
+
+  const denom = (k1+k2);
+  // Ripartizione proporzionale con arrotondamento a 2 decimali (cent) e somma garantita = totale
+  const s1r = Math.round((total * (k1/denom)) * 100) / 100;
+  const s2r = Math.round((total - s1r) * 100) / 100;
+
+  const i1=document.getElementById("spesaAtt1");
+  const i2=document.getElementById("spesaAtt2");
+  if(i1) i1.value = s1r.toLocaleString("it-IT", {minimumFractionDigits:2, maximumFractionDigits:2});
+  if(i2) i2.value = s2r.toLocaleString("it-IT", {minimumFractionDigits:2, maximumFractionDigits:2});
+
+  // trigger recalculation downstream
+  if(i1) i1.dispatchEvent(new Event("input", {bubbles:true}));
+  if(i2) i2.dispatchEvent(new Event("input", {bubbles:true}));
+}
+function getKwhMonth(n){
+  const totEl = document.getElementById(`kwh${n}_tot`);
+  const t = totEl ? parseItNumber(totEl.value) : NaN;
+  if(isFinite(t) && t>0) return t;
+  const f1 = parseItNumber((document.getElementById(`kwh${n}_f1`)||{}).value);
+  const f2 = parseItNumber((document.getElementById(`kwh${n}_f2`)||{}).value);
+  const f3 = parseItNumber((document.getElementById(`kwh${n}_f3`)||{}).value);
+  return (isFinite(f1)?f1:0)+(isFinite(f2)?f2:0)+(isFinite(f3)?f3:0);
+}
+function openBimModal(){
+  // Require kWh fields before opening
+  const k1 = getKwhMonth(1);
+  const k2 = getKwhMonth(2);
+  if(!(k1>0) || !(k2>0)){
+    alert("Prima di inserire la spesa bimestrale, compila tutti i campi di consumo (kWh) per entrambi i mesi.");
+    return;
+  }
+  const m=document.getElementById("bimModal");
+  if(m) m.classList.add("open");
+}
+function closeBimModal(){
+  const m=document.getElementById("bimModal");
+  if(m) m.classList.remove("open");
+}
+function applyBimSpesa(){
+  const qc = parseItNumber((document.getElementById("bim_quota_consumi")||{}).value);
+  const qf = parseItNumber((document.getElementById("bim_quota_fissa")||{}).value);
+  const total = (isFinite(qc)?qc:0) + (isFinite(qf)?qf:0);
+  const k1 = getKwhMonth(1);
+  const k2 = getKwhMonth(2);
+  if(!(total>0)) { alert("Inserisci almeno un importo valido (Quota consumi e/o Quota fissa)." ); return; }
+  if(!(k1>0) || !(k2>0)) { alert("Prima di ripartire la spesa bimestrale, compila tutti i campi di consumo (kWh) per entrambi i mesi." ); return; }
+
+  BIM_STATE.active = true;
+  BIM_STATE.quotaConsumi = (isFinite(qc)?qc:0);
+  BIM_STATE.quotaFissa   = (isFinite(qf)?qf:0);
+  BIM_STATE.total        = total;
+
+  // calcolo + scrittura campi
+  recalcBimAutoSpeseIfActive();
+  closeBimModal();
+}
+function syncBimUI(){
+  const mSel = document.getElementById("mensilita");
+  const is2 = mSel && String(mSel.value)==="2";
+  const i1=document.getElementById("spesaAtt1");
+  const i2=document.getElementById("spesaAtt2");
+  const helper=document.getElementById("bimHelper");
+  if(helper) helper.style.display = is2 ? "block" : "none";
+  if(i1){ i1.readOnly = is2; i1.classList.toggle("locked", is2); }
+  if(i2){ i2.readOnly = is2; i2.classList.toggle("locked", is2); }
+}
+
+
+  function euroToNumber(euroStr){
+    if(!euroStr) return NaN;
+    // "1.234,56 €" -> 1234.56
+    return Number(euroStr.replace(/\s?€/g,"").replace(/\./g,"").replace(",",".").trim());
+  }
+  function fmtEuro(n){
+    if(typeof n !== "number" || !isFinite(n)) return "—";
+    return n.toLocaleString("it-IT", {minimumFractionDigits:2, maximumFractionDigits:2}) + " €";
+  }
+
+  function safeOneLine(str, maxLen=64){
+    if(!str) return "—";
+    const s = String(str).replace(/\s+/g," ").trim();
+    return s.length>maxLen ? s.slice(0,maxLen-1)+"…" : s;
+  }
+
+  function ensureJsPdfLoaded(){
+    // Prefer already loaded globals
+    if((window.jspdf && window.jspdf.jsPDF) || window.jsPDF) return Promise.resolve(true);
+
+    // Avoid double-loading
+    if(window.__JSPDF_LOADING_PROMISE) return window.__JSPDF_LOADING_PROMISE;
+
+    window.__JSPDF_LOADING_PROMISE = new Promise((resolve, reject)=>{
+      const s = document.createElement("script");
+      s.src = "/configuratore-energia/assets/jspdf.umd.min.js";
+      s.async = true;
+      s.onload = ()=>resolve(true);
+      s.onerror = ()=>reject(new Error("Failed to load /configuratore-energia/assets/jspdf.umd.min.js"));
+      document.head.appendChild(s);
+    });
+
+    return window.__JSPDF_LOADING_PROMISE;
+  }
+
+  
+  // ------------------------------------------------------------
+  // Helpers (PDF)
+  // ------------------------------------------------------------
+  function smartShorten(input, maxWords = 7, maxChars = 90) {
+    const s = (input ?? "").toString().trim();
+    if (!s) return "";
+    const words = s.split(/\s+/);
+    let out = s;
+    if (words.length > maxWords) out = words.slice(0, maxWords).join(" ") + "…";
+    if (out.length > maxChars) out = out.slice(0, Math.max(1, maxChars - 1)) + "…";
+    return out;
+  }
+
+  // === Agenti riconosciuti (validazione) ===
+  const KNOWN_AGENTS = [
+    "Alessandro Balli",
+    "Alessandro Bettollini",
+    "Andrea Bonaventura",
+    "Angelo Basilici",
+    "Antonio Martucci",
+    "Chiara Pattacini",
+    "Claudio Bonvini",
+    "Cosmo Di Luozzo",
+    "Emilio Zucconi",
+    "Fabio Galia",
+    "Federico Decanio",
+    "Filippo Pelleriti",
+    "Francesco Krakamp",
+    "Giancarlo Di Sabatino",
+    "Giorgio Di Mento",
+    "Linda Giancarli",
+    "Luca D'Andreagiovanni",
+    "Manuela Rizzo",
+    "Maria Belisari",
+    "Martin Veber",
+    "Massimo Asceni",
+    "Matteo Sommavilla",
+    "Pietro Vultaggio",
+    "Roberto Sommavilla",
+    "Salvatore Petronaci",
+    "Stefano Caffari",
+    "Stefano Santarelli",
+  ];
+
+  const normalizeApostrophes = (s)=> (s||"").toString().replace(/[’‘]/g,"'");
+
+  const normalizeAgentFullName = (full)=> normalizeApostrophes(full)
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g," ");
+
+  const KNOWN_AGENT_SET = new Set(KNOWN_AGENTS.map(normalizeAgentFullName));
+
+  const buildWincomEmail = (first, last)=>{
+    const f = normalizeApostrophes(first).toLowerCase().replace(/\s+/g,"").replace(/'/g,"");
+    const l = normalizeApostrophes(last).toLowerCase().replace(/\s+/g,"").replace(/'/g,"");
+    return `${f}.${l}@wincomitalia.com`;
+  };
+
+async function generatePdfOfferta(){
+    // Ensure jsPDF is available (LOCAL on GitHub Pages)
+    try{
+      await ensureJsPdfLoaded();
+    }catch(loadErr){
+      console.error(loadErr);
+      alert("Impossibile generare il PDF: libreria PDF non caricata. Verifica che /configuratore-energia/assets/jspdf.umd.min.js sia raggiungibile e ricarica la pagina.");
+      throw loadErr;
+    }
+
+    const jsPDFCtor =
+      (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF :
+      (window.jsPDF ? window.jsPDF : null);
+
+    if(!jsPDFCtor){
+      console.error("jsPDF globals not found. window.jspdf:", window.jspdf, "window.jsPDF:", window.jsPDF);
+      alert("Impossibile generare il PDF: libreria PDF non disponibile (window.jspdf/jsPDF). Ricarica la pagina e riprova.");
+      throw new Error("jsPDF not available");
+    }
+
+    // --- Snapshot valori dal configuratore ---
+    const mens = Number((document.getElementById("mensilita")||{}).value||1) || 1;
+    const isVodafone = String((document.getElementById("cltVodafone")||{}).value||"SI").toUpperCase()==="SI";
+    const fasce = String((document.getElementById("fasce")||{}).value||"MULTI").toUpperCase();
+    const offerta = String((document.getElementById("offertaEconomica")||{}).value||"FLEX").toUpperCase();
+
+    const mese1 = (document.getElementById("mese1")||{}).value || "";
+    const anno1 = Number((document.getElementById("anno1")||{}).value||0) || 0;
+    const mese2 = (document.getElementById("mese2")||{}).value || "";
+    const anno2 = Number((document.getElementById("anno2")||{}).value||0) || 0;
+
+    const att1 = num((document.getElementById("spesaAtt1")||{}).value);
+    const att2 = mens>=2 ? num((document.getElementById("spesaAtt2")||{}).value) : 0;
+
+    const kwh1 = (fasce==="MULTI")
+      ? {f1:num((document.getElementById("kwh1_f1")||{}).value), f2:num((document.getElementById("kwh1_f2")||{}).value), f3:num((document.getElementById("kwh1_f3")||{}).value)}
+      : {tot:num((document.getElementById("kwh1_tot")||{}).value)};
+    const kwh2 = (fasce==="MULTI")
+      ? {f1:num((document.getElementById("kwh2_f1")||{}).value), f2:num((document.getElementById("kwh2_f2")||{}).value), f3:num((document.getElementById("kwh2_f3")||{}).value)}
+      : {tot:num((document.getElementById("kwh2_tot")||{}).value)};
+
+    const r1 = calcMonth({ mese:mese1, anno:anno1, isVodafone, fasce, kwh:kwh1, spesaAttuale:att1 });
+    const r2 = (mens>=2) ? calcMonth({ mese:mese2, anno:anno2, isVodafone, fasce, kwh:kwh2, spesaAttuale:att2 }) : null;
+
+    const totAtt = mens>=2 ? (att1+att2) : att1;
+    const totFw  = mens>=2 ? (r1.spesaFW + (r2 ? r2.spesaFW : 0)) : r1.spesaFW;
+
+    const diff = totAtt - totFw; // positivo => risparmio
+    const isSaving = diff >= 0;
+    const diffAbs = Math.abs(diff);
+
+    const annual = diff * (mens===2 ? 6 : 12);
+    const annualAbs = Math.abs(annual);
+
+    // costo medio €/kWh (netto fee)
+    const avgKw = (res)=> {
+      const k = res.kwhTot || 0;
+      if (!k) return 0;
+      return (res.spesaFW - res.fee) / k;
+    };
+
+    // --- Dati aziendali dal form ---
+    const company = smartShorten((document.getElementById("pdf_company")||{}).value || "", 70);
+    const piva    = smartShorten((document.getElementById("pdf_piva")||{}).value || "", 40);
+    const addr    = smartShorten((document.getElementById("pdf_address")||{}).value || "", 120);
+    const podId   = smartShorten((document.getElementById("pdf_pod")||{}).value || "", 60);
+
+const agentFirst = smartShorten((document.getElementById("pdf_agent_first")||{}).value || "", 40);
+    const agentLast  = smartShorten((document.getElementById("pdf_agent_last")||{}).value || "", 40);
+    const agentFull  = `${agentFirst} ${agentLast}`.trim();
+    const agentEmail = (agentFirst && agentLast) ? buildWincomEmail(agentFirst, agentLast) : "";
+    // --- Testi PDF da backhand ---
+    const cfgPack = (typeof window.getConfigForPdf === "function") ? window.getConfigForPdf() : (window.CONFIG || {});
+    const pdfT = (cfgPack && cfgPack.pdfTxt) ? cfgPack.pdfTxt : (window.PDF_TXT || {});
+    const fontScale = Number(cfgPack?.pdfFontScale || 1) || 1;
+    const boldAll = !!cfgPack?.pdfBoldAll;
+
+    const fmtMoney = (n)=> (Number(n)||0).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2}) + " €";
+    const fmtNum = (n, dec=5)=> (Number(n)||0).toLocaleString("it-IT",{minimumFractionDigits:dec,maximumFractionDigits:dec});
+
+    // link CTE: leggiamo gli href reali dai pulsanti del configuratore
+    const cteFixHref = (document.querySelector('.btnRow a[href*="cte_fastweb_energia_fix"]')||{}).href || "";
+    const cteFlexHref = (document.querySelector('.btnRow a[href*="cte_fastweb_energia_flex"]')||{}).href || "";
+    const cteHref = (offerta==="FIX") ? cteFixHref : cteFlexHref;
+
+    // --- PDF ---
+    const doc = new jsPDFCtor({unit:"mm", format:"a4"});
+    const W = doc.internal.pageSize.getWidth();
+
+    const C = {
+      text:[17,24,39],
+      muted:[85,85,85],
+      border:[230,230,234],
+      soft:[251,251,252],
+      grayPill:[243,244,246],
+      link:[11,87,208],
+      green:[26,127,55],
+      red:[180,0,0],
+      fwYellow:[245,196,0],
+    };
+
+    const setFont = (weight)=> doc.setFont("helvetica", boldAll ? "bold" : (weight||"normal"));
+    const h1 = 20*fontScale, h2=11*fontScale, p = 10*fontScale, s = 9*fontScale;
+
+    // Header pulito (senza "Vodafone + Fastweb")
+    doc.setFillColor(255,255,255);
+    doc.rect(0,0,W,16,"F");
+    doc.setDrawColor(...C.border);
+    doc.line(0,16,W,16);
+
+    // pill a destra
+    doc.setFillColor(...C.grayPill);
+    doc.setDrawColor(...C.border);
+    const pillW=42, pillH=7.5, pillX=W-18-pillW, pillY=12;
+    doc.roundedRect(pillX, pillY-pillH, pillW, pillH, 3.5, 3.5, "FD");
+    doc.setTextColor(55,65,81);
+    doc.setFontSize(8*fontScale);
+    setFont("bold");
+    doc.text((pdfT.pillText||"PROPOSTA COMMERCIALE").toString(), pillX+pillW/2, pillY-3.2, {align:"center"});
+
+    // Titolo
+    let y=26;
+    doc.setTextColor(...C.text);
+    setFont("bold");
+    doc.setFontSize(h1);
+    doc.text((pdfT.title||"OFFERTA ENERGIA – FASTWEB").toString(), 18, y);
+    y += 7;
+    setFont("normal");
+    doc.setFontSize(h2);
+    doc.setTextColor(...C.muted);
+    doc.text((pdfT.subtitle||"Documento di sintesi (simulazione)").toString(), 18, y);
+    y += 12;
+
+    // Boxes 2 colonne
+    const gap=8;
+    const colW=(W-36-gap)/2;
+    const boxH=46;
+    const boxY=y;
+    const xL=18, xR=18+colW+gap;
+
+    const box = (x)=>{ doc.setDrawColor(...C.border); doc.setFillColor(...C.soft); doc.roundedRect(x, boxY, colW, boxH, 4, 4, "FD"); };
+    box(xL); box(xR);
+
+    // Titoli sezioni
+    doc.setTextColor(...C.text);
+    setFont("bold"); doc.setFontSize(11*fontScale);
+    doc.text((pdfT.sectionCustomerTitle||"Dati cliente").toString(), xL+4, boxY+10);
+    doc.text((pdfT.sectionParamsTitle||"Parametri simulazione").toString(), xR+4, boxY+10);
+
+    // Helpers: wrapping-safe text lines (avoid overwriting next row)
+    const lineH = 6; // base line height in PDF units
+    const wrapLine = (txt, maxW)=> doc.splitTextToSize(String(txt||"").trim(), maxW);
+
+    const drawLeftWrapped = (txt, x, y, maxW)=>{
+      const lines = wrapLine(txt, maxW);
+      doc.text(lines, x, y);
+      return y + (contactLines.length * lineH);
+    };
+
+    const drawLabelValueWrapped = (label, value, x, y, maxW)=>{
+      const lab = `${label}:`;
+      setFont("bold"); doc.text(lab, x, y);
+      const wLab = doc.getTextWidth(lab + " ");
+      const vMaxW = Math.max(10, maxW - wLab);
+      const vLines = wrapLine(String(value||"—"), vMaxW);
+      setFont("normal");
+      // first line on same row
+      doc.text(vLines[0] || "—", x + wLab, y, {maxWidth: vMaxW});
+      // subsequent lines aligned under value start
+      for(let i=1;i<vLines.length;i++){
+        doc.text(vLines[i], x + wLab, y + (i*lineH), {maxWidth: vMaxW});
+      }
+      return y + (Math.max(1, vLines.length) * lineH);
+    };
+
+    // Sinistra (label bold)
+    let yy = boxY+18;
+    yy = drawLabelValueWrapped((pdfT.lblCompany||"Ragione sociale"), company||"—", xL+4, yy, colW-8);
+    yy = drawLabelValueWrapped((pdfT.lblPiva||"P. IVA"), piva||"—", xL+4, yy, colW-8);
+    yy = drawLabelValueWrapped((pdfT.lblAddress||"Indirizzo POD"), addr||"—", xL+4, yy, colW-8);
+    yy = drawLabelValueWrapped((pdfT.lblPod||"Id POD"), podId||"—", xL+4, yy, colW-8);
+
+    // Destra (label bold)
+    const rightItems = [
+      {k:(pdfT.lblOffer||"Offerta economica"), v: offerta},
+      {k:(pdfT.lblVodafone||"Cliente Vodafone"), v: isVodafone ? "SI" : "NO"},
+      {k:(pdfT.lblPeriod||"Periodo"), v: mens>=2 ? `${mese1} ${anno1} – ${mese2} ${anno2}` : `${mese1} ${anno1}`},
+      {k:(pdfT.lblMeter||"Tipo contatore"), v: fasce==="MULTI" ? "Multiorario" : "Monorario"},
+    ];
+    yy = boxY+18;
+    rightItems.forEach(it=>{ yy = drawLabelValueWrapped(it.k, it.v, xR+4, yy, colW-8); });
+
+y = boxY + boxH + 12;
+
+    // Intro
+    const intro1 = (pdfT.intro1 || "Facendo seguito alle intercorse intese, riportiamo di seguito le condizioni a lei riservate.").toString();
+    const intro2 = (pdfT.intro2 || "In caso di accettazione dell'offerta, provvederemo a sottoporre alla sua firma il modulo che riporterà le condizioni concordate.").toString();
+    setFont("normal"); doc.setFontSize(p); doc.setTextColor(...C.text);
+    const split = (txt)=> doc.splitTextToSize(txt, W-36);
+    let lines = split(intro1); doc.text(lines, 18, y); y += 6 + (contactLines.length-1)*5;
+    lines = split(intro2); doc.text(lines, 18, y); y += 10 + (contactLines.length-1)*5;
+
+    // Riepilogo economico
+    const sumH=36;
+    doc.setDrawColor(...C.border); doc.setFillColor(255,255,255);
+    doc.roundedRect(18, y, W-36, sumH, 4, 4, "FD");
+    setFont("bold"); doc.setFontSize(12*fontScale); doc.setTextColor(...C.text);
+    doc.text((pdfT.summaryTitle||"Riepilogo economico").toString(), 22, y+10);
+    doc.setDrawColor(239,239,242);
+    doc.line(22, y+12, W-22, y+12);
+
+    const col = (W-36-12)/3;
+    const x1=22, x2=22+col, x3=22+2*col;
+
+    setFont("normal"); doc.setFontSize(s); doc.setTextColor(...C.muted);
+    doc.text((pdfT.sumAtt||"Totale spesa attuale").toString(), x1, y+20);
+    doc.text((pdfT.sumFw||"Totale stimato Fastweb").toString(), x2, y+20);
+    doc.text((isSaving ? (pdfT.sumSaving||"Risparmio") : (pdfT.sumIncrease||"Aumento")).toString(), x3, y+20);
+
+    // spazio prima importi
+    const valueY = y+30;
+    setFont("bold"); doc.setFontSize(16*fontScale);
+    doc.setTextColor(...C.text); doc.text("€ " + fmtMoney(totAtt).replace(" €",""), x1, valueY);
+    doc.setTextColor(...C.fwYellow); doc.text("€ " + fmtMoney(totFw).replace(" €",""), x2, valueY);
+    doc.setTextColor(...(isSaving?C.green:C.red)); doc.text("€ " + fmtMoney(diffAbs).replace(" €",""), x3, valueY);
+
+    y += sumH + 10;
+
+    // Annuale
+    setFont("bold"); doc.setFontSize(11*fontScale);
+    doc.setTextColor(...(isSaving?C.green:C.red));
+    const annualLabel = isSaving ? (pdfT.annualSaving||"Risparmio annuale") : (pdfT.annualIncrease||"Aumento annuale");
+    doc.text(`${annualLabel}: € ${fmtMoney(annualAbs).replace(" €","")}`, 18, y);
+    y += 10;
+
+    // Dettaglio simulazione
+    setFont("bold"); doc.setFontSize(12*fontScale); doc.setTextColor(...C.text);
+    doc.text((pdfT.detailTitle||"Dettaglio simulazione").toString(), 18, y);
+    y += 6;
+
+    const rowH=9;
+    const rows = 1 + (mens>=2 ? 2 : 1);
+    const tH = rows*rowH + 10;
+    doc.setDrawColor(...C.border); doc.setFillColor(...C.soft);
+    doc.roundedRect(18, y, W-36, tH, 4,4,"FD");
+
+    doc.setFillColor(239,239,242);
+    doc.rect(18, y, W-36, rowH, "F");
+
+    const headers = [
+      (pdfT.colPeriod||"Periodo"),
+      (pdfT.colKwh||"kWh Tot."),
+      (pdfT.colAtt||"Spesa attuale"),
+      (pdfT.colFw||"Spesa Fastweb"),
+      (pdfT.colAvg||"Costo medio €/kWh")
+    ];
+    const fr=[0.20,0.14,0.19,0.19,0.28];
+    let cx=18+4, cy=y+6.2;
+    setFont("bold"); doc.setFontSize(s); doc.setTextColor(51,51,51);
+    for (let i=0;i<headers.length;i++){
+      doc.text(String(headers[i]), cx, cy);
+      cx += (W-36)*fr[i];
+    }
+
+    const drawRow = (idx, periodo, res, attVal)=>{
+      const yy = y + rowH*(idx+1);
+      doc.setDrawColor(...C.border);
+      doc.line(18, yy, W-18, yy);
+
+      const vals = [
+        periodo,
+        String(Math.round(res.kwhTot||0)),
+        "€ " + fmtMoney(attVal).replace(" €",""),
+        "€ " + fmtMoney(res.spesaFW||0).replace(" €",""),
+        fmtNum(avgKw(res), 5)
+      ];
+      let cx=18+4;
+      setFont("normal"); doc.setFontSize(s); doc.setTextColor(...C.text);
+      for (let i=0;i<vals.length;i++){
+        doc.text(String(vals[i]), cx, yy+6.2);
+        cx += (W-36)*fr[i];
+      }
+    };
+
+    drawRow(0, `${mese1} ${anno1}`, r1, att1);
+    if (mens>=2 && r2) drawRow(1, `${mese2} ${anno2}`, r2, att2);
+
+    y += tH + 10;
+
+    // CTA CTE
+    setFont("normal"); doc.setFontSize(p); doc.setTextColor(...C.text);
+    const cta = (pdfT.ctaLine||"Per maggiori informazioni sulle condizioni tecnico-economiche proposte:").toString();
+    doc.text(cta, 18, y); y += 7;
+
+    setFont("bold"); doc.setFontSize(p); doc.setTextColor(11,87,208);
+    const linkText = (pdfT.ctaLinkText||"Clicca qui per consultare la CTE").toString();
+    doc.text(linkText, 18, y);
+    if (cteHref){
+      const wLink = doc.getTextWidth(linkText);
+      doc.link(18, y-4.5, wLink, 6.5, { url: cteHref });
+    }
+    y += 10;
+
+    // Contatti agente (spazio dopo CTA)
+    y += 6;
+
+    // Card contatto (più elegante)
+    const contactTitle = (pdfT.contactTitle||"Riferimenti commerciali").toString();
+    const contactIntro = (pdfT.contactIntro||"Per maggiori informazioni e dettagli sull'offerta, puoi contattarmi:").toString();
+    const contactCompany = (pdfT.contactCompany||"Wincom Srl").toString();
+    const contactPartner = (pdfT.contactPartner||"Vodafone Excellent Partner").toString();
+
+    const contactLines = [
+      {t: contactTitle, w:"bold", c:C.text, s: (p*1.05)},
+      {t: contactIntro, w:"normal", c:C.muted, s: (p)},
+      {t: agentFull || "—", w:"bold", c:C.text, s: (p*1.05)},
+      ...(agentEmail ? [{t: agentEmail, w:"normal", c:C.text, s: (p)}] : []),
+      {t: contactCompany, w:"normal", c:C.text, s: (p)},
+      {t: contactPartner, w:"normal", c:C.text, s: (p)},
+    ];
+
+    // misura altezza card
+    const cPadX = 4.5, cPadY = 4.0;
+    const contactLineH = 5.6*FS;
+    const cCardH = cPadY*2 + contactLineH*contactLines.length + 1;
+    const cCardW = W - 36;
+    doc.setDrawColor(...C.border);
+    doc.setFillColor(...C.soft);
+    doc.roundedRect(18, y-2, cardW, cardH, 3.5, 3.5, "FD");
+
+    let cCy = y + cPadY + 2.8;
+    for(const ln of contactLines){
+      setFont(ln.w);
+      doc.setFontSize(ln.s);
+      doc.setTextColor(...ln.c);
+      // wrap only for intro
+      if(ln === lines[1] && doc.splitTextToSize){
+        const wrap = doc.splitTextToSize(ln.t, cardW - padX*2);
+        doc.text(wrap, 18+padX, cy);
+        cy += lineH*wrap.length;
+      }else{
+        doc.text(ln.t, 18+padX, cy);
+        cCy += contactLineH;
+      }
+    }
+    y = (y-2) + cardH + 4;
+
+
+
+// Footer Wincom (fixed to bottom)
+try{
+  doc.setFontSize(8.5*FS);
+  doc.setTextColor(120);
+  const f1 = (pdfT.footerLine1||"").toString();
+  const f2 = (pdfT.footerLine2||"").toString();
+  const f3 = (pdfT.footerLine3||"").toString();
+  const fy = pageH - 18;
+  if(f1) doc.text(f1, 18, fy);
+  if(f2) doc.text(f2, 18, fy+5.2);
+  if(f3) doc.text(f3, 18, fy+10.4);
+  doc.setTextColor(0);
+}catch(e){}
+    const filename = (pdfT.filename||"Offerta_Fastweb_Energia").toString().replace(/\s+/g,"_") + ".pdf";
+    doc.save(filename);
+}
+
+  // expose
+  window.PDFCFG = PDFCFG;
+  window.openPdfModal = openPdfModal;
+  window.closePdfModal = closePdfModal;
+  window.generatePdfOfferta = generatePdfOfferta;
+
+  
+
+// Alias for legacy callers (v28/v34)
+function compute(){
+  return render();
+}
+
+document.addEventListener("DOMContentLoaded", ()=>{
+    ensurePdfButtonInActions();
+    toggleAnnualLinesForMonths();
+    const m = document.getElementById("mensilita");
+    if(m) m.addEventListener("change", toggleAnnualLinesForMonths);
+    if(m) m.addEventListener("change", syncBimUI);
+    syncBimUI();
+
+    // Preserve "Spesa attuale" when switching MONO/MULTI
+    const fasceSel = document.getElementById("fasce");
+    if(fasceSel){
+      fasceSel.addEventListener("change", ()=>{
+        const i1=document.getElementById("spesaAtt1");
+        const i2=document.getElementById("spesaAtt2");
+        const v1=i1?i1.value:"";
+        const v2=i2?i2.value:"";
+        // render will run too; restore after layout toggles
+        setTimeout(()=>{
+          if(i1) i1.value = v1;
+          if(i2) i2.value = v2;
+        }, 0);
+      });
+    }
+    // Se cambia QUALSIASI menu a tendina, azzera eventuale ripartizione bimestrale (spese auto-compilate)
+    document.querySelectorAll("select").forEach(sel=>{
+      sel.addEventListener("change", ()=>{
+        // pulisci solo se la mensilità è 2 (bimestre); in altri casi non serve
+        const mVal = (document.getElementById("mensilita")||{}).value;
+        if(String(mVal)==="2"){
+          clearBimAutoSpese("select-change");
+          // trigger ricalcolo UI
+          const i1=document.getElementById("spesaAtt1");
+          const i2=document.getElementById("spesaAtt2");
+          if(i1) i1.dispatchEvent(new Event("input", {bubbles:true}));
+          if(i2) i2.dispatchEvent(new Event("input", {bubbles:true}));
+        }
+      });
+    });
+
+    // Se ho inserito la spesa bimestrale e cambio i kWh (mono o multi), ricalcola automaticamente la ripartizione
+    const kwhIds = ["kwh1_tot","kwh2_tot","kwh1_f1","kwh1_f2","kwh1_f3","kwh2_f1","kwh2_f2","kwh2_f3"];
+    kwhIds.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){
+        el.addEventListener("input", ()=>{
+          recalcBimAutoSpeseIfActive();
+        });
+      }
+    });
+    // PDF modal buttons (no inline handlers -> works with CSP)
+    const bPrint = document.getElementById("btnPdfPrint");
+    if(bPrint) bPrint.addEventListener("click", async (ev)=>{
+      ev.preventDefault();ev.stopPropagation();
+
+      const first = (document.getElementById("pdf_agent_first")||{}).value || "";
+      const last  = (document.getElementById("pdf_agent_last")||{}).value || "";
+      const full  = `${first} ${last}`.trim();
+
+      // campi agente obbligatori
+      if(!first.trim() || !last.trim()){
+        alert("Inserisci Nome e Cognome dell'agente (campi obbligatori).");
+        return;
+      }
+
+      // validazione agente
+      const ok = KNOWN_AGENT_SET.has(normalizeAgentFullName(full));
+      if(!ok){
+        alert("Agente non riconosciuto, contatta l’amministratore per l’aggiornamento.");
+        closePdfModal();
+        return;
+      }
+
+      try{
+        await generatePdfOfferta();
+      }catch(err){
+        console.error(err);
+        alert("Impossibile generare il PDF: errore interno o libreria non caricata. Verifica che /configuratore-energia/assets/jspdf.umd.min.js sia raggiungibile e riprova.");
+      }
+    });
+    const bCancel = document.getElementById("btnPdfCancel");
+    if(bCancel) bCancel.addEventListener("click", closePdfModal);
+
+    // Strong labels (black + bold)
+    const strongKeys = new Set(['lblClienteVodafone', 'lblTipologiaFasce', 'lblMensilita', 'lblOffertaEconomica', 'lblMese1', 'lblAnno1', 'lblF1_m1', 'lblF2_m1', 'lblF3_m1', 'lblKwh1Tot', 'lblSpesaAtt1', 'lblMese2', 'lblAnno2', 'lblF1_m2', 'lblF2_m2', 'lblF3_m2', 'lblKwh2Tot', 'lblSpesaAtt2', 'ttlFw1', 'ttlEsito1', 'ttlFw2', 'ttlEsito2', 'ttlAttBim', 'ttlFwBim', 'ttlEsitoBim', 'ttlDettagli']);
+    document.querySelectorAll('[data-text-key]').forEach(el=>{
+      const k = el.getAttribute('data-text-key');
+      if(strongKeys.has(k)) el.classList.add('lbl-strong');
+    });
+  
+// Bimestre modal
+const bb = document.getElementById("btnBimSpesa");
+if(bb) bb.addEventListener("click", (e)=>{ e.preventDefault(); openBimModal(); });
+const bClose = document.getElementById("btnBimClose");
+const bimCancel = document.getElementById("btnBimCancel");
+const bApply = document.getElementById("btnBimApply");
+if(bClose) bClose.addEventListener("click", (e)=>{ e.preventDefault(); closeBimModal(); });
+if(bimCancel) bimCancel.addEventListener("click", (e)=>{ e.preventDefault(); closeBimModal(); });
+if(bApply) bApply.addEventListener("click", (e)=>{ e.preventDefault(); applyBimSpesa(); });
+});
+})();
+</script>
+
+<div id="pdfModal" class="modal-overlay" aria-hidden="true">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-label="Genera Offerta PDF">
+    <h3>Genera Offerta PDF</h3>
+    <div class="sub">Inserisci i dati cliente per intestare la proposta.</div>
+
+    <div class="row">
+      <input id="pdf_company" placeholder="Ragione sociale" />
+      <input id="pdf_piva" placeholder="P. IVA" />
+    </div>
+    <input id="pdf_address" placeholder="Indirizzo POD" />
+    <input id="pdf_pod" placeholder="Id POD" />
+
+    <div class="row">
+      <input id="pdf_agent_first" placeholder="Nome agente *" required />
+      <input id="pdf_agent_last" placeholder="Cognome agente *" required />
+    </div>
+
+    <div class="row">
+      <button id="btnPdfPrint" class="print-btn" type="button">Stampa PDF</button>
+      <button id="btnPdfCancel" class="cancel-btn" type="button">Annulla</button>
+    </div>
+  </div>
+</div>
+<!-- === /PDF OFFERTA === -->
+
+
+
+<!-- BIMESTRE MODAL -->
+<div class="modal" id="bimModal" aria-hidden="true">
+  <div class="modalCard" style="max-width:640px">
+    <div class="muted" style="margin:0 0 14px">
+      Inserisci gli importi presenti in fattura. Il totale sarà ripartito sui due mesi in proporzione ai kWh inseriti.
+    </div>
+
+    <div class="grid2">
+      <div>
+        <label class="lbl-strong">Quota consumi (€)</label>
+        <input id="bimQuotaConsumi" type="number" step="0.01" inputmode="decimal" placeholder="0,00" />
+      </div>
+      <div>
+        <label class="lbl-strong">Quota fissa (€)</label>
+        <input id="bimQuotaFissa" type="number" step="0.01" inputmode="decimal" placeholder="0,00" />
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:14px; justify-content:flex-end; gap:10px">
+      <button id="btnBimApply" class="print-btn" type="button">Applica ripartizione</button>
+      <button id="btnBimCancel" class="cancel-btn" type="button">Annulla</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Footer brand (pagina) -->
+<div class="siteFooter">
+  <div><strong>Wincom Srl</strong> • Via Tempio del Cielo 1/3, 00144 Roma (RM) • +39 06 50758</div>
+  <div>info@wincomitalia.com • certificata@pec.mywincom.it • P.IVA 05616631007</div>
+</div>
+
+
+<script>
+/* --- PATCH v40: stable clear + bim logic + auto-recalc + clears on select changes --- */
+(function(){
+  function parseIt(v){
+    if(v==null) return NaN;
+    const s=String(v).trim();
+    if(!s) return NaN;
+    return Number(s.replace(/\./g,"").replace(/\s/g,"").replace(",","."));
+  }
+  function fmt2(n){
+    try{ return Number(n).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    catch(e){ return String(Math.round(n*100)/100); }
+  }
+  function getKwhTot(n){
+    const tot=document.getElementById("kwh"+n+"_tot");
+    const t=tot?parseIt(tot.value):NaN;
+    if(isFinite(t) && t>0) return t;
+    const f1=parseIt((document.getElementById("kwh"+n+"_f1")||{}).value);
+    const f2=parseIt((document.getElementById("kwh"+n+"_f2")||{}).value);
+    const f3=parseIt((document.getElementById("kwh"+n+"_f3")||{}).value);
+    return (isFinite(f1)?f1:0)+(isFinite(f2)?f2:0)+(isFinite(f3)?f3:0);
+  }
+  function clearSpese(){
+    ["spesaAtt1","spesaAtt2"].forEach(id=>{
+      const el=document.getElementById(id);
+      if(!el) return;
+      el.value="";
+      delete el.dataset.autobim;
+      // non dispatcho input qui per evitare loop: chi usa compute/render lo fa già a change
+    });
+  }
+
+  // stato bimestre globale
+  const BIM = (window.__BIM_STATE ||= {active:false, total:0, qc:0, qf:0});
+
+  function resetBim(){
+    BIM.active=false; BIM.total=0; BIM.qc=0; BIM.qf=0;
+    clearSpese();
+  }
+
+  function applySplit(){
+    if(!BIM.active) return;
+    const k1=getKwhTot(1), k2=getKwhTot(2);
+    if(!(k1>0 && k2>0 && BIM.total>0)) return;
+    // riparto e garantisco somma = totale
+    let s1 = Math.round((BIM.total * (k1/(k1+k2))) * 100)/100;
+    let s2 = Math.round((BIM.total - s1) * 100)/100;
+    const i1=document.getElementById("spesaAtt1");
+    const i2=document.getElementById("spesaAtt2");
+    if(i1){ i1.value=fmt2(s1); i1.dataset.autobim="1"; i1.dispatchEvent(new Event("input",{bubbles:true})); }
+    if(i2){ i2.value=fmt2(s2); i2.dataset.autobim="1"; i2.dispatchEvent(new Event("input",{bubbles:true})); }
+  }
+
+  function openModal(){
+    const m=document.getElementById("bimModal");
+    if(m) m.classList.add("open");
+  }
+  function closeModal(){
+    const m=document.getElementById("bimModal");
+    if(m) m.classList.remove("open");
+  }
+
+  function requireKwhOrWarn(){
+    const k1=getKwhTot(1), k2=getKwhTot(2);
+    if(!(k1>0 && k2>0)){
+      alert("Prima di inserire la spesa bimestrale, compila tutti i campi di consumo (kWh) per entrambi i mesi.");
+      return false;
+    }
+    return true;
+  }
+
+  function rebind(id, handler){
+    const el=document.getElementById(id);
+    if(!el) return null;
+    const clone=el.cloneNode(true);
+    el.parentNode.replaceChild(clone, el);
+    clone.addEventListener("click", handler);
+    return clone;
+  }
+
+  window.addEventListener("DOMContentLoaded", ()=>{
+    // 1) Fix tasto Cancella (svuota davvero senza chiamare compute non esistenti)
+    const clearBtn = document.getElementById("btnClearAll");
+    if(clearBtn){
+      const clone=clearBtn.cloneNode(true);
+      clearBtn.parentNode.replaceChild(clone, clearBtn);
+      clone.addEventListener("click",(e)=>{
+        e.preventDefault();
+        // input principali
+        document.querySelectorAll("input.edit").forEach(inp=>{
+          inp.value=""; delete inp.dataset.autobim;
+        });
+        // select principali: reset a prima opzione
+        ["cltVodafone","fasce","mensilita","offertaEconomica","mese1","anno1","mese2","anno2"].forEach(id=>{
+          const s=document.getElementById(id);
+          if(s && s.tagName==="SELECT") s.selectedIndex=0;
+        });
+        resetBim();
+        // prova a ricalcolare se esiste una funzione globale
+        try{ if(typeof window.render==="function") window.render(); }catch(_){}
+      });
+    }
+
+    // 2) Ogni volta che cambi MONO/MULTI o FIX/FLEX -> svuota spese + reset bimestre
+    ["fasce","offertaEconomica"].forEach(id=>{
+      const s=document.getElementById(id);
+      if(s){
+        s.addEventListener("change", ()=>{ resetBim(); });
+      }
+    });
+
+    // 2b) Ogni cambio select (tutte) in mensilità=2 -> svuota spese (anche se bloccate)
+    document.querySelectorAll("select").forEach(sel=>{
+      sel.addEventListener("change", ()=>{
+        const m=(document.getElementById("mensilita")||{}).value;
+        if(String(m)==="2"){ resetBim(); }
+      });
+    });
+
+    // 3) Bottone inserisci spesa bimestrale: valida kWh prima di aprire
+    const bimBtn = document.getElementById("btnBim");
+    if(bimBtn){
+      const clone=bimBtn.cloneNode(true);
+      bimBtn.parentNode.replaceChild(clone, bimBtn);
+      clone.addEventListener("click",(e)=>{
+        e.preventDefault();
+        if(!requireKwhOrWarn()) return;
+        openModal();
+      });
+    }
+
+    // 4) Applica ripartizione: salva e split
+    const applyBtn=document.getElementById("btnBimApply");
+    const cancelBtn=document.getElementById("btnBimCancel");
+    if(applyBtn){
+      const c=applyBtn.cloneNode(true);
+      applyBtn.parentNode.replaceChild(c, applyBtn);
+      c.addEventListener("click",(e)=>{
+        e.preventDefault();
+        if(!requireKwhOrWarn()) return;
+        const qc=parseIt((document.getElementById("bim_quota_consumi")||{}).value);
+        const qf=parseIt((document.getElementById("bim_quota_fissa")||{}).value);
+        const total=(isFinite(qc)?qc:0)+(isFinite(qf)?qf:0);
+        if(!(total>0)){ alert("Inserisci almeno un importo valido (Quota consumi e/o Quota fissa)."); return; }
+        BIM.active=true; BIM.qc=isFinite(qc)?qc:0; BIM.qf=isFinite(qf)?qf:0; BIM.total=total;
+        applySplit();
+        closeModal();
+      });
+    }
+    if(cancelBtn){
+      const c=cancelBtn.cloneNode(true);
+      cancelBtn.parentNode.replaceChild(c, cancelBtn);
+      c.addEventListener("click",(e)=>{ e.preventDefault(); closeModal(); });
+    }
+    const modal=document.getElementById("bimModal");
+    if(modal){
+      modal.addEventListener("click",(e)=>{ if(e.target && e.target.id==="bimModal") closeModal(); });
+    }
+
+    // 5) Auto-ripartizione se cambiano i kWh (mono/multi)
+    ["kwh1_tot","kwh2_tot","kwh1_f1","kwh1_f2","kwh1_f3","kwh2_f1","kwh2_f2","kwh2_f3"].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){
+        el.addEventListener("input", ()=>{ applySplit(); });
+      }
+    });
+
+    // 6) PDF button: nessuna modifica qui (v34 già funzionante)
+  });
+})();
+</script>
+
+</body>
+</html>
