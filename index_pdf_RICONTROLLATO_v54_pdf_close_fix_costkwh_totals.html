@@ -1935,7 +1935,7 @@ const delta = (isFinite(att) && isFinite(fw)) ? (fw - att) : 0;
   const cteFlexUrl = safe(pdfT.cteFlexUrl || "https://www.fastweb.it/downloads/PDF/business/energia/cte_fastweb_energia_flex.pdf?rel=20241001");
   const isFlex = (offerta || "").toUpperCase().includes("FLEX");
   const cteUrl = isFlex ? cteFlexUrl : cteFixUrl;
-  const cteCtaText = safe(pdfT.cteCta || "Clicca qui per consultare la CTE (FIX/FLEX in base all'offerta).");
+  const cteCtaText = safe(pdfT.cteCta || "Clicca qui per consultare la CTE");
   // clickable link
   if(typeof doc.textWithLink === "function"){
     doc.textWithLink(cteCtaText, M, y, {url: cteUrl});
