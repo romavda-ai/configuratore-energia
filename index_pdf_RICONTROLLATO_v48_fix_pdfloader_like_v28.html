@@ -1590,9 +1590,9 @@ function syncBimUI(){
   };
 
 async function generatePdfOfferta(){
-    const FS = (v)=>v;
     // Ensure jsPDF is available (LOCAL on GitHub Pages)
     try{
+      const FS = (v)=>v;
       await ensureJsPdfLoaded();
     }catch(loadErr){
       console.error(loadErr);
