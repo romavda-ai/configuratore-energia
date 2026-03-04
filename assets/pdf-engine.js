@@ -3,8 +3,7 @@
    Dipende da: assets/jspdf.umd.min.js (già presente) o fallback CDN incluso.
 */
 (function(){
-  if(window.PDFEngine && typeof window.PDFEngine.generate==="function"){ return; }
-
+  
   "use strict";
   function ensureJsPdfLoaded(){
     // Prefer already loaded globals
