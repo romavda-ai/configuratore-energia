@@ -20,12 +20,33 @@
       "assets/jspdf.umd.min.js",
       "./assets/jspdf.umd.min.js",
       "/configuratore-energia/assets/jspdf.umd.min.js",
+      "/assets/jspdf.umd.min.js",
       "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
     ];
 
-    for(const src of candidates){
+    const isProbablyHtml = (txt)=>{
+      const t = String(txt||"").trimStart();
+      return t.startsWith("<!DOCTYPE") || t.startsWith("<html") || t.startsWith("<");
+    };
+
+    // Preflight: evita di iniettare pagine HTML (404 GitHub) che causano "Unexpected token <"
+    const preflightOk = async (url)=>{
       try{
-        await loadScript(src);
+        const r = await fetch(url, { cache: "no-store" });
+        const txt = await r.text();
+        if(!r.ok) return false;
+        if(isProbablyHtml(txt)) return false;
+        return true;
+      }catch(e){
+        return false;
+      }
+    };
+
+    for(const base of candidates){
+      const url = base + "?v=54.10";
+      try{
+        if(!(await preflightOk(url))) continue;
+        await loadScript(url);
         if(window.jspdf && (window.jspdf.jsPDF || window.jspdf.default || window.jsPDF)) return true;
       }catch(e){}
     }
