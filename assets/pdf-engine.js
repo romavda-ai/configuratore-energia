@@ -1,109 +1,45 @@
-/* pdf-engine.js (v54) - motore PDF isolato
-   Richiede: assets/jspdf.umd.min.js (locale) oppure fallback CDN.
-   Espone: window.PDFEngine.generate(data)
+/* pdf-engine.js (v55) - Motore PDF (layout + render)
+   Dipendenze: jsPDF UMD già caricato (assets/jspdf.umd.min.js)
+   API: window.PDFEngine.generate(data)
 */
 (function(){
-  if(window.PDFEngine && typeof window.PDFEngine.generate==="function"){ return; }
-
-  const loadScript = (src)=> new Promise((resolve,reject)=>{
-    const s=document.createElement("script");
-    s.src=src; s.async=true;
-    s.onload=()=>resolve(true);
-    s.onerror=()=>reject(new Error("load fail: "+src));
-    document.head.appendChild(s);
-  });
-
-  async function ensureJsPdfLoaded(){
-    if(window.jspdf && (window.jspdf.jsPDF || window.jspdf.default || window.jsPDF)) return true;
-
-    const candidates = [
-      "assets/jspdf.umd.min.js",
-      "./assets/jspdf.umd.min.js",
-      "/configuratore-energia/assets/jspdf.umd.min.js",
-      "/assets/jspdf.umd.min.js",
-      "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-    ];
-
-    const isProbablyHtml = (txt)=>{
-      const t = String(txt||"").trimStart();
-      return t.startsWith("<!DOCTYPE") || t.startsWith("<html") || t.startsWith("<");
-    };
-
-    // Preflight: evita di iniettare pagine HTML (404 GitHub) che causano "Unexpected token <"
-    const preflightOk = async (url)=>{
-      try{
-        const r = await fetch(url, { cache: "no-store" });
-        const txt = await r.text();
-        if(!r.ok) return false;
-        if(isProbablyHtml(txt)) return false;
-        return true;
-      }catch(e){
-        return false;
-      }
-    };
-
-    for(const base of candidates){
-      const url = base + "?v=54.10";
-      try{
-        if(!(await preflightOk(url))) continue;
-        await loadScript(url);
-        if(window.jspdf && (window.jspdf.jsPDF || window.jspdf.default || window.jsPDF)) return true;
-      }catch(e){}
-    }
-    return false;
-  }
-
   const safe = (s)=> String(s ?? "").trim();
-
   const toTitleCase = (s)=> safe(s).split(/\s+/).map(w=> w ? (w[0].toUpperCase()+w.slice(1).toLowerCase()) : "").join(" ");
-
-  const fmtEUR = (n)=>{
-    const v = (isFinite(n)? n : 0);
-    return v.toLocaleString("it-IT",{minimumFractionDigits:2, maximumFractionDigits:2}) + " €";
-  };
+  const fmtEUR = (n)=> (Number.isFinite(n)? n:0).toLocaleString("it-IT",{minimumFractionDigits:2, maximumFractionDigits:2}) + " €";
 
   function pickFont(doc, bold){
-    try{
-      doc.setFont("helvetica", bold ? "bold" : "normal");
-    }catch(e){
-      // ignore
-    }
+    try{ doc.setFont("helvetica", bold ? "bold" : "normal"); }catch(e){}
   }
 
   async function generate(data){
-    const ok = await ensureJsPdfLoaded();
-    if(!ok) throw new Error("jsPDF non caricata");
-
     const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : (window.jsPDF || null);
-    if(!jsPDFCtor) throw new Error("jsPDF ctor non trovato");
+    if(!jsPDFCtor) throw new Error("jsPDF non disponibile: verifica assets/jspdf.umd.min.js");
 
-    // --- data normalization ---
     const mensilita = safe(data.mensilita || "1");
     const periodoTxt = (mensilita==="2") ? "bimestre" : "mensile";
 
-    // Totali: priorità ai risultati calcolati (out), altrimenti ai campi input
-    const att1 = (data.spesaAtt1?.totale ?? 0) || (data.spesaAtt1?.fallback ?? 0);
-    const fw1  = (data.out?.fw1 ?? 0);
+    const attTot = (mensilita==="2") ? (data.totals?.attBim ?? 0) : (data.spesaAtt1?.totale ?? data.totals?.att1 ?? 0);
+    const fwTot  = (mensilita==="2") ? (data.totals?.fwBim ?? 0)  : (data.totals?.fw1 ?? 0);
 
-    const attBim = (data.spesaBim?.totale ?? 0);
-    const fwBim  = (data.out?.fwBim ?? 0);
-
-    const attTot = (mensilita==="2") ? attBim : att1;
-    const fwTot  = (mensilita==="2") ? fwBim  : fw1;
-
-    const signedDelta = (attTot - fwTot);
-    const isSave = (signedDelta >= 0);
+    const signedDelta = attTot - fwTot;
+    const isSave = signedDelta >= 0;
     const deltaAbs = Math.abs(signedDelta);
-
     const annMult = (mensilita==="2") ? 6 : 12;
     const annVal = deltaAbs * annMult;
 
-    // --- PDF layout ---
-    const doc = new jsPDFCtor({ unit:"mm", format:"a4" });
-    const W = doc.internal.pageSize.getWidth();
-    const H = doc.internal.pageSize.getHeight();
-    const M = 16;
+    // Fee (quota fissa fastweb): 5 se SI, 20 se NO, moltiplicata per mesi
+    const vodSI = safe(data.clienteVodafone).toUpperCase() === "SI";
+    const feeMonth = vodSI ? 5 : 20;
+    const feeTot = (mensilita==="2") ? (feeMonth*2) : feeMonth;
 
+    // Attuale: quota consumi/fissa per tabella
+    const attCons = (mensilita==="2") ? (data.spesaBim?.quotaConsumi ?? 0) : (data.spesaAtt1?.consumo ?? 0);
+    const attFix  = (mensilita==="2") ? (data.spesaBim?.quotaFissa   ?? 0) : (data.spesaAtt1?.fissa   ?? 0);
+
+    const fwFix  = feeTot;
+    const fwCons = Math.max(0, fwTot - fwFix);
+
+    // Colors
     const colBlack = [17,17,17];
     const colGray  = [90,90,90];
     const colYel   = [250, 199, 26];
@@ -111,36 +47,34 @@
     const colRed   = [210, 50, 50];
     const colDelta = isSave ? colGreen : colRed;
 
+    const doc = new jsPDFCtor({ unit:"mm", format:"a4" });
+    const W = doc.internal.pageSize.getWidth();
+    const H = doc.internal.pageSize.getHeight();
+    const M = 16;
     let y = 18;
 
     // Header
-    pickFont(doc, true); doc.setFontSize(16); doc.setTextColor(...colBlack);
+    pickFont(doc,true); doc.setFontSize(16); doc.setTextColor(...colBlack);
     doc.text("OFFERTA ENERGIA – FASTWEB", M, y);
     y += 6;
-    pickFont(doc, true); doc.setFontSize(11); doc.setTextColor(...colGray);
+    pickFont(doc,true); doc.setFontSize(11); doc.setTextColor(...colGray);
     doc.text("Documento di sintesi", M, y);
     y += 10;
 
-    // Panels: Dati cliente / Parametri simulazione
+    // Panels
     const panelGap = 4;
     const panelW = (W - 2*M - panelGap)/2;
     const panelH = 36;
     const pY = y;
+
     doc.setDrawColor(220,220,220);
     doc.setFillColor(247,247,247);
-
-    // left panel
     doc.roundedRect(M, pY, panelW, panelH, 3,3, "FD");
-    // right panel
     doc.roundedRect(M+panelW+panelGap, pY, panelW, panelH, 3,3, "FD");
 
     pickFont(doc,true); doc.setFontSize(11); doc.setTextColor(...colBlack);
     doc.text("Dati cliente", M+4, pY+7);
     doc.text("Parametri simulazione", M+panelW+panelGap+4, pY+7);
-
-    pickFont(doc,true); doc.setFontSize(8.8);
-    const rlab = (xR, yy, lab)=>{ doc.text(lab, xR, yy, {align:"right"}); };
-    pickFont(doc,false);
 
     const cl = data.cliente || {};
     const pr = {
@@ -150,10 +84,12 @@
       tipo: safe(data.tipologia)
     };
 
-    const lXr = M + 36;
-    const lXv = lXr + 2;
-    const rXr = M + panelW + panelGap + 44;
-    const rXv = rXr + 2;
+    pickFont(doc,true); doc.setFontSize(8.8); doc.setTextColor(...colBlack);
+    const rlab = (xR, yy, lab)=> doc.text(lab, xR, yy, {align:"right"});
+    pickFont(doc,false);
+
+    const lXr = M + 36, lXv = lXr + 2;
+    const rXr = M + panelW + panelGap + 44, rXv = rXr + 2;
 
     const linesL = [
       ["Ragione sociale:", safe(cl.ragSoc)],
@@ -168,23 +104,16 @@
       ["Tipo contatore:", pr.tipo],
     ];
 
-    let yy = pY + 14;
-    const gapY = 5.2;
-
+    let yy = pY + 14, gapY = 5.2;
     for(let i=0;i<4;i++){
-      pickFont(doc,true); doc.setTextColor(...colBlack);
-      rlab(lXr, yy, linesL[i][0]);
-      pickFont(doc,false);
-      doc.text(linesL[i][1] || "-", lXv, yy);
+      pickFont(doc,true); rlab(lXr, yy, linesL[i][0]);
+      pickFont(doc,false); doc.text(linesL[i][1] || "-", lXv, yy);
       yy += gapY;
     }
-
     yy = pY + 14;
     for(let i=0;i<4;i++){
-      pickFont(doc,true); doc.setTextColor(...colBlack);
-      rlab(rXr, yy, linesR[i][0]);
-      pickFont(doc,false);
-      doc.text(linesR[i][1] || "-", rXv, yy);
+      pickFont(doc,true); rlab(rXr, yy, linesR[i][0]);
+      pickFont(doc,false); doc.text(linesR[i][1] || "-", rXv, yy);
       yy += gapY;
     }
 
@@ -197,7 +126,7 @@
     doc.text("In caso di accettazione dell'offerta, provvederemo a sottoporre alla sua firma il modulo con le condizioni concordate.", M, y);
     y += 10;
 
-    // Riepilogo economico (fuori dal riquadro, sottolineato)
+    // Riepilogo title (underlined)
     pickFont(doc,true); doc.setFontSize(12); doc.setTextColor(...colBlack);
     const sec = "Riepilogo economico";
     doc.text(sec, M, y);
@@ -205,35 +134,31 @@
     doc.line(M, y+1.2, M + doc.getTextWidth(sec), y+1.2);
     y += 6;
 
-    // 4 cards in linea
-    const cardsH = 26;
-    const gap4 = 3.2;
+    // 4 cards
+    const cardsH = 26, gap4 = 3.2;
     const cardW = (W - 2*M - 3*gap4) / 4;
-    const xC1 = M;
-    const xC2 = xC1 + cardW + gap4;
-    const xC3 = xC2 + cardW + gap4;
-    const xC4 = xC3 + cardW + gap4;
+    const xC1=M, xC2=xC1+cardW+gap4, xC3=xC2+cardW+gap4, xC4=xC3+cardW+gap4;
 
-    const drawCard = (x, title, titleCol, value, sub, subCol)=>{
+    const drawCard = (x, title, col, value, sub)=>{
       doc.setDrawColor(220,220,220);
       doc.setFillColor(255,255,255);
       doc.roundedRect(x, y, cardW, cardsH, 3,3, "FD");
-      pickFont(doc,true); doc.setFontSize(9.5); doc.setTextColor(...titleCol);
+      pickFont(doc,true); doc.setFontSize(9.5); doc.setTextColor(...col);
       doc.text(title, x+3, y+6);
-      pickFont(doc,true); doc.setFontSize(13.5); doc.setTextColor(...titleCol);
+      pickFont(doc,true); doc.setFontSize(13.5); doc.setTextColor(...col);
       doc.text(value, x+3, y+14);
-      pickFont(doc,false); doc.setFontSize(9); doc.setTextColor(...subCol);
+      pickFont(doc,false); doc.setFontSize(9); doc.setTextColor(...col);
       doc.text(sub, x+3, y+21.5);
     };
 
-    drawCard(xC1, "Totale spesa attuale", colBlack, fmtEUR(attTot), periodoTxt, colBlack);
-    drawCard(xC2, "Totale stimato Fastweb", colYel, fmtEUR(fwTot), periodoTxt, colYel);
-    drawCard(xC3, isSave ? "Risparmio" : "Aumento", colDelta, fmtEUR(deltaAbs), periodoTxt, colDelta);
-    drawCard(xC4, isSave ? "Risparmio Annuo" : "Aumento Annuo", colDelta, fmtEUR(annVal), "annuale", colDelta);
+    drawCard(xC1, "Totale spesa attuale", colBlack, fmtEUR(attTot), periodoTxt);
+    drawCard(xC2, "Totale stimato Fastweb", colYel, fmtEUR(fwTot), periodoTxt);
+    drawCard(xC3, isSave ? "Risparmio" : "Aumento", colDelta, fmtEUR(deltaAbs), periodoTxt);
+    drawCard(xC4, isSave ? "Risparmio Annuo" : "Aumento Annuo", colDelta, fmtEUR(annVal), "annuale");
 
     y += cardsH + 10;
 
-    // Dettaglio simulazione (sottolineato)
+    // Dettaglio (underlined)
     pickFont(doc,true); doc.setFontSize(12); doc.setTextColor(...colBlack);
     const det = "Dettaglio simulazione";
     doc.text(det, M, y);
@@ -241,42 +166,22 @@
     doc.line(M, y+1.2, M + doc.getTextWidth(det), y+1.2);
     y += 6;
 
-    // Tabella dettaglio (quote) - valida per tutte le combinazioni
-    const vodSI = safe(data.clienteVodafone).toUpperCase()==="SI";
-    const feeMonth = vodSI ? 5 : 20; // €/mese
-    const feeTot = (mensilita==="2") ? (feeMonth*2) : feeMonth;
-
-    // Valori attuali (quota consumo / fissa)
-    const attCons = (mensilita==="2") ? (data.spesaBim?.quotaConsumi ?? 0) : (data.spesaAtt1?.consumo ?? 0);
-    const attFix  = (mensilita==="2") ? (data.spesaBim?.quotaFissa   ?? 0) : (data.spesaAtt1?.fissa   ?? 0);
-
-    // Valori Fastweb (quota fissa = fee; quota consumi = totale - fee)
-    const fwFix  = feeTot;
-    const fwCons = Math.max(0, fwTot - fwFix);
-
-    // Header row (6 colonne)
+    // Table header (6 cols)
     doc.setDrawColor(220,220,220);
     doc.setFillColor(247,247,247);
     doc.rect(M, y, W-2*M, 8, "FD");
     pickFont(doc,true); doc.setFontSize(8.7); doc.setTextColor(...colGray);
 
-    const xP  = M+2;     // Periodo
-    const xK  = M+34;    // kWh
-    const xAC = M+52;    // Spesa Consumi
-    const xAF = M+78;    // Spesa Fissa
-    const xFC = M+104;   // Quota Consumi FW
-    const xFF = M+140;   // Quota Fissa FW
-
+    const xP=M+2, xK=M+34, xAC=M+52, xAF=M+78, xFC=M+104, xFF=M+140;
     doc.text("Periodo", xP, y+5.5);
     doc.text("kWh Tot.", xK, y+5.5);
     doc.text("Spesa Consumi", xAC, y+5.5);
     doc.text("Spesa Fissa", xAF, y+5.5);
     doc.text("Quota Consumi Fastweb", xFC, y+5.5);
     doc.text("Quota Fissa Fastweb", xFF, y+5.5);
-
     y += 8;
 
-    // Riga unica (mensile o bimestrale)
+    // Row
     doc.setFillColor(255,255,255);
     doc.rect(M, y, W-2*M, 8, "FD");
     pickFont(doc,false); doc.setFontSize(8.9); doc.setTextColor(...colBlack);
@@ -286,7 +191,7 @@
       : (safe(data.mese1) + (data.anno? ("/"+safe(data.anno)) : ""));
 
     const kwh1 = (safe(data.tipologia).toUpperCase().includes("MULTI"))
-      ? (data.kwh1?.f1 + data.kwh1?.f2 + data.kwh1?.f3)
+      ? ((data.kwh1?.f1||0) + (data.kwh1?.f2||0) + (data.kwh1?.f3||0))
       : (data.kwh1?.f1 || 0);
 
     doc.text(period1 || "-", xP, y+5.5);
@@ -298,12 +203,10 @@
 
     y += 18;
 
-// Riferimenti commerciali in riquadro grigio chiaro a destra
+    // Riferimenti commerciali (riquadro grigio chiaro a destra)
     const a = data.agent || {};
-    const refBoxW = 74;
-    const refBoxH = 24;
-    const refX = W - M - refBoxW;
-    const refY = y;
+    const refBoxW = 74, refBoxH = 24;
+    const refX = W - M - refBoxW, refY = y+4;
     doc.setFillColor(245,245,245);
     doc.setDrawColor(220,220,220);
     doc.roundedRect(refX, refY, refBoxW, refBoxH, 3,3, "FD");
@@ -313,8 +216,7 @@
     const agentCompany= safe(a.company || "Wincom Srl");
     const agentPartner= safe(a.partner || "Vodafone Excellent Partner");
 
-    let ty = refY + 7;
-    const tx = refX + 4;
+    let ty = refY + 7, tx = refX + 4;
     pickFont(doc,true); doc.setFontSize(10); doc.setTextColor(...colBlack);
     doc.text(agentNameTC, tx, ty);
     ty += 5.5;
@@ -338,5 +240,5 @@
     return true;
   }
 
-  window.PDFEngine = { generate, ensureJsPdfLoaded };
+  window.PDFEngine = { generate };
 })();
