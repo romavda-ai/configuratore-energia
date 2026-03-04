@@ -202,9 +202,9 @@
     "btnCteFix": "Scarica CTE FIX",
     "btnCteFlex": "Scarica CTE FLEX",
     "auto_16": "Scala testo PDF (es. 1.0 = default)",
-    "auto_17": "\n              \n              Grassetto per tutti i testi PDF\n            ",
-    "auto_18": "Quota consumi (€)",
-    "auto_19": "Quota fissa (€)"
+    "auto_19": "\n              \n              Grassetto per tutti i testi PDF\n            ",
+    "auto_17": "Quota consumi (€)",
+    "auto_18": "Quota fissa (€)"
   },
   "pdf": {
     "txt": {
