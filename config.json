@@ -173,7 +173,11 @@
     "ttlAttBim": "Totale spesa attuale (Bim)",
     "ttlFwBim": "Totale stimato con Fastweb (Bim)",
     "ttlEsitoBim": "Risultato confronto totale",
-    "ttlDettagli": "Dettaglio calcolo (valori utilizzati)",
+    "ttlDettagli": "Dettaglio Calcolo",
+    "detCostEnergy1": "Costo energia",
+    "detCostComm1": "Costo commercializzazione",
+    "detCostEnergy2": "Costo energia",
+    "detCostComm2": "Costo commercializzazione",
     "auto_4": "Costo energia",
     "auto_5": "Costo commercializzazione",
     "auto_6": "Costo energia",
@@ -186,10 +190,6 @@
     "auto_13": "Aumento capacity mercato (€/kWh)",
     "auto_14": "Testi configuratore (JSON)",
     "auto_15": "Testi PDF (JSON)",
-    "auto_16": "Scala testo PDF (es. 1.0 = default)",
-    "auto_17": "\n              \n              Grassetto per tutti i testi PDF\n            ",
-    "auto_18": "Quota consumi (€)",
-    "auto_19": "Quota fissa (€)",
     "pillInfo": "🔧 Valori modificabili (verde scuro) + campi condizionali (MONO/MULTI, 1/2 mesi)",
     "btnPdfOffer": "Stampa PDF Offerta",
     "btnInsertBim": "Inserisci spesa bimestrale",
@@ -200,7 +200,11 @@
     "btnPdfGenerate": "Genera PDF",
     "btnPdfCancel": "Annulla",
     "btnCteFix": "Scarica CTE FIX",
-    "btnCteFlex": "Scarica CTE FLEX"
+    "btnCteFlex": "Scarica CTE FLEX",
+    "auto_16": "Scala testo PDF (es. 1.0 = default)",
+    "auto_17": "\n              \n              Grassetto per tutti i testi PDF\n            ",
+    "auto_18": "Quota consumi (€)",
+    "auto_19": "Quota fissa (€)"
   },
   "pdf": {
     "txt": {
