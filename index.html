@@ -2136,11 +2136,11 @@ if(bApply) bApply.addEventListener("click", (e)=>{ e.preventDefault(); applyBimS
     <div class="grid2">
       <div>
         <label class="lbl-strong">Quota consumi (€)</label>
-        <input id="bimQuotaConsumi" type="number" step="0.01" inputmode="decimal" placeholder="0,00" />
+        <input id="bimQuotaConsumi" type="text" inputmode="decimal" pattern="[0-9.,\s]*" placeholder="0,00" />
       </div>
       <div>
         <label class="lbl-strong">Quota fissa (€)</label>
-        <input id="bimQuotaFissa" type="number" step="0.01" inputmode="decimal" placeholder="0,00" />
+        <input id="bimQuotaFissa" type="text" inputmode="decimal" pattern="[0-9.,\s]*" placeholder="0,00" />
       </div>
     </div>
 
