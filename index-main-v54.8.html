@@ -1987,5 +1987,72 @@ if(bApply) bApply.addEventListener("click", (e)=>{ e.preventDefault(); applyBimS
 })();
 </script>
 
+<script>
+<script>
+/* Loader robusto per jsPDF (GitHub Pages / sottocartelle) */
+(function(){
+  const candidates = [
+    "assets/jspdf.umd.min.js",
+    "./assets/jspdf.umd.min.js",
+    "/configuratore-energia/assets/jspdf.umd.min.js",
+    "/assets/jspdf.umd.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+  ];
+  const s = document.createElement("script");
+  let i = 0;
+  s.src = candidates[i] + "?v=54.4";
+  s.async = true;
+  s.onerror = () => {
+    i++;
+    if(i < candidates.length){
+      s.src = candidates[i] + "?v=54.4";
+    } else {
+      console.error("jsPDF non trovata in nessun path", candidates);
+    }
+  };
+  document.head.appendChild(s);
+})();
+</script>
+
+<script>
+/* Loader robusto per pdf-engine.js (v54.5) - espone window.__pdfEngineReady */
+(function(){
+  const candidates = [
+    "assets/pdf-engine.js",
+    "./assets/pdf-engine.js",
+    "/configuratore-energia/assets/pdf-engine.js",
+    "/assets/pdf-engine.js"
+  ];
+
+  // Promise globale per attendere il caricamento
+  let resolveReady, rejectReady;
+  window.__pdfEngineReady = new Promise((res, rej)=>{ resolveReady=res; rejectReady=rej; });
+
+  const s = document.createElement("script");
+  let i = 0;
+  s.src = candidates[i] + "?v=54.5";
+  s.async = true;
+
+  s.onload = () => {
+    if(window.PDFEngine && typeof window.PDFEngine.generate === "function"){
+      resolveReady(true);
+    }else{
+      rejectReady(new Error("pdf-engine caricato ma PDFEngine non disponibile"));
+    }
+  };
+
+  s.onerror = () => {
+    i++;
+    if(i < candidates.length){
+      s.src = candidates[i] + "?v=54.5";
+    } else {
+      console.error("pdf-engine.js non trovato in nessun path", candidates);
+      rejectReady(new Error("pdf-engine.js non trovato"));
+    }
+  };
+
+  document.head.appendChild(s);
+})();
+</script>
 </body>
 </html>
