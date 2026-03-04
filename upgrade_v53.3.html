@@ -273,11 +273,11 @@ select option{color:var(--text);background:#ffffff}
 
     <div class="row" style="margin-top:10px">
     <div id="wrapSpesaConsumo1" class="field">
-      <label class="lblStrong" data-text-key="lblSpesaAtt1">Spesa attuale 1° Mese (€)</label>
+      <label data-text-key="lblSpesaAtt1">Spesa attuale 1° Mese (€)</label>
       <input id="spesaAtt1" class="edit" inputmode="decimal" />
     </div>
     <div id="wrapSpesaFissa1" class="field" style="display:none">
-      <label class="lblStrong">Spesa Quota Fissa (€)</label>
+      <label>Spesa Quota Fissa (€)</label>
       <input id="spesaAtt1Fissa" class="edit" inputmode="decimal" />
     </div>
   </div>
@@ -1893,14 +1893,19 @@ const delta = (isFinite(att) && isFinite(fw)) ? (fw - att) : 0;
   const cardW = (W - 2*M - 3*gap4) / 4;
   const periodoTxt = (String(mensilita).trim()==="2") ? "bimestre" : "mensile";
 
+  const attBim = (typeof window.attBimVal==="number") ? window.attBimVal : att; // fallback
+  const fwBim  = (typeof window.fwBimVal==="number") ? window.fwBimVal : fw;  // fallback
+
   const xC1 = M;
   const xC2 = xC1 + cardW + gap4;
   const xC3 = xC2 + cardW + gap4;
   const xC4 = xC3 + cardW + gap4;
 
-  // Importi
-  const attTot = (String(mensilita).trim()==="2") ? attBim : att1;
-  const fwTot  = (String(mensilita).trim()==="2") ? fwBim  : fw1;
+  // Importi (totali 1 mese / bimestre)
+  const att1Tot = att; // alias: totale spesa attuale 1 mese
+  const fw1Tot  = fw;  // alias: totale stimato Fastweb 1 mese
+  const attTot = (String(mensilita).trim()==="2") ? attBim : att1Tot;
+  const fwTot  = (String(mensilita).trim()==="2") ? fwBim  : fw1Tot;
 
   // Colori logica risparmio/aumento
   const signedDelta = (attTot - fwTot);
