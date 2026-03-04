@@ -3,6 +3,8 @@
    Espone: window.PDFEngine.generate(data)
 */
 (function(){
+  if(window.PDFEngine && typeof window.PDFEngine.generate==="function"){ return; }
+
   const loadScript = (src)=> new Promise((resolve,reject)=>{
     const s=document.createElement("script");
     s.src=src; s.async=true;
