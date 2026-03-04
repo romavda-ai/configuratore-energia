@@ -154,7 +154,7 @@
     "lblF1_m1": "Fascia F1 (kWh)",
     "lblF2_m1": "Fascia F2 (kWh)",
     "lblF3_m1": "Fascia F3 (kWh)",
-    "lblKwh1Tot": "Totale 1° mese ",
+    "lblKwh1Tot": "Totale 1° mese (kWh)",
     "lblSpesaAtt1": "Spesa Quota Consumo (€)",
     "auto_1": "Spesa Quota Fissa (€)",
     "auto_2": "\n    Inserisci quota consumi e quota fissa: il totale fattura verrà ripartito sui 2 mesi in base ai kWh.\n  ",
