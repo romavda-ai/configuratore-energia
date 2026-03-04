@@ -277,7 +277,7 @@ select option{color:var(--text);background:#ffffff}
       <input id="spesaAtt1" class="edit" inputmode="decimal" />
     </div>
     <div id="wrapSpesaFissa1" class="field" style="display:none">
-      <label data-text-key="spesaAtt1Fissa">Spesa Quota Fissa (€)</label>
+      <label>Spesa Quota Fissa (€)</label>
       <input id="spesaAtt1Fissa" class="edit" inputmode="decimal" />
     </div>
   </div>
@@ -420,8 +420,8 @@ select option{color:var(--text);background:#ffffff}
 
         <table style="margin:0">
           <tbody>
-            <tr><td>Costo energia</td><td class="right" id="d_ckw1">—</td><td class="muted right">€/KWh</td></tr>
-            <tr><td>Costo commercializzazione</td><td class="right" id="d_fee">—</td><td class="muted right">€/mese</td></tr>
+            <tr><td data-text-key="detCostEnergy1">Costo energia</td><td class="right" id="d_ckw1">—</td><td class="muted right">€/KWh</td></tr>
+            <tr><td data-text-key="detCostComm1">Costo commercializzazione</td><td class="right" id="d_fee">—</td><td class="muted right">€/mese</td></tr>
           </tbody>
         </table>
       </div>
@@ -434,8 +434,8 @@ select option{color:var(--text);background:#ffffff}
 
         <table style="margin:0">
           <tbody>
-            <tr><td>Costo energia</td><td class="right" id="d_ckw2">—</td><td class="muted right">€/KWh</td></tr>
-            <tr><td>Costo commercializzazione</td><td class="right" id="d_fee2">—</td><td class="muted right">€/mese</td></tr>
+            <tr><td data-text-key="detCostEnergy2">Costo energia</td><td class="right" id="d_ckw2">—</td><td class="muted right">€/KWh</td></tr>
+            <tr><td data-text-key="detCostComm2">Costo commercializzazione</td><td class="right" id="d_fee2">—</td><td class="muted right">€/mese</td></tr>
           </tbody>
         </table>
       </div>
@@ -701,6 +701,11 @@ const TEXT_DEFAULT = {
   ttlEsitoBim: "Risultato confronto totale",
   ttlDettagli: "Dettaglio calcolo (valori utilizzati)"
 ,
+    detCostEnergy1: "Costo energia",
+  detCostComm1: "Costo commercializzazione",
+  detCostEnergy2: "Costo energia",
+  detCostComm2: "Costo commercializzazione",
+
   // Pulsanti
   btnPdfOffer: "Stampa PDF Offerta",
   btnInsertBim: "Inserisci spesa bimestrale",
@@ -778,7 +783,7 @@ function applyTexts(){
     // labels (left form)
     "lblClienteVodafone","lblTipologiaFasce","lblMensilita","lblOffertaEconomica",
     "lblMese1","lblAnno1","lblF1_m1","lblF2_m1","lblF3_m1","lblKwh1Tot","lblSpesaAtt1",
-    "lblMese2","lblAnno2","lblF1_m2","lblF2_m2","lblF3_m2","lblKwh2Tot","lblSpesaAtt2","spesaAtt1Fissa",
+    "lblMese2","lblAnno2","lblF1_m2","lblF2_m2","lblF3_m2","lblKwh2Tot","lblSpesaAtt2",
     // titles/right side
     "ttlFw1","ttlEsito1","ttlFw2","ttlEsito2","ttlAttBim","ttlFwBim","ttlEsitoBim","ttlDettagli"
   ]);
