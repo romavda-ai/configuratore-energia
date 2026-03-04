@@ -218,15 +218,7 @@
     doc.line(M, y+1.2, M + doc.getTextWidth(det), y+1.2);
     y += 6;
 
-    // Dettaglio simulazione (sottolineato)
-    pickFont(doc,true); doc.setFontSize(12); doc.setTextColor(...colBlack);
-    const det = "Dettaglio simulazione";
-    doc.text(det, M, y);
-    doc.setLineWidth(0.4);
-    doc.line(M, y+1.2, M + doc.getTextWidth(det), y+1.2);
-    y += 6;
-
-    // Tabella dettaglio (quote)
+    // Tabella dettaglio (quote) - valida per tutte le combinazioni
     const vodSI = safe(data.clienteVodafone).toUpperCase()==="SI";
     const feeMonth = vodSI ? 5 : 20; // €/mese
     const feeTot = (mensilita==="2") ? (feeMonth*2) : feeMonth;
@@ -239,19 +231,18 @@
     const fwFix  = feeTot;
     const fwCons = Math.max(0, fwTot - fwFix);
 
-    // Header row
+    // Header row (6 colonne)
     doc.setDrawColor(220,220,220);
     doc.setFillColor(247,247,247);
     doc.rect(M, y, W-2*M, 8, "FD");
     pickFont(doc,true); doc.setFontSize(8.7); doc.setTextColor(...colGray);
 
-    // Colonne (6)
     const xP  = M+2;     // Periodo
     const xK  = M+34;    // kWh
     const xAC = M+52;    // Spesa Consumi
     const xAF = M+78;    // Spesa Fissa
     const xFC = M+104;   // Quota Consumi FW
-    const xFF = M+134;   // Quota Fissa FW
+    const xFF = M+140;   // Quota Fissa FW
 
     doc.text("Periodo", xP, y+5.5);
     doc.text("kWh Tot.", xK, y+5.5);
@@ -262,7 +253,7 @@
 
     y += 8;
 
-    // Riga unica: mensile o bimestrale (totali coerenti con selezione)
+    // Riga unica (mensile o bimestrale)
     doc.setFillColor(255,255,255);
     doc.rect(M, y, W-2*M, 8, "FD");
     pickFont(doc,false); doc.setFontSize(8.9); doc.setTextColor(...colBlack);
@@ -284,7 +275,7 @@
 
     y += 18;
 
-    // Riferimenti commerciali in riquadro grigio chiaro a destra
+// Riferimenti commerciali in riquadro grigio chiaro a destra
     const a = data.agent || {};
     const refBoxW = 74;
     const refBoxH = 24;
