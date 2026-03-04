@@ -1671,6 +1671,117 @@ function syncBimUI(){
     return `${f}.${l}@wincomitalia.com`;
   };
 
+async function generatePdfOfferta_INTERNAL(){
+  // Stable, self-contained PDF generator (no external helpers, no FS/contactLines issues)
+  // 1) Ensure jsPDF
+  try{
+    await ensureJsPdfLoaded();
+  }catch(e){
+    alert("Impossibile generare il PDF: libreria PDF non caricata. Verifica che /configuratore-energia/assets/jspdf.umd.min.js sia raggiungibile e riprova.");
+    console.error(e);
+    return;
+  }
+
+  const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : (window.jsPDF || null);
+  if(!jsPDFCtor){
+    alert("Impossibile generare il PDF: libreria PDF non caricata. Verifica che /configuratore-energia/assets/jspdf.umd.min.js sia raggiungibile e riprova.");
+    return;
+  }
+
+  // 2) Read PDF config (texts + style) from backhand
+  const cfgPack = (typeof window.getConfigForPdf === "function") ? window.getConfigForPdf() : (window.CONFIG || {});
+  const pdfT = (cfgPack && cfgPack.pdfTxt) ? cfgPack.pdfTxt : (window.PDF_TEXT_DEFAULT || {});
+  const fontScale = (cfgPack && cfgPack.pdfFontScale) ? Number(cfgPack.pdfFontScale) : 1;
+  const boldAll = !!(cfgPack && cfgPack.pdfBoldAll);
+
+  const fs = (v)=> Math.max(6, v * (isFinite(fontScale)?fontScale:1));
+
+  // 3) Small utilities
+  const $ = (id)=> document.getElementById(id);
+  const txt = (id)=> (($(id)?.value ?? $(id)?.textContent ?? "") + "").trim();
+  const normNum = (v)=>{
+    if(v==null) return 0;
+    let s = (v+"").trim().replace(/\s+/g,"");
+    // If it has both '.' and ',' we assume IT format: '.' thousands, ',' decimals
+    if(s.includes(".") && s.includes(",")){
+      s = s.replace(/\./g,"").replace(",",".");
+    } else if(s.includes(",")){
+      // Only comma -> decimal separator
+      s = s.replace(",",".");
+    } else {
+      // Only dot or none -> dot is decimal, remove commas if any (thousands)
+      s = s.replace(/,/g,"");
+    }
+    s = s.replace(/[^\d.\-]/g,"");
+    const n = parseFloat(s);
+    return isFinite(n) ? n : 0;
+  };
+  const fmtEuro = (n)=>{
+    const v = isFinite(n) ? n : 0;
+    return v.toLocaleString("it-IT",{minimumFractionDigits:2, maximumFractionDigits:2}) + " €";
+  };
+  const fmtDec = (n, d=5)=>{
+    const v = isFinite(n) ? n : 0;
+    return v.toLocaleString("it-IT",{minimumFractionDigits:d, maximumFractionDigits:d});
+  };
+
+  const fmtKwh = (n)=>{
+    const v = isFinite(n) ? n : 0;
+    return v.toFixed(5);
+  };
+  const safe = (s)=> (s??"").toString();
+
+  // Wrap text helper for jsPDF
+  const wrap = (doc, text, maxWidth)=>{
+    return doc.splitTextToSize(String(text||""), maxWidth);
+  };
+
+  // 4) Gather business fields from PDF form
+  // NOTE: IDs are those used in the PDF modal (pdf_company, pdf_piva, pdf_address, pdf_pod, pdf_agent_first/last)
+  const ragSoc = txt("pdf_company") || txt("pdf_ragione") || txt("ragioneSociale") || "";
+  const piva   = txt("pdf_piva")    || txt("piva") || "";
+  const indPod = txt("pdf_address") || txt("pdf_indirizzo") || txt("indirizzoPod") || txt("indirizzo") || "";
+  const idPod  = txt("pdf_pod")     || txt("pod") || "";
+
+  const agNome = txt("pdf_agent_first") || txt("pdf_ag_nome") || txt("ag_nome") || "";
+  const agCogn = txt("pdf_agent_last")  || txt("pdf_ag_cognome") || txt("ag_cognome") || "";
+
+  const fullAgent = (agNome + " " + agCogn).trim();
+
+  // 5) Gather simulation parameters (from configuratore)
+  const offerta = (txt("selectOfferta") || txt("offertaEconomica") || "").toUpperCase();
+  const clienteVodafone = (txt("cltVodafone") || txt("clienteVodafone") || txt("selectClienteVodafone") || "").toUpperCase();
+  const tipologia = (txt("fasce") || txt("tipologiaFasce") || txt("selectTipologiaFasce") || "").toUpperCase();
+
+  const mese1 = txt("mese1") || txt("selectMese1") || "";
+  const anno1 = txt("anno1") || txt("selectAnno1") || "";
+  const mese2 = txt("mese2") || txt("selectMese2") || "";
+  const anno2 = txt("anno2") || txt("selectAnno2") || "";
+
+  const mensilita = (txt("mensilita") || txt("mensilitaFattura") || txt("selectMensilita") || "1").trim();
+
+  const periodo = (mensilita==="2" && mese2 && anno2) ? `${mese1}/${anno1} - ${mese2}/${anno2}` : `${mese1}/${anno1}`;
+
+  // 6) Read computed outputs directly from UI fields (already calculated)
+// IMPORTANT: we prefer reading the *visible* values already shown in the configuratore,
+// so PDF always matches what the user sees.
+const parseFromSpan = (id)=> normNum(($(id)?.textContent||""));
+
+const isBim = (String(mensilita).trim() === "2");
+
+// Totali (mese o bimestre)
+let att = 0, fw = 0;
+if(isBim){
+  att = parseFromSpan("ttlAttBimVal") || normNum(txt("out_att_bim"));
+  fw  = parseFromSpan("ttlFwBimVal")  || normNum(txt("out_fw_bim"));
+} else {
+  // 1 mensilità: spesa attuale = quota consumo + quota fissa (se presente)
+  let attInput = normNum(txt("spesaAtt1"));
+  const attFissa = normNum(txt("spesaAtt1Fissa"));
+  if(String(mensilita).trim()==="1") attInput = attInput + attFissa;
+  att = parseFromSpan("ttlAttVal") || attInput || normNum(txt("out_att_1")) || normNum(txt("out_att_bim"));
+  fw  = parseFromSpan("ttlFwVal")  || normNum(txt("out_fw1")) || normNum(txt("out_fw_1")) || normNum(txt("out_fw_bim"));
+}
 const delta = (isFinite(att) && isFinite(fw)) ? (fw - att) : 0;
 // Month details (kWh + costs)
   const isMulti = (tipologia || "").includes("MULTI");
@@ -2338,17 +2449,22 @@ if(bApply) bApply.addEventListener("click", (e)=>{ e.preventDefault(); applyBimS
 </script>
 
 
-<script defer src="assets/jspdf.umd.min.js?v=56"></script>
-<script defer src="assets/pdf-engine.js?v=56"></script>
-
+<!-- PDF external engine (v56.1) -->
+<script defer src="assets/jspdf.umd.min.js?v=56.1"></script>
+<script defer src="assets/pdf-engine.js?v=56.1"></script>
 <script>
-/* PDF hook (v56): delega tutto al motore esterno */
+/* Wrapper per mantenere invariato il configuratore (pulsanti/UI/logic) */
 window.generatePdfOfferta = async function(){
-  if(!window.PDFEngine || typeof window.PDFEngine.generateFromDOM !== "function"){
-    alert("Motore PDF non caricato. Verifica che assets/pdf-engine.js sia raggiungibile.");
+  if(window.PDFEngine && typeof window.PDFEngine.generateFromDOM === "function"){
+    try { return await window.PDFEngine.generateFromDOM(); }
+    catch(e){ console.error(e); alert("Impossibile generare il PDF: " + (e?.message||e)); }
     return;
   }
-  return window.PDFEngine.generateFromDOM();
+  // Fallback: usa la vecchia funzione interna se presente
+  if(typeof window.generatePdfOfferta_INTERNAL === "function"){
+    return window.generatePdfOfferta_INTERNAL();
+  }
+  alert("Motore PDF non caricato. Verifica assets/pdf-engine.js e assets/jspdf.umd.min.js");
 };
 </script>
 
