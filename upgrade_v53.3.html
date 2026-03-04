@@ -36,6 +36,7 @@
     .row{display:grid;grid-template-columns: 1fr 1fr;gap:10px}
     .row3{display:grid;grid-template-columns: 1fr 1fr 1fr;gap:10px}
     label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
+.lblStrong{font-weight:800;color:#111;font-size:18px;margin:0 0 10px}
     .lbl-strong{color:#000 !important;font-weight:800 !important;}
 
     [data-text-key="ttlFw1"],[data-text-key="ttlEsito1"],[data-text-key="ttlFw2"],[data-text-key="ttlEsito2"],[data-text-key="ttlAttBim"],[data-text-key="ttlFwBim"],[data-text-key="ttlEsitoBim"],[data-text-key="ttlDettagli"]{color:#000 !important;font-weight:800 !important;}
@@ -270,13 +271,13 @@ select option{color:var(--text);background:#ffffff}
     </div>
   </div>
 
-  <div class="row" style="margin-top:10px">
-    <div>
-      <label data-text-key="lblSpesaAtt1">Spesa attuale 1° Mese (€)</label>
+    <div class="row" style="margin-top:10px">
+    <div id="wrapSpesaConsumo1" class="field">
+      <label class="lblStrong" data-text-key="lblSpesaAtt1">Spesa attuale 1° Mese (€)</label>
       <input id="spesaAtt1" class="edit" inputmode="decimal" />
     </div>
     <div id="wrapSpesaFissa1" class="field" style="display:none">
-      <label>Spesa Quota Fissa (€)</label>
+      <label class="lblStrong">Spesa Quota Fissa (€)</label>
       <input id="spesaAtt1Fissa" class="edit" inputmode="decimal" />
     </div>
   </div>
@@ -1573,20 +1574,39 @@ function syncBimUI(){
     // Avoid double-loading
     if(window.__JSPDF_LOADING_PROMISE) return window.__JSPDF_LOADING_PROMISE;
 
-    window.__JSPDF_LOADING_PROMISE = new Promise((resolve, reject)=>{
+    const urls = [
+      "/configuratore-energia/assets/jspdf.umd.min.js",   // produzione (tuo path)
+      "assets/jspdf.umd.min.js",                         // relativo (GitHub Pages / test)
+      "./assets/jspdf.umd.min.js",                       // relativo esplicito
+      "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" // fallback definitivo
+    ];
+
+    const loadOnce = (url)=> new Promise((resolve,reject)=>{
       const s = document.createElement("script");
-      s.src = "/configuratore-energia/assets/jspdf.umd.min.js";
+      s.src = url;
       s.async = true;
       s.onload = ()=>resolve(true);
-      s.onerror = ()=>reject(new Error("Failed to load /configuratore-energia/assets/jspdf.umd.min.js"));
+      s.onerror = ()=>reject(new Error("Failed to load "+url));
       document.head.appendChild(s);
     });
+
+    window.__JSPDF_LOADING_PROMISE = (async ()=>{
+      let lastErr = null;
+      for(const u of urls){
+        try{
+          await loadOnce(u);
+          if((window.jspdf && window.jspdf.jsPDF) || window.jsPDF) return true;
+          lastErr = new Error("jsPDF loaded but globals not found ("+u+")");
+        }catch(e){
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error("Failed to load jsPDF");
+    })();
 
     return window.__JSPDF_LOADING_PROMISE;
   }
 
-
-  
   // ------------------------------------------------------------
   // Helpers (PDF)
   // ------------------------------------------------------------
@@ -1878,14 +1898,14 @@ const delta = (isFinite(att) && isFinite(fw)) ? (fw - att) : 0;
   const xC3 = xC2 + cardW + gap4;
   const xC4 = xC3 + cardW + gap4;
 
+  // Importi
+  const attTot = (String(mensilita).trim()==="2") ? attBim : att1;
+  const fwTot  = (String(mensilita).trim()==="2") ? fwBim  : fw1;
+
   // Colori logica risparmio/aumento
   const signedDelta = (attTot - fwTot);
   const isSave = (signedDelta >= 0);
   const colDelta = isSave ? [26,127,55] : [200,0,0];
-
-  // Importi
-  const attTot = (String(mensilita).trim()==="2") ? attBim : att1;
-  const fwTot  = (String(mensilita).trim()==="2") ? fwBim  : fw1;
   const deltaTot = Math.abs(signedDelta);
 
   // Annuale: se mensile *12, se bimestrale *6
