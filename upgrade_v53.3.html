@@ -275,7 +275,7 @@ select option{color:var(--text);background:#ffffff}
       <label data-text-key="lblSpesaAtt1">Spesa attuale 1° Mese (€)</label>
       <input id="spesaAtt1" class="edit" inputmode="decimal" />
     </div>
-    <div id="wrapSpesaFissa1" style="display:none">
+    <div id="wrapSpesaFissa1" class="field" style="display:none">
       <label>Spesa Quota Fissa (€)</label>
       <input id="spesaAtt1Fissa" class="edit" inputmode="decimal" />
     </div>
@@ -548,6 +548,12 @@ select option{color:var(--text);background:#ffffff}
 
 
 <script>
+
+// v53.4 safety: ensure legacy compute() exists in this script scope
+if (typeof window.compute !== "function") {
+  window.compute = function(){ if (typeof window.render === "function") return window.render(); };
+}
+
 // --- PDF helpers (global)
 let __PDF_FONT_SCALE = 1;
 function FS(v){ return v * __PDF_FONT_SCALE; }
@@ -1873,13 +1879,14 @@ const delta = (isFinite(att) && isFinite(fw)) ? (fw - att) : 0;
   const xC4 = xC3 + cardW + gap4;
 
   // Colori logica risparmio/aumento
-  const isSave = (String(esito || "").toLowerCase().indexOf("risparm")>=0);
+  const signedDelta = (attTot - fwTot);
+  const isSave = (signedDelta >= 0);
   const colDelta = isSave ? [26,127,55] : [200,0,0];
 
   // Importi
   const attTot = (String(mensilita).trim()==="2") ? attBim : att1;
   const fwTot  = (String(mensilita).trim()==="2") ? fwBim  : fw1;
-  const deltaTot = Math.abs(attTot - fwTot);
+  const deltaTot = Math.abs(signedDelta);
 
   // Annuale: se mensile *12, se bimestrale *6
   const annual = deltaTot * ((String(mensilita).trim()==="2") ? 6 : 12);
