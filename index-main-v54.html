@@ -1989,5 +1989,30 @@ if(bApply) bApply.addEventListener("click", (e)=>{ e.preventDefault(); applyBimS
 })();
 </script>
 
+<script>
+/* Loader robusto per pdf-engine.js (v54.3) */
+(function(){
+  const candidates = [
+    "assets/pdf-engine.js",
+    "./assets/pdf-engine.js",
+    "/assets/pdf-engine.js",
+    "/configuratore-energia/assets/pdf-engine.js"
+  ];
+  const s = document.createElement("script");
+  let i = 0;
+  s.src = candidates[i] + "?v=54.3";
+  s.async = true;
+  s.onerror = () => {
+    i++;
+    if(i < candidates.length){
+      s.src = candidates[i] + "?v=54.3";
+    } else {
+      console.error("pdf-engine.js non trovato in nessun path", candidates);
+    }
+  };
+  document.head.appendChild(s);
+})();
+</script>
+
 </body>
 </html>
