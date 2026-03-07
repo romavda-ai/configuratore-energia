@@ -254,9 +254,9 @@
         ${F("a_piv","P.IVA (se Impresa)","text","IT12345678901")}
         ${F("a_ate","ATECO (se Impresa)","text","35.14.00")}
       </div>
-      <div class="gr gr2">
+      <div class="gr" style="grid-template-columns:1.6fr 1fr">
         ${F("a_leg","Nome Cognome Legale Rappresentante (se Impresa)","text","Nome e Cognome")}
-        ${F("a_cfl","C.F. Legale Rappresentante (se Impresa)","text","Codice Fiscale")}
+        ${F("a_cfl","C.F. Legale Rappresentante","text","Codice Fiscale")}
       </div>
       <div class="ehr"></div>
       <div class="gr gr2">
@@ -471,13 +471,13 @@
     act.innerHTML = "";
     const first = idx===0, last = idx===STEPS.length-1;
 
+    // tasto SVUOTA — sempre primo a sinistra
+    const cl = mkBtn("btn-clear","🗑 Svuota"); cl.onclick = () => clearStep(idx); act.appendChild(cl);
     if (first) {
       const c = mkBtn("btn-cancel","Annulla"); c.onclick = closeModal; act.appendChild(c);
     } else {
       const b = mkBtn("btn-back","← Indietro"); b.onclick = ()=>renderStep(cur-1); act.appendChild(b);
     }
-    // tasto SVUOTA — pulisce solo i campi dello step corrente
-    const cl = mkBtn("btn-clear","🗑 Svuota"); cl.onclick = () => clearStep(idx); act.appendChild(cl);
     if (!last) {
       const n = mkBtn("btn-next","Avanti →"); n.onclick = ()=>renderStep(cur+1); act.appendChild(n);
     } else {
@@ -577,73 +577,68 @@
 <title>Richiesta di Preventivo – Fastweb Energia</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{font-family:Arial,Helvetica,sans-serif;font-size:9pt;color:#000;
+html,body{font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#000;
   background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-body{padding:9mm 11mm 18mm;}
+body{padding:3mm 11mm 18mm;}
 
 /* header */
-.top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4pt;}
-.top-left h1{font-size:16pt;font-weight:700;line-height:1.1;margin-bottom:2pt;}
-.top-left .sub{font-size:10pt;}
+.top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2pt;}
+.top-left h1{font-size:14pt;font-weight:700;line-height:1.1;margin-bottom:1pt;}
+.top-left .sub{font-size:8.5pt;}
 
-/* box agenzia */
-.agency{border:0.5pt solid #bbb;padding:3pt 5pt 2pt;margin-bottom:4pt;}
-.arow{display:flex;align-items:baseline;gap:4pt;border-bottom:0.5pt dotted #aaa;
-  min-height:12pt;padding-bottom:1pt;margin-bottom:2pt;font-size:8pt;}
-.arow:last-child{margin-bottom:0;border-bottom:none;}
-.arow .al{font-size:7.5pt;color:#555;white-space:nowrap;}
+
 
 /* intro */
-.intro{font-size:8pt;line-height:1.5;margin-bottom:5pt;}
+.intro{font-size:7pt;line-height:1.4;margin-bottom:3pt;}
 
 /* NOME OFFERTA box */
-.offerta-box{border:0.5pt solid #bbb;padding:5pt 6pt;margin-bottom:0;}
-.off-title{font-size:9pt;font-weight:700;margin-bottom:4pt;}
-.off-grid{display:flex;gap:16pt;}
-.off-col-title{font-size:7.5pt;font-weight:700;margin-bottom:3pt;}
-.off-item{display:flex;align-items:center;gap:3pt;margin-bottom:2.5pt;font-size:8pt;}
+.offerta-box{border:0.5pt solid #bbb;padding:3pt 5pt;margin-bottom:0;}
+.off-title{font-size:8pt;font-weight:700;margin-bottom:2pt;}
+.off-grid{display:flex;gap:10pt;}
+.off-col-title{font-size:7pt;font-weight:700;margin-bottom:2pt;}
+.off-item{display:flex;align-items:center;gap:3pt;margin-bottom:1.5pt;font-size:7pt;}
 
 /* sezione header arancione */
-.sec{background:#F5A01E;color:#fff;font-size:9pt;font-weight:700;
+.sec{background:#F5A01E;color:#fff;font-size:8pt;font-weight:700;
   text-transform:uppercase;letter-spacing:.07em;
-  padding:3pt 6pt;margin-top:4pt;margin-bottom:4pt;}
+  padding:2pt 5pt;margin-top:3pt;margin-bottom:2pt;}
 
 /* righe campi */
-.frows{display:flex;flex-wrap:wrap;gap:0 5pt;margin-bottom:3.5pt;align-items:flex-end;}
+.frows{display:flex;flex-wrap:wrap;gap:0 4pt;margin-bottom:2pt;align-items:flex-end;}
 .fr{flex:1;min-width:0;}
-.fl{font-size:7pt;color:#444;margin-bottom:1.5pt;white-space:nowrap;}
-.fline{border-bottom:0.5pt solid #777;min-height:12pt;font-size:9pt;
-  padding-bottom:1pt;white-space:nowrap;overflow:hidden;}
+.fl{font-size:6pt;color:#444;margin-bottom:0.5pt;white-space:nowrap;}
+.fline{border-bottom:0.5pt solid #777;min-height:9pt;font-size:8pt;
+  padding-bottom:0.5pt;white-space:nowrap;overflow:hidden;}
 .dt{color:#bbb;letter-spacing:.5pt;}
 .fv{font-weight:400;}
 
 /* celle quadrate */
 .cells{display:inline-flex;gap:0;}
-.cell{display:inline-block;width:8.5pt;height:10pt;border:0.4pt solid #888;
-  text-align:center;font-size:7pt;line-height:10pt;
+.cell{display:inline-block;width:7pt;height:9pt;border:0.4pt solid #888;
+  text-align:center;font-size:6pt;line-height:9pt;
   font-family:'Courier New',monospace;font-weight:500;}
 
 /* IBAN celle */
 .iban{display:inline-flex;gap:1.5pt;flex-wrap:nowrap;}
-.ic{display:inline-block;width:10.5pt;height:12pt;border:0.5pt solid #555;
-  text-align:center;font-size:8pt;line-height:12pt;
+.ic{display:inline-block;width:8.5pt;height:10pt;border:0.5pt solid #555;
+  text-align:center;font-size:7pt;line-height:10pt;
   font-family:'Courier New',monospace;font-weight:600;}
 
 /* checkbox */
-.chk{display:inline-block;width:8.5pt;height:8.5pt;border:0.5pt solid #555;
+.chk{display:inline-block;width:7pt;height:7pt;border:0.5pt solid #555;
   vertical-align:middle;margin-right:2pt;
-  text-align:center;font-size:7pt;line-height:8.5pt;font-weight:900;}
+  text-align:center;font-size:6pt;line-height:7pt;font-weight:900;}
 .chk1{background:#000;color:#fff;border-color:#000;}
 .chk0{background:#fff;}
 
 /* riga inline radio/check */
-.irow{font-size:8pt;margin-bottom:2.5pt;display:flex;flex-wrap:wrap;
-  align-items:center;gap:2pt 10pt;}
+.irow{font-size:7pt;margin-bottom:1.5pt;display:flex;flex-wrap:wrap;
+  align-items:center;gap:2pt 8pt;}
 .isep{color:#bbb;margin:0 2pt;}
 
 /* firma */
-.firma-wrap{margin-top:5pt;}
-.firma-txt{font-size:7.5pt;line-height:1.5;margin-bottom:4pt;}
+.firma-wrap{margin-top:3pt;}
+.firma-txt{font-size:6.5pt;line-height:1.4;margin-bottom:2pt;}
 .firma-fields{display:flex;gap:10pt;align-items:flex-end;margin-top:2pt;}
 .firma-ld{flex:1.3;}
 .firma-ld .fl{font-size:7pt;color:#444;}
@@ -665,7 +660,7 @@ body{padding:9mm 11mm 18mm;}
   border-top:0.3pt solid #ccc;padding-top:2pt;line-height:1.6;}
 
 @media print{
-  body{padding:7mm 9mm 16mm;}
+  body{padding:2mm 9mm 14mm;}
 }
 </style></head><body>
 
@@ -678,12 +673,6 @@ body{padding:9mm 11mm 18mm;}
     <div class="sub">Fastweb Energia - Energia Elettrica</div>
   </div>
   <div>${LOGO}</div>
-</div>
-
-<!-- ══ AGENZIA ══ -->
-<div class="agency">
-  <div class="arow"><span class="al">Identificativo Agenzia:</span> ${dots(80)}</div>
-  <div class="arow"><span class="al">Identificativo Venditore:</span> ${dots(80)}</div>
 </div>
 
 <!-- ══ INTRO ══ -->
@@ -752,12 +741,9 @@ ${SEC("DATI ANAGRAFICI E DI RESIDENZA")}
 </div>
 
 <div class="frows">
-  <div class="fr"><div class="fl">Nome e Cognome del Legale Rappresentante (se Impresa)</div>
-    <div class="fline">${V(d.leg,55)}</div></div>
-</div>
-
-<div class="frows">
-  <div class="fr"><div class="fl">C.F. del legale rappresentante (se Impresa)</div>
+  <div class="fr" style="flex:1.6"><div class="fl">Nome e Cognome del Legale Rappresentante (se Impresa)</div>
+    <div class="fline">${V(d.leg,35)}</div></div>
+  <div class="fr" style="flex:1"><div class="fl">C.F. del legale rappresentante (se Impresa)</div>
     <div class="fline">${CELLS(d.cfl,16)}</div></div>
 </div>
 
