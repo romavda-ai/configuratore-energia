@@ -226,7 +226,7 @@
         <div class="oc">
           <div class="oct">Consumer</div>
           ${["Fastweb Energia Light","Fastweb Energia Full","Fastweb Energia Maxi","Fastweb Energia Flex","Fastweb Energia Fix"]
-            .map(o=>`<label class="oi"><input type="checkbox" name="em_con" value="${o}" id="con_${o.replace(/\s/g,'_')}"><span>${o}</span></label>`).join("")}
+            .map(o=>`<label class="oi" style="cursor:default;opacity:.85"><input type="radio" name="em_con_frozen" value="${o}" disabled style="accent-color:#F5A01E;width:15px;height:15px;cursor:default"><span>${o}</span></label>`).join("")}
         </div>
         <div class="oc">
           <div class="oct">Business</div>
