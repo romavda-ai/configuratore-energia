@@ -226,12 +226,12 @@
         <div class="oc">
           <div class="oct">Consumer</div>
           ${["Fastweb Energia Light","Fastweb Energia Full","Fastweb Energia Maxi","Fastweb Energia Flex","Fastweb Energia Fix"]
-            .map(o=>`<label class="oi"><input type="radio" name="em_off" value="${o}"><span>${o}</span></label>`).join("")}
+            .map(o=>`<label class="oi"><input type="checkbox" name="em_con" value="${o}" id="con_${o.replace(/\s/g,'_')}"><span>${o}</span></label>`).join("")}
         </div>
         <div class="oc">
           <div class="oct">Business</div>
           ${["Fastweb Energia Business Flex","Fastweb Energia Business Fix"]
-            .map(o=>`<label class="oi"><input type="radio" name="em_off" value="${o}"><span>${o}</span></label>`).join("")}
+            .map(o=>`<label class="oi"><input type="radio" name="em_biz" value="${o}"><span>${o}</span></label>`).join("")}
         </div>
       </div>
     </div>
@@ -501,7 +501,16 @@
     const set = (id,val) => { const el=document.getElementById(id); if(el&&val){el.value=val;vld(el);} };
     const offMap = {FIX:"Fastweb Energia Business Fix",FLEX:"Fastweb Energia Business Flex"};
     const ov = offMap[data.offerta]||data.offerta||"";
-    if (ov) { const r=document.querySelector(`input[name="em_off"][value="${ov}"]`); if(r) r.checked=true; }
+    if (ov) {
+      // prova prima Business radio
+      const rb = document.querySelector(`input[name="em_biz"][value="${ov}"]`);
+      if (rb) { rb.checked=true; }
+      else {
+        // prova Consumer checkbox
+        const rc = document.querySelector(`input[name="em_con"][value="${ov}"]`);
+        if (rc) rc.checked=true;
+      }
+    }
     set("a_rag", data.ragioneSociale);
     set("a_piv", data.piva);
     set("t_pod", data.codicePOD);
@@ -515,7 +524,8 @@
     const v = id => document.getElementById(id)?.value.trim()||"";
     const r = nm => document.querySelector(`input[name="${nm}"]:checked`)?.value||"";
     return {
-      offerta:r("em_off"),
+      offerta:r("em_biz"),
+      consumerOffers: Array.from(document.querySelectorAll('input[name="em_con"]:checked')).map(el=>el.value),
       rag:v("a_rag"), ind:v("a_ind"), num:v("a_num"), cap:v("a_cap"),
       com:v("a_com"), prv:v("a_prv"), cf:v("a_cf"), piv:v("a_piv"), ate:v("a_ate"),
       leg:v("a_leg"), cfl:v("a_cfl"), tel:v("a_tel"), mai:v("a_mai"), pec:v("a_pec"),
@@ -695,8 +705,8 @@ body{padding:3mm 11mm 20mm;}
     </div>
     <div>
       <div class="off-col-title">&nbsp;</div>
-      <div class="off-item">${CHK(d.offerta==="Fastweb Energia Flex")} Fastweb Energia Flex</div>
-      <div class="off-item">${CHK(d.offerta==="Fastweb Energia Fix")} Fastweb Energia Fix</div>
+      <div class="off-item">${CHK(d.consumerOffers&&d.consumerOffers.includes("Fastweb Energia Flex"))} Fastweb Energia Flex</div>
+      <div class="off-item">${CHK(d.consumerOffers&&d.consumerOffers.includes("Fastweb Energia Fix"))} Fastweb Energia Fix</div>
     </div>
     <div>
       <div class="off-col-title">Business:</div>
@@ -953,37 +963,27 @@ ${SEC("DATI DI PAGAMENTO")}
         }).then(canvas => {
           const imgData = canvas.toDataURL("image/jpeg", 0.95);
           const { jsPDF } = window.jspdf;
-          const pdf = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
-          const pdfW = pdf.internal.pageSize.getWidth();
-          const pdfH = pdf.internal.pageSize.getHeight();
-          // Calcola altezza proporzionale — se l'HTML è più alto di un A4 aggiungi pagine
+          const pdfW_mm = 210, pdfH_mm = 297;
+          // Calcola quanti mm di altezza occupa il canvas (proporzionale alla larghezza A4)
           const canvasH = canvas.height;
           const canvasW = canvas.width;
-          const ratio   = canvasH / canvasW;
-          const imgH    = pdfW * ratio;
-          if (imgH <= pdfH) {
-            pdf.addImage(imgData, "JPEG", 0, 0, pdfW, imgH);
-          } else {
-            // Pagine multiple
-            let yOffset = 0;
-            const pageH = pdfW * (pdfH / pdfW) * (canvasW / canvasW); // pdfH in canvas px
-            const sliceH = Math.floor(canvasW * (pdfH / pdfW));
-            let page = 0;
-            while (yOffset < canvasH) {
-              const sliceCanvas = document.createElement("canvas");
-              sliceCanvas.width  = canvasW;
-              sliceCanvas.height = Math.min(sliceH, canvasH - yOffset);
-              const ctx = sliceCanvas.getContext("2d");
-              ctx.drawImage(canvas, 0, yOffset, canvasW, sliceCanvas.height, 0, 0, canvasW, sliceCanvas.height);
-              const sliceData = sliceCanvas.toDataURL("image/jpeg", 0.95);
-              const sliceImgH = pdfW * (sliceCanvas.height / canvasW);
-              if (page > 0) pdf.addPage();
-              pdf.addImage(sliceData, "JPEG", 0, 0, pdfW, sliceImgH);
-              yOffset += sliceH;
-              page++;
-            }
-          }
-          pdf.save("Preventivo_Fastweb_Energia.pdf");
+          const imgH_mm = pdfW_mm * (canvasH / canvasW);
+          // Crea PDF con altezza esatta del contenuto — nessuna pagina bianca
+          const pdf = new jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: imgH_mm <= pdfH_mm ? "a4" : [pdfW_mm, imgH_mm]
+          });
+          // Ritaglia il canvas alla sola parte visibile (evita spazio bianco)
+          const trimH = Math.min(canvasH, Math.round(canvasW * (pdfH_mm / pdfW_mm)));
+          const trimCanvas = document.createElement("canvas");
+          trimCanvas.width  = canvasW;
+          trimCanvas.height = trimH;
+          trimCanvas.getContext("2d").drawImage(canvas, 0, 0, canvasW, trimH, 0, 0, canvasW, trimH);
+          const trimData = trimCanvas.toDataURL("image/jpeg", 0.95);
+          const trimH_mm = pdfW_mm * (trimH / canvasW);
+          pdf.addImage(trimData, "JPEG", 0, 0, pdfW_mm, trimH_mm);
+          pdf.save("Modulo_FW_Energia.pdf");
           document.body.removeChild(iframe);
           closeModal();
         }).catch(() => {
