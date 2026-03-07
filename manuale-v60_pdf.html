@@ -1051,7 +1051,7 @@ function FS(v){ return v * __PDF_FONT_SCALE; }
 // Se presente, ./newconfig.json viene caricato all'avvio e applicato a tutti.
 // Dal pannello Admin, al click su "Salva e applica" viene anche scaricato automaticamente un nuovo newconfig.json.
 const CONFIG_FILE = "./newconfig.json";
-const AUTOLOAD_CONFIG = false; // evita fetch automatico con 404 se newconfig.json non esiste
+const AUTOLOAD_CONFIG = true;  // carica newconfig.json automaticamente all'avvio
 
 function downloadJSON(filename, obj){
   const json = JSON.stringify(obj, null, 2);
@@ -1094,7 +1094,7 @@ async function tryLoadConfigFile(){
   }
 }
 
-const PUN_DEFAULT = [{"mese": "FIX", "anno": 2025, "pun": 0.165, "f1": 0.165, "f2": 0.165, "f3": 0.165}, {"mese": "Gennaio", "anno": 2025, "pun": 0.14303, "f1": 0.15832, "f2": 0.15161, "f3": 0.12854}, {"mese": "Febbraio", "anno": 2025, "pun": 0.15036, "f1": 0.15764, "f2": 0.15895, "f3": 0.13991}, {"mese": "Marzo", "anno": 2025, "pun": 0.12055, "f1": 0.12168, "f2": 0.13486, "f3": 0.11165}, {"mese": "Aprile", "anno": 2025, "pun": 0.09985, "f1": 0.09584, "f2": 0.11508, "f3": 0.09505}, {"mese": "Maggio", "anno": 2025, "pun": 0.09358, "f1": 0.08909, "f2": 0.11064, "f3": 0.08711}, {"mese": "Giugno", "anno": 2025, "pun": 0.11178, "f1": 0.11306, "f2": 0.12676, "f3": 0.10363}, {"mese": "Luglio", "anno": 2025, "pun": 0.11313, "f1": 0.10896, "f2": 0.12676, "f3": 0.10849}, {"mese": "Agosto", "anno": 2025, "pun": 0.10879, "f1": 0.10558, "f2": 0.11797, "f3": 0.10604}, {"mese": "Settembre", "anno": 2025, "pun": 0.10959, "f1": 0.10558, "f2": 0.12093, "f3": 0.10188}, {"mese": "Ottobre", "anno": 2025, "pun": 0.11104, "f1": 0.11783, "f2": 0.12166, "f3": 0.09948}, {"mese": "Novembre", "anno": 2025, "pun": 0.11709, "f1": 0.12959, "f2": 0.12402, "f3": 0.10551}, {"mese": "Dicembre", "anno": 2025, "pun": 0.11549, "f1": 0.13009, "f2": 0.11998, "f3": 0.10452}, {"mese": "FIX", "anno": 2026, "pun": 0.165, "f1": 0.165, "f2": 0.165, "f3": 0.165}, {"mese": "Gennaio", "anno": 2026, "pun": 0.13266, "f1": 0.15126, "f2": 0.1374, "f3": 0.11829}];
+const PUN_DEFAULT = [{"mese":"FIX","anno":2025,"pun":0.155,"f1":0.155,"f2":0.155,"f3":0.155},{"mese":"Gennaio","anno":2025,"pun":0.14303,"f1":0.15832,"f2":0.15161,"f3":0.12854},{"mese":"Febbraio","anno":2025,"pun":0.15036,"f1":0.15764,"f2":0.15895,"f3":0.13991},{"mese":"Marzo","anno":2025,"pun":0.12055,"f1":0.12168,"f2":0.13486,"f3":0.11165},{"mese":"Aprile","anno":2025,"pun":0.09985,"f1":0.09584,"f2":0.11508,"f3":0.09505},{"mese":"Maggio","anno":2025,"pun":0.09358,"f1":0.08909,"f2":0.11064,"f3":0.08711},{"mese":"Giugno","anno":2025,"pun":0.11178,"f1":0.11306,"f2":0.12676,"f3":0.10363},{"mese":"Luglio","anno":2025,"pun":0.11313,"f1":0.10896,"f2":0.12676,"f3":0.10849},{"mese":"Agosto","anno":2025,"pun":0.10879,"f1":0.10558,"f2":0.11797,"f3":0.10604},{"mese":"Settembre","anno":2025,"pun":0.10959,"f1":0.10558,"f2":0.12093,"f3":0.10188},{"mese":"Ottobre","anno":2025,"pun":0.11104,"f1":0.11783,"f2":0.12166,"f3":0.09948},{"mese":"Novembre","anno":2025,"pun":0.11709,"f1":0.12959,"f2":0.12402,"f3":0.10551},{"mese":"Dicembre","anno":2025,"pun":0.11549,"f1":0.13009,"f2":0.11998,"f3":0.10452},{"mese":"FIX","anno":2026,"pun":0.155,"f1":0.155,"f2":0.155,"f3":0.155},{"mese":"Gennaio","anno":2026,"pun":0.13266,"f1":0.15126,"f2":0.1374,"f3":0.11829},{"mese":"Febbraio","anno":2026,"pun":0.11441,"f1":0.12228,"f2":0.11984,"f3":0.1053}];
 
 
 function loadPUN(){
@@ -2071,7 +2071,7 @@ function syncBimUI(){
 
   // 1 mensilità => mostra quota fissa + cambia label
   if(wrapF) wrapF.style.display = is1 ? "block" : "none";
-  if(lbl1) lbl1.textContent = is1 ? "QUOTA COMSUMI (€)" : "Spesa attuale 1° Mese (€)";
+  if(lbl1) lbl1.textContent = is1 ? "QUOTA CONSUMI (€)" : "Spesa attuale 1° Mese (€)";
   if(lblMese1){
     lblMese1.innerHTML = is1
       ? '<span class="lbl-icon">📅</span>MESE FATTURATO'
@@ -2886,7 +2886,7 @@ if(bApply) bApply.addEventListener("click", (e)=>{ e.preventDefault(); applyBimS
 
     <div class="grid2">
       <div>
-        <label id="bimLblConsumi" class="lbl-strong">QUOTA COMSUMI (€)</label>
+        <label id="bimLblConsumi" class="lbl-strong">QUOTA CONSUMI (€)</label>
         <input id="bimQuotaConsumi" type="text" inputmode="decimal" pattern="[0-9.,\s]*" placeholder="0,00" />
       </div>
       <div>
