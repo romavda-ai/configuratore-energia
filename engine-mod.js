@@ -141,7 +141,11 @@
 .btn-cancel{padding:12px 14px;border-radius:11px;
   border:1.5px solid rgba(15,17,23,.12);background:transparent;
   color:#7a8099;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;}
-.btn-cancel:hover{background:rgba(15,17,23,.05);}`;
+.btn-cancel:hover{background:rgba(15,17,23,.05);}
+.btn-clear{padding:12px 14px;border-radius:11px;
+  border:1.5px solid rgba(192,42,42,.3);background:rgba(192,42,42,.05);
+  color:#c02a2a;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;}
+.btn-clear:hover{background:rgba(192,42,42,.12);}`;
 
   if (!document.getElementById("__emCSS")) {
     const s = document.createElement("style");
@@ -282,6 +286,10 @@
     <!-- ── 3: TECNICA ── -->
     <div class="em-step" id="ems-tecnica">
       <div class="em-stitle"><span class="em-sn">4</span>Dati Tecnici di Fornitura</div>
+      <div class="ef" style="margin-bottom:11px">
+        <label>Tipo di Fornitura</label>
+        ${R("t_for",[["singola","Singola"],["multisito","Multisito (compilare l'Allegato Multisito)"]])}
+      </div>
       <div class="gr" style="grid-template-columns:2fr 1fr 1fr">
         ${F("t_pod","Codice POD","text","IT001E00000000")}
         ${F("t_kwh","Consumo (kWh/anno)","number","Es. 10000")}
@@ -299,10 +307,6 @@
       <div class="ef" style="margin-bottom:11px">
         <label>Tipologia Impianto</label>
         ${R("t_imp",[["monofase","Monofase (230 V)"],["trifase","Trifase (400V)"]])}
-      </div>
-      <div class="ef" style="margin-bottom:11px">
-        <label>Tipo di Fornitura</label>
-        ${R("t_for",[["singola","Singola"],["multisito","Multisito (compilare l'Allegato Multisito)"]])}
       </div>
       <div class="ef" style="margin-bottom:0">
         <label>Tipologia di Titolarità dell'Immobile</label>
@@ -357,11 +361,11 @@
     ov.addEventListener("click", e => { if(e.target===ov) closeModal(); });
     document.getElementById("__emX").addEventListener("click", closeModal);
 
-    // validazione live
+    // validazione live — X rossa di default, verde appena compilato
     ov.querySelectorAll("input:not([type=radio]),select").forEach(el => {
+      vld(el); // stato iniziale: X rossa
       el.addEventListener("input",  () => vld(el));
       el.addEventListener("change", () => vld(el));
-      el.addEventListener("blur",   () => { if(el.value.trim()) vld(el); });
     });
 
     // sync pagamento quando cambiano i sorgenti anagrafica
@@ -424,6 +428,31 @@
   }
 
   /* ════════════════════════════════════════════════════
+     SVUOTA STEP CORRENTE
+  ════════════════════════════════════════════════════ */
+  function clearStep(idx) {
+    const stepEl = document.getElementById("ems-" + STEPS[idx].id);
+    if (!stepEl) return;
+    // svuota input e select
+    stepEl.querySelectorAll("input:not([type=radio]),select").forEach(el => {
+      el.value = "";
+      delete el.dataset.edited;
+      vld(el);
+    });
+    // deseleziona radio
+    stepEl.querySelectorAll("input[type=radio]").forEach(el => { el.checked = false; });
+    // riapplica default radio per questo step
+    if (idx === 3) { // tecnica
+      const r = stepEl.querySelector('input[name="t_for"][value="singola"]');
+      if (r) r.checked = true;
+    }
+    if (idx === 4) { // pagamento
+      const r = stepEl.querySelector('input[name="p_tip"][value="b2b"]');
+      if (r) r.checked = true;
+    }
+  }
+
+  /* ════════════════════════════════════════════════════
      NAVIGAZIONE
   ════════════════════════════════════════════════════ */
   function renderStep(idx) {
@@ -447,6 +476,8 @@
     } else {
       const b = mkBtn("btn-back","← Indietro"); b.onclick = ()=>renderStep(cur-1); act.appendChild(b);
     }
+    // tasto SVUOTA — pulisce solo i campi dello step corrente
+    const cl = mkBtn("btn-clear","🗑 Svuota"); cl.onclick = () => clearStep(idx); act.appendChild(cl);
     if (!last) {
       const n = mkBtn("btn-next","Avanti →"); n.onclick = ()=>renderStep(cur+1); act.appendChild(n);
     } else {
@@ -633,15 +664,7 @@ body{padding:9mm 11mm 18mm;}
   font-size:6pt;color:#555;text-align:center;
   border-top:0.3pt solid #ccc;padding-top:2pt;line-height:1.6;}
 
-/* bottone stampa */
-.pbtn{position:fixed;bottom:14px;right:14px;
-  background:#1a3a6b;color:#fff;border:none;
-  padding:10px 20px;border-radius:8px;
-  font-family:Arial,sans-serif;font-size:12px;font-weight:700;
-  cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);}
-.pbtn:hover{background:#2255aa;}
 @media print{
-  .pbtn{display:none!important;}
   body{padding:7mm 9mm 16mm;}
 }
 </style></head><body>
@@ -914,14 +937,92 @@ ${SEC("DATI DI PAGAMENTO")}
   Contributo Ambientale CONAI assolto - Società soggetta all'attività di direzione e coordinamento di Swisscom AG
 </div>
 
-<button class="pbtn" onclick="window.print()">🖨️ Stampa / Salva PDF</button>
 </body></html>`;
 
-    const w = window.open("","_blank");
-    if (!w) { alert("Popup bloccato.\nAbilita i popup per questa pagina e riprova."); return; }
-    w.document.write(html);
-    w.document.close();
-    closeModal();
+    // Genera PDF reale via iframe nascosto + jsPDF + html2canvas
+    const btn = document.querySelector(".btn-gen");
+    if (btn) { btn.textContent = "⏳ Generazione PDF..."; btn.disabled = true; }
+
+    function doDownload() {
+      // Crea iframe nascosto con l'HTML
+      const iframe = document.createElement("iframe");
+      iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:794px;height:1123px;border:none;";
+      document.body.appendChild(iframe);
+      iframe.contentDocument.open();
+      iframe.contentDocument.write(html);
+      iframe.contentDocument.close();
+
+      setTimeout(() => {
+        const iDoc = iframe.contentDocument.documentElement;
+        window.html2canvas(iDoc, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          width: 794,
+          windowWidth: 794,
+          logging: false,
+        }).then(canvas => {
+          const imgData = canvas.toDataURL("image/jpeg", 0.95);
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
+          const pdfW = pdf.internal.pageSize.getWidth();
+          const pdfH = pdf.internal.pageSize.getHeight();
+          // Calcola altezza proporzionale — se l'HTML è più alto di un A4 aggiungi pagine
+          const canvasH = canvas.height;
+          const canvasW = canvas.width;
+          const ratio   = canvasH / canvasW;
+          const imgH    = pdfW * ratio;
+          if (imgH <= pdfH) {
+            pdf.addImage(imgData, "JPEG", 0, 0, pdfW, imgH);
+          } else {
+            // Pagine multiple
+            let yOffset = 0;
+            const pageH = pdfW * (pdfH / pdfW) * (canvasW / canvasW); // pdfH in canvas px
+            const sliceH = Math.floor(canvasW * (pdfH / pdfW));
+            let page = 0;
+            while (yOffset < canvasH) {
+              const sliceCanvas = document.createElement("canvas");
+              sliceCanvas.width  = canvasW;
+              sliceCanvas.height = Math.min(sliceH, canvasH - yOffset);
+              const ctx = sliceCanvas.getContext("2d");
+              ctx.drawImage(canvas, 0, yOffset, canvasW, sliceCanvas.height, 0, 0, canvasW, sliceCanvas.height);
+              const sliceData = sliceCanvas.toDataURL("image/jpeg", 0.95);
+              const sliceImgH = pdfW * (sliceCanvas.height / canvasW);
+              if (page > 0) pdf.addPage();
+              pdf.addImage(sliceData, "JPEG", 0, 0, pdfW, sliceImgH);
+              yOffset += sliceH;
+              page++;
+            }
+          }
+          pdf.save("Preventivo_Fastweb_Energia.pdf");
+          document.body.removeChild(iframe);
+          closeModal();
+        }).catch(() => {
+          document.body.removeChild(iframe);
+          if (btn) { btn.textContent = "📄 Genera PDF Modulistica"; btn.disabled = false; }
+          alert("Errore generazione PDF. Riprova.");
+        });
+      }, 600); // attendi rendering completo
+    }
+
+    // Carica librerie se non già presenti
+    function loadScript(src, cb) {
+      if (document.querySelector(`script[src="${src}"]`)) { cb(); return; }
+      const s = document.createElement("script");
+      s.src = src; s.onload = cb;
+      s.onerror = () => alert("Errore caricamento librerie PDF. Verifica la connessione.");
+      document.head.appendChild(s);
+    }
+
+    if (window.html2canvas && window.jspdf) {
+      doDownload();
+    } else {
+      loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js", () => {
+        loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js", () => {
+          doDownload();
+        });
+      });
+    }
   }
 
   /* ════════════════════════════════════════════════════
