@@ -1,922 +1,738 @@
 /**
- * engine-mod.js — Motore Modulistica Fastweb Energia
- * Versione: 1.0 | Compatibile con manuale-v59+
- *
- * Espone:  window.openModulistica(data)
- *   @param data  {ragioneSociale, piva, indirizzoPOD, codicePOD, offerta, tipoContatore}
- *
- * Flusso:
- *   1. Riceve i dati già inseriti nel configuratore (nessuna reinserzione richiesta)
- *   2. Apre un modal overlay con il form del Preventivo Fastweb Energia
- *   3. I campi ricevuti vengono pre-popolati e resi di sola lettura (con unlock facoltativo)
- *   4. Al click su "Genera PDF" apre una finestra di stampa HTML→PDF identica al modulo originale
- *
- * File PDF vuoto richiesto:  NON necessario — il PDF viene generato via window.print()
- * dalla finestra di anteprima HTML, senza dipendenze esterne.
+ * engine-mod.js — Motore Modulistica Fastweb Energia v2.0
+ * - Navigazione step-by-step (Avanti / Indietro per ogni sezione)
+ * - Validazione campo in tempo reale: ✓ verde se compilato, ✕ rosso se svuotato
+ * - PDF generato identico all'originale (Arial, layout, bordi, font 7pt)
+ * - Nessun campo "pre-compilato" visibile — tutto è editabile normalmente
+ * - Espone: window.openModulistica(data)
  */
-
-(function (global) {
+(function (G) {
   "use strict";
+  if (G.__engineModReady) return;
+  G.__engineModReady = true;
 
-  /* ─────────────────────────────────────────────
-   * 0. GUARD — evita inizializzazioni multiple
-   * ─────────────────────────────────────────────*/
-  if (global.__engineModReady) return;
-  global.__engineModReady = true;
-
-  /* ─────────────────────────────────────────────
-   * 1. STILI MODAL
-   * ─────────────────────────────────────────────*/
-  const STYLE_ID = "__engineModStyle";
-  if (!document.getElementById(STYLE_ID)) {
+  /* ─── STILI ──────────────────────────────────────────────────── */
+  if (!document.getElementById("__emCSS")) {
     const s = document.createElement("style");
-    s.id = STYLE_ID;
+    s.id = "__emCSS";
     s.textContent = `
-      #__engineModOverlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(10,15,30,.55);
-        backdrop-filter: blur(7px);
-        -webkit-backdrop-filter: blur(7px);
-        align-items: center;
-        justify-content: center;
-        z-index: 10000;
-        font-family: 'DM Sans', system-ui, sans-serif;
-      }
-      #__engineModOverlay.active { display: flex; }
+#__emOv{display:none;position:fixed;inset:0;background:rgba(10,15,30,.62);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  align-items:center;justify-content:center;z-index:10000;
+  font-family:'DM Sans',system-ui,sans-serif;}
+#__emOv.active{display:flex;}
 
-      #__engineModBox {
-        width: min(700px, calc(100vw - 24px));
-        max-height: 92vh;
-        overflow-y: auto;
-        background: #fff;
-        border-radius: 20px;
-        box-shadow: 0 28px 90px rgba(0,0,0,.28);
-        padding: 28px 28px 24px;
-        position: relative;
-        color: #0f1117;
-      }
-      #__engineModBox::-webkit-scrollbar { width: 5px; }
-      #__engineModBox::-webkit-scrollbar-thumb { background: rgba(0,0,0,.15); border-radius: 4px; }
+#__emBox{width:min(660px,calc(100vw - 18px));max-height:91vh;overflow-y:auto;
+  background:#fff;border-radius:22px;position:relative;color:#0f1117;
+  box-shadow:0 32px 100px rgba(0,0,0,.32);}
+#__emBox::-webkit-scrollbar{width:4px;}
+#__emBox::-webkit-scrollbar-thumb{background:rgba(0,0,0,.12);border-radius:3px;}
 
-      #__engineModBox h2 {
-        margin: 0 0 4px;
-        font-size: 19px;
-        font-weight: 800;
-        letter-spacing: -.3px;
-      }
-      #__engineModBox .em-sub {
-        font-size: 12.5px;
-        color: #7a8099;
-        margin: 0 0 20px;
-      }
-      #__engineModBox .em-close {
-        position: absolute;
-        top: 16px; right: 18px;
-        background: none;
-        border: none;
-        font-size: 20px;
-        cursor: pointer;
-        color: #7a8099;
-        line-height: 1;
-        padding: 4px 6px;
-        border-radius: 8px;
-        transition: background .12s;
-      }
-      #__engineModBox .em-close:hover { background: #f0f2f6; color: #0f1117; }
+/* header fisso */
+#__emHdr{padding:20px 24px 0;position:sticky;top:0;background:#fff;
+  border-radius:22px 22px 0 0;z-index:4;}
+#__emHdr h2{margin:0 32px 2px 0;font-size:17px;font-weight:800;letter-spacing:-.3px;}
+#__emHdr p{font-size:11.5px;color:#7a8099;margin:0 0 12px;}
+#__emCloseBtn{position:absolute;top:14px;right:16px;background:none;border:none;
+  font-size:19px;cursor:pointer;color:#7a8099;padding:4px 6px;border-radius:8px;
+  line-height:1;transition:background .12s;}
+#__emCloseBtn:hover{background:#f0f2f6;color:#0f1117;}
 
-      /* Sezione header */
-      .em-section {
-        background: #0f1117;
-        color: #fff;
-        font-size: 10.5px;
-        font-weight: 700;
-        letter-spacing: .1em;
-        text-transform: uppercase;
-        padding: 6px 12px;
-        border-radius: 6px;
-        margin: 18px 0 12px;
-      }
-      .em-section:first-of-type { margin-top: 0; }
+/* progress */
+#__emProg{padding:0 24px 12px;}
+.em-dots{display:flex;gap:4px;margin-bottom:5px;}
+.em-dot{flex:1;height:4px;border-radius:2px;background:#e8eaf0;transition:background .28s;}
+.em-dot.em-done{background:#1a7a3c;}
+.em-dot.em-cur{background:#FFC800;}
+.em-plbl{display:flex;justify-content:space-between;font-size:10.5px;}
+.em-plbl-name{font-weight:700;color:#0f1117;}
+.em-plbl-count{color:#7a8099;}
 
-      /* Badge "pre-compilato" */
-      .em-prefill-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 10px;
-        font-weight: 600;
-        background: #edf7f1;
-        color: #1a7a3c;
-        border: 1px solid rgba(26,122,60,.25);
-        border-radius: 999px;
-        padding: 2px 8px;
-        margin-left: 6px;
-        vertical-align: middle;
-      }
+/* content */
+#__emCnt{padding:2px 24px 0;}
+.em-step{display:none;}
+.em-step.em-active{display:block;}
+.em-stitle{font-size:13px;font-weight:700;padding-bottom:8px;
+  border-bottom:2.5px solid #FFC800;margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;}
+.em-snum{background:#FFC800;color:#0f1117;font-size:11px;font-weight:800;
+  width:21px;height:21px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
 
-      /* Grid righe */
-      .em-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
-      .em-row.em-row1 { grid-template-columns: 1fr; }
-      .em-row.em-row3 { grid-template-columns: 1fr 1fr 1fr; }
-      @media (max-width: 520px) {
-        .em-row, .em-row3 { grid-template-columns: 1fr; }
-      }
+/* griglia */
+.emr{display:grid;gap:11px;margin-bottom:11px;}
+.emr2{grid-template-columns:1fr 1fr;}
+.emr3{grid-template-columns:1fr 1fr 1fr;}
+.emr1{grid-template-columns:1fr;}
+@media(max-width:500px){.emr2,.emr3{grid-template-columns:1fr;}}
 
-      /* Campi */
-      .em-field { display: flex; flex-direction: column; gap: 5px; }
-      .em-field label {
-        font-size: 10.5px;
-        font-weight: 600;
-        color: #7a8099;
-        text-transform: uppercase;
-        letter-spacing: .06em;
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0;
-        margin: 0;
-      }
-      .em-field input, .em-field select {
-        height: 42px;
-        padding: 0 12px;
-        border-radius: 9px;
-        border: 1.5px solid rgba(15,17,23,.13);
-        background: #fff;
-        color: #0f1117;
-        font-family: inherit;
-        font-size: 14px;
-        font-weight: 500;
-        outline: none;
-        transition: border-color .14s, box-shadow .14s;
-        box-shadow: 0 1px 3px rgba(15,17,23,.05);
-        width: 100%;
-        box-sizing: border-box;
-      }
-      .em-field input:focus, .em-field select:focus {
-        border-color: #FFC800;
-        box-shadow: 0 0 0 3px rgba(180,140,0,.16);
-      }
-      .em-field input.em-locked {
-        background: #f7f8fc;
-        color: #5a6070;
-        border-color: rgba(15,17,23,.08);
-        cursor: not-allowed;
-        box-shadow: none;
-        opacity: .8;
-      }
-      .em-field input[type="date"] { font-size: 13px; }
+/* campo */
+.emf{display:flex;flex-direction:column;gap:4px;}
+.emf label{font-size:10px;font-weight:700;color:#7a8099;
+  text-transform:uppercase;letter-spacing:.07em;margin:0;}
+.emf-wrap{position:relative;}
+.emf input,.emf select{height:40px;padding:0 32px 0 11px;border-radius:9px;
+  border:1.5px solid rgba(15,17,23,.14);background:#fff;color:#0f1117;
+  font-family:inherit;font-size:13.5px;font-weight:500;outline:none;
+  transition:border-color .14s,box-shadow .14s;
+  box-shadow:0 1px 2px rgba(15,17,23,.05);width:100%;box-sizing:border-box;}
+.emf input:focus,.emf select:focus{border-color:#FFC800;
+  box-shadow:0 0 0 3px rgba(180,140,0,.16);}
+.emf input[type=date]{font-size:12px;}
+.emf select{appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:28px;}
+.emf-arrow{position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;
+  border-top:5px solid #7a8099;pointer-events:none;}
+/* icona stato */
+.em-icon{position:absolute;right:9px;top:50%;transform:translateY(-50%);
+  font-size:13px;font-weight:900;pointer-events:none;
+  opacity:0;transition:opacity .18s;line-height:1;}
+.em-icon.ok{color:#1a7a3c;opacity:1;}
+.em-icon.err{color:#c42b2b;opacity:1;}
+/* select: sposta freccia a sinistra dell'icona */
+.emf-sw .em-icon{right:28px;}
 
-      /* Select arrow */
-      .em-select-wrap { position: relative; }
-      .em-select-wrap::after {
-        content: '';
-        position: absolute; right: 12px; top: 50%;
-        transform: translateY(-50%);
-        width: 0; height: 0;
-        border-left: 5px solid transparent;
-        border-right: 5px solid transparent;
-        border-top: 6px solid #7a8099;
-        pointer-events: none;
-      }
-      .em-field select { appearance: none; -webkit-appearance: none; padding-right: 32px; cursor: pointer; }
+/* radio */
+.em-rg{display:flex;flex-wrap:wrap;gap:6px 16px;padding:5px 0;}
+.em-rg label{font-size:13px;font-weight:500;color:#0f1117;
+  cursor:pointer;display:flex;align-items:center;gap:6px;
+  text-transform:none;letter-spacing:0;}
+.em-rg input[type=radio]{accent-color:#FFC800;width:15px;height:15px;}
+.em-rg-col{flex-direction:column;gap:6px;}
 
-      /* Radio group */
-      .em-radio-group { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 4px 0; }
-      .em-radio-group label {
-        display: flex; align-items: center; gap: 7px;
-        font-size: 13px; font-weight: 500;
-        color: #0f1117; text-transform: none; letter-spacing: 0;
-        cursor: pointer;
-      }
-      .em-radio-group input[type="radio"] { accent-color: #FFC800; width: 16px; height: 16px; }
+/* offerta */
+.em-og{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.em-oc{border:1.5px solid #e8eaf0;border-radius:10px;padding:11px 13px;
+  transition:border-color .15s,background .15s;}
+.em-oc:has(input:checked){border-color:#FFC800;background:rgba(255,200,0,.06);}
+.em-oct{font-size:9.5px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.1em;color:#7a8099;margin-bottom:7px;}
+.em-oi{display:flex;align-items:center;gap:7px;margin-bottom:5px;cursor:pointer;}
+.em-oi input[type=radio]{accent-color:#FFC800;width:15px;height:15px;flex-shrink:0;}
+.em-oi span{font-size:12.5px;font-weight:500;}
 
-      /* Divider */
-      .em-hr { height: 1px; background: rgba(15,17,23,.08); margin: 6px 0 14px; }
+/* divider */
+.emhr{height:1px;background:rgba(15,17,23,.07);margin:6px 0 12px;}
 
-      /* Nota unlock */
-      .em-unlock-note {
-        font-size: 11px;
-        color: #7a8099;
-        margin-top: 3px;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-      }
-      .em-unlock-note a {
-        color: #997800;
-        cursor: pointer;
-        text-decoration: underline;
-        font-weight: 600;
-        border: none;
-        background: none;
-        padding: 0;
-        font-size: inherit;
-      }
-
-      /* Actions */
-      .em-actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin-top: 22px;
-      }
-      .em-btn-primary {
-        padding: 13px;
-        border-radius: 12px;
-        border: none;
-        background: linear-gradient(180deg, rgba(0,150,0,.92), rgba(0,120,0,.85));
-        color: #fff;
-        font-family: inherit;
-        font-weight: 800;
-        font-size: 14px;
-        cursor: pointer;
-        box-shadow: 0 6px 20px rgba(0,0,0,.14);
-        transition: filter .15s, transform .06s;
-      }
-      .em-btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
-      .em-btn-secondary {
-        padding: 13px;
-        border-radius: 12px;
-        border: 1.5px solid rgba(15,17,23,.14);
-        background: rgba(15,17,23,.04);
-        color: #0f1117;
-        font-family: inherit;
-        font-weight: 700;
-        font-size: 14px;
-        cursor: pointer;
-        transition: background .12s;
-      }
-      .em-btn-secondary:hover { background: rgba(15,17,23,.08); }
+/* actions */
+#__emAct{padding:14px 24px 20px;display:flex;gap:10px;
+  border-top:1px solid rgba(15,17,23,.07);margin-top:10px;flex-shrink:0;}
+.em-next{flex:1;padding:11px;border-radius:11px;border:none;
+  background:linear-gradient(135deg,#FFC800,#e6b400);color:#0f1117;
+  font-family:inherit;font-weight:800;font-size:14px;cursor:pointer;
+  box-shadow:0 4px 14px rgba(255,200,0,.38);transition:filter .14s,transform .06s;}
+.em-next:hover{filter:brightness(1.06);transform:translateY(-1px);}
+.em-back{padding:11px 16px;border-radius:11px;
+  border:1.5px solid rgba(15,17,23,.13);background:rgba(15,17,23,.03);
+  color:#0f1117;font-family:inherit;font-weight:700;font-size:14px;
+  cursor:pointer;transition:background .12s;white-space:nowrap;}
+.em-back:hover{background:rgba(15,17,23,.07);}
+.em-gen{flex:2;padding:11px;border-radius:11px;border:none;
+  background:linear-gradient(135deg,#1a4a8a,#2255bb);color:#fff;
+  font-family:inherit;font-weight:800;font-size:14px;cursor:pointer;
+  box-shadow:0 4px 14px rgba(26,74,138,.32);transition:filter .14s,transform .06s;}
+.em-gen:hover{filter:brightness(1.1);transform:translateY(-1px);}
+.em-cancel{padding:11px 14px;border-radius:11px;
+  border:1.5px solid rgba(15,17,23,.12);background:transparent;
+  color:#7a8099;font-family:inherit;font-weight:600;font-size:13px;
+  cursor:pointer;white-space:nowrap;}
+.em-cancel:hover{background:rgba(15,17,23,.05);}
     `;
     document.head.appendChild(s);
   }
 
-  /* ─────────────────────────────────────────────
-   * 2. COSTRUZIONE MODAL DOM
-   * ─────────────────────────────────────────────*/
+  /* ─── STEPS ─────────────────────────────────────────────────── */
+  const STEPS = [
+    {id:"offerta",   lbl:"Offerta"},
+    {id:"anagrafica",lbl:"Anagrafica"},
+    {id:"documento", lbl:"Documento"},
+    {id:"tecnica",   lbl:"Tecnica"},
+    {id:"pagamento", lbl:"Pagamento"},
+    {id:"firma",     lbl:"Firma"},
+  ];
+  let cur = 0;
+
+  /* ─── HELPER HTML ────────────────────────────────────────────── */
+  function F(id, lbl, type="text", ph="", extra="") {
+    const isSelect = type === "select";
+    return `<div class="emf">
+      <label for="${id}">${lbl}</label>
+      <div class="emf-wrap${isSelect?" emf-sw":""}">
+        <input id="${id}" type="${type}" placeholder="${ph}" autocomplete="off" ${extra}/>
+        <span class="em-icon" id="${id}_ic"></span>
+      </div></div>`;
+  }
+  function SEL(id, lbl, opts) {
+    return `<div class="emf">
+      <label for="${id}">${lbl}</label>
+      <div class="emf-wrap emf-sw">
+        <select id="${id}">
+          <option value="">— Seleziona —</option>
+          ${opts.map(o=>`<option>${o}</option>`).join("")}
+        </select>
+        <span class="emf-arrow"></span>
+        <span class="em-icon" id="${id}_ic"></span>
+      </div></div>`;
+  }
+  function R(name, vals) { // radio row
+    return `<div class="em-rg">${vals.map(([v,l])=>
+      `<label><input type="radio" name="${name}" value="${v}"> ${l}</label>`
+    ).join("")}</div>`;
+  }
+  function Rcol(name, vals) {
+    return `<div class="em-rg em-rg-col">${vals.map(([v,l])=>
+      `<label><input type="radio" name="${name}" value="${v}"> ${l}</label>`
+    ).join("")}</div>`;
+  }
+
+  /* ─── BUILD DOM ─────────────────────────────────────────────── */
   function buildModal() {
-    if (document.getElementById("__engineModOverlay")) return;
+    if (document.getElementById("__emOv")) return;
+    const ov = document.createElement("div");
+    ov.id = "__emOv";
+    ov.innerHTML = `
+<div id="__emBox">
+  <div id="__emHdr">
+    <button id="__emCloseBtn">✕</button>
+    <h2>Compila Modulistica</h2>
+    <p>Preventivo di Fornitura – Fastweb Energia Elettrica</p>
+  </div>
+  <div id="__emProg">
+    <div class="em-dots" id="__emDots"></div>
+    <div class="em-plbl"><span class="em-plbl-name" id="__emLblName"></span><span class="em-plbl-count" id="__emLblCount"></span></div>
+  </div>
+  <div id="__emCnt">
 
-    const overlay = document.createElement("div");
-    overlay.id = "__engineModOverlay";
-    overlay.setAttribute("role", "dialog");
-    overlay.setAttribute("aria-modal", "true");
-    overlay.setAttribute("aria-label", "Compila Modulistica Preventivo Fastweb Energia");
-
-    overlay.innerHTML = `
-      <div id="__engineModBox">
-        <button class="em-close" id="__emClose" title="Chiudi">✕</button>
-        <h2>Compila Modulistica</h2>
-        <p class="em-sub">Preventivo Fastweb Energia — i campi evidenziati sono già stati pre-compilati dai dati inseriti nel configuratore.</p>
-
-        <!-- ═══════════ NOME OFFERTA ═══════════ -->
-        <div class="em-section">Nome Offerta</div>
-        <div class="em-row">
-          <div class="em-field">
-            <label>Offerta Selezionata <span class="em-prefill-badge">✓ Pre-compilato</span></label>
-            <input id="em_offerta" class="em-locked" readonly />
-          </div>
-          <div class="em-field">
-            <label>Tipo Contatore <span class="em-prefill-badge">✓ Pre-compilato</span></label>
-            <input id="em_contatore" class="em-locked" readonly />
-          </div>
+    <!-- 0: OFFERTA -->
+    <div class="em-step" id="ems-offerta">
+      <div class="em-stitle"><span class="em-snum">1</span>Nome Offerta</div>
+      <div class="em-og">
+        <div class="em-oc">
+          <div class="em-oct">Consumer</div>
+          ${["Fastweb Energia Light","Fastweb Energia Full","Fastweb Energia Maxi","Fastweb Energia Flex","Fastweb Energia Fix"].map(o=>`
+          <label class="em-oi"><input type="radio" name="em_off" value="${o}"><span>${o}</span></label>`).join("")}
         </div>
-        <div class="em-unlock-note">
-          <span>🔒 Modifica questi valori nel configuratore oppure</span>
-          <a id="__emUnlockOfferta">sblocca per modifica manuale</a>
-        </div>
-
-        <!-- ═══════════ DATI ANAGRAFICI ═══════════ -->
-        <div class="em-section">Dati Anagrafici e di Residenza</div>
-
-        <div class="em-row em-row1">
-          <div class="em-field">
-            <label>Ragione Sociale <span class="em-prefill-badge">✓ Pre-compilato</span></label>
-            <input id="em_ragione" class="em-locked" readonly placeholder="Ragione sociale azienda" />
-          </div>
-        </div>
-        <div class="em-unlock-note" style="margin-bottom:10px">
-          <span>🔒 Compilato dal campo "Ragione sociale" del configuratore PDF —</span>
-          <a id="__emUnlockAnagrafica">sblocca per modifica</a>
-        </div>
-
-        <div class="em-row">
-          <div class="em-field">
-            <label>P.IVA <span class="em-prefill-badge">✓ Pre-compilato</span></label>
-            <input id="em_piva" class="em-locked" readonly placeholder="Es. IT12345678901" />
-          </div>
-          <div class="em-field">
-            <label>Codice Fiscale</label>
-            <input id="em_cf" placeholder="Codice Fiscale" maxlength="16" />
-          </div>
-        </div>
-
-        <div class="em-row">
-          <div class="em-field">
-            <label>Codice ATECO</label>
-            <input id="em_ateco" placeholder="Es. 35.14.00" />
-          </div>
-          <div class="em-field">
-            <label>Nome Legale Rappresentante</label>
-            <input id="em_legale" placeholder="Nome e Cognome" />
-          </div>
-        </div>
-
-        <div class="em-row em-row3">
-          <div class="em-field">
-            <label>Indirizzo Sede Legale</label>
-            <input id="em_indirizzo" placeholder="Via/Piazza..." />
-          </div>
-          <div class="em-field">
-            <label>CAP</label>
-            <input id="em_cap" placeholder="00000" maxlength="5" />
-          </div>
-          <div class="em-field">
-            <label>Comune</label>
-            <input id="em_comune" placeholder="Comune" />
-          </div>
-        </div>
-
-        <div class="em-row">
-          <div class="em-field">
-            <label>Provincia</label>
-            <input id="em_provincia" placeholder="Es. RM" maxlength="2" />
-          </div>
-          <div class="em-field">
-            <label>Telefono / Cellulare</label>
-            <input id="em_tel" type="tel" placeholder="+39 3xx xxx xxxx" />
-          </div>
-        </div>
-
-        <div class="em-row">
-          <div class="em-field">
-            <label>E-mail</label>
-            <input id="em_email" type="email" placeholder="nome@azienda.it" />
-          </div>
-          <div class="em-field">
-            <label>PEC</label>
-            <input id="em_pec" type="email" placeholder="nome@pec.it" />
-          </div>
-        </div>
-
-        <div class="em-row">
-          <div class="em-field">
-            <label>Tipo Documento</label>
-            <div class="em-select-wrap">
-              <select id="em_tipoDoc">
-                <option value="">— Seleziona —</option>
-                <option>Carta d'Identità</option>
-                <option>Passaporto</option>
-                <option>Patente di Guida</option>
-                <option>Permesso di Soggiorno</option>
-              </select>
-            </div>
-          </div>
-          <div class="em-field">
-            <label>Numero Documento</label>
-            <input id="em_numDoc" placeholder="Es. AX1234567" />
-          </div>
-        </div>
-
-        <div class="em-row">
-          <div class="em-field">
-            <label>Data Rilascio</label>
-            <input id="em_dataRil" type="date" />
-          </div>
-          <div class="em-field">
-            <label>Data Scadenza</label>
-            <input id="em_dataScad" type="date" />
-          </div>
-        </div>
-
-        <div class="em-row">
-          <div class="em-field">
-            <label>Rilasciato da</label>
-            <input id="em_rilDa" placeholder="Es. Comune di Roma" />
-          </div>
-          <div class="em-field">
-            <label>Nazione di Rilascio</label>
-            <input id="em_nazione" placeholder="Es. Italia" />
-          </div>
-        </div>
-
-        <!-- ═══════════ DATI TECNICI ═══════════ -->
-        <div class="em-section">Dati Tecnici di Fornitura</div>
-
-        <div class="em-row em-row1">
-          <div class="em-field">
-            <label>Codice POD <span class="em-prefill-badge">✓ Pre-compilato</span></label>
-            <input id="em_pod" class="em-locked" readonly placeholder="IT001E00000000" />
-          </div>
-        </div>
-        <div class="em-row em-row1" style="margin-bottom:10px">
-          <div class="em-field">
-            <label>Indirizzo Fornitura POD <span class="em-prefill-badge">✓ Pre-compilato</span></label>
-            <input id="em_indForn" class="em-locked" readonly placeholder="Indirizzo fornitura" />
-          </div>
-        </div>
-        <div class="em-unlock-note" style="margin-bottom:12px">
-          <span>🔒 Compilato dai campi "Id POD" e "Indirizzo POD" del configuratore —</span>
-          <a id="__emUnlockTecnico">sblocca per modifica</a>
-        </div>
-
-        <div class="em-row">
-          <div class="em-field">
-            <label>Consumo Annuo (kWh/anno)</label>
-            <input id="em_consumo" type="number" min="0" placeholder="Es. 10000" />
-          </div>
-          <div class="em-field">
-            <label>Potenza Impegnata (kW)</label>
-            <input id="em_potenza" type="number" min="0" step="0.1" placeholder="Es. 6" />
-          </div>
-        </div>
-
-        <div class="em-field" style="margin-bottom:10px">
-          <label>Tipologia Impianto</label>
-          <div class="em-radio-group" id="em_rg_impianto">
-            <label><input type="radio" name="em_impianto" value="monofase" /> Monofase (230 V)</label>
-            <label><input type="radio" name="em_impianto" value="trifase"  /> Trifase (400 V)</label>
-          </div>
-        </div>
-
-        <div class="em-field" style="margin-bottom:10px">
-          <label>Tipo di Fornitura</label>
-          <div class="em-radio-group" id="em_rg_fornitura">
-            <label><input type="radio" name="em_fornitura" value="singola"   /> Singola</label>
-            <label><input type="radio" name="em_fornitura" value="multisito" /> Multisito</label>
-          </div>
-        </div>
-
-        <div class="em-field" style="margin-bottom:14px">
-          <label>Titolarità Immobile</label>
-          <div class="em-radio-group" id="em_rg_titolarita">
-            <label><input type="radio" name="em_titolarita" value="proprieta" /> Proprietà / Usufrutto</label>
-            <label><input type="radio" name="em_titolarita" value="locazione"  /> Locazione / Comodato</label>
-            <label><input type="radio" name="em_titolarita" value="altro"      /> Altro</label>
-          </div>
-        </div>
-
-        <!-- ═══════════ DATI DI PAGAMENTO ═══════════ -->
-        <div class="em-section">Dati di Pagamento</div>
-        <p style="font-size:12px;color:#7a8099;margin:-8px 0 12px">
-          I seguenti dati potrebbero differire dall'intestatario aziendale — compilali solo se necessario.
-        </p>
-
-        <div class="em-row">
-          <div class="em-field">
-            <label>Intestatario / Rapp. Legale</label>
-            <input id="em_intestatario" placeholder="Nome e Cognome" />
-          </div>
-          <div class="em-field">
-            <label>Ragione Sociale (pagamento)</label>
-            <input id="em_ragPag" placeholder="Se diversa dall'azienda" />
-          </div>
-        </div>
-
-        <div class="em-row em-row1">
-          <div class="em-field">
-            <label>IBAN</label>
-            <input id="em_iban" placeholder="IT60 X054 2811 1010 0000 0123 456" maxlength="34" style="font-family:'DM Mono',monospace;letter-spacing:.04em" />
-          </div>
-        </div>
-
-        <div class="em-row">
-          <div class="em-field">
-            <label>C.F. Intestatario</label>
-            <input id="em_cfInt" placeholder="Codice Fiscale intestatario" maxlength="16" />
-          </div>
-          <div class="em-field">
-            <label>Tipo Cliente</label>
-            <div class="em-radio-group">
-              <label><input type="radio" name="em_tipo_cliente" value="b2b" /> B2B</label>
-              <label><input type="radio" name="em_tipo_cliente" value="b2c" /> B2C</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="em-row">
-          <div class="em-field">
-            <label>P.IVA (pagamento)</label>
-            <input id="em_pivaPag" placeholder="Se diversa" />
-          </div>
-          <div class="em-field">
-            <label>Codice SDI</label>
-            <input id="em_sdi" placeholder="Es. 0000000" maxlength="7" />
-          </div>
-        </div>
-
-        <!-- ═══════════ FIRMA ═══════════ -->
-        <div class="em-section">Luogo e Data di Firma</div>
-        <div class="em-row">
-          <div class="em-field">
-            <label>Firma 1 — Luogo e Data</label>
-            <input id="em_luogoData1" placeholder="Es. Roma, 07/03/2026" />
-          </div>
-          <div class="em-field">
-            <label>Firma 2 — Luogo e Data (B2B)</label>
-            <input id="em_luogoData2" placeholder="Es. Roma, 07/03/2026" />
-          </div>
-        </div>
-
-        <!-- ═══════════ AZIONI ═══════════ -->
-        <div class="em-hr" style="margin-top:18px"></div>
-        <div class="em-actions">
-          <button class="em-btn-primary" id="__emGenerate">📄 Genera PDF Modulistica</button>
-          <button class="em-btn-secondary" id="__emClose2">Annulla</button>
+        <div class="em-oc">
+          <div class="em-oct">Business</div>
+          ${["Fastweb Energia Business Flex","Fastweb Energia Business Fix"].map(o=>`
+          <label class="em-oi"><input type="radio" name="em_off" value="${o}"><span>${o}</span></label>`).join("")}
         </div>
       </div>
-    `;
+    </div>
 
-    document.body.appendChild(overlay);
+    <!-- 1: ANAGRAFICA -->
+    <div class="em-step" id="ems-anagrafica">
+      <div class="em-stitle"><span class="em-snum">2</span>Dati Anagrafici e di Residenza</div>
+      <div class="emr emr1">${F("em_rag","Nome e Cognome / Ragione Sociale (se Impresa)","text","Es. Azienda Srl")}</div>
+      <div class="emr" style="grid-template-columns:2fr 70px 90px">
+        ${F("em_ind","Indirizzo di Residenza / Sede Legale (se Impresa)","text","Via/Piazza...")}
+        ${F("em_num","N°","text","1")}
+        ${F("em_cap","CAP","text","00000")}
+      </div>
+      <div class="emr" style="grid-template-columns:1fr 65px">
+        ${F("em_com","Comune","text","Roma")}
+        ${F("em_prv","Prov.","text","RM")}
+      </div>
+      <div class="emr emr3">
+        ${F("em_cf","Codice Fiscale","text","RSSMRA80A01H501A")}
+        ${F("em_piv","P.IVA (se Impresa)","text","IT12345678901")}
+        ${F("em_ate","ATECO (se Impresa)","text","35.14.00")}
+      </div>
+      <div class="emr emr2">
+        ${F("em_leg","Nome Cognome Legale Rappresentante (se Impresa)","text","Nome e Cognome")}
+        ${F("em_cfl","C.F. Legale Rappresentante (se Impresa)","text","Codice Fiscale")}
+      </div>
+      <div class="emhr"></div>
+      <div class="emr emr2">
+        ${F("em_tel","Numero di Cellulare di Riferimento","tel","+39 3xx xxx xxxx")}
+        ${F("em_mai","E-mail","email","nome@azienda.it")}
+      </div>
+      <div class="emr emr1">${F("em_pec","PEC","email","nome@pec.it")}</div>
+    </div>
 
-    // — Close handlers
-    overlay.addEventListener("click", function (e) {
-      if (e.target === overlay) closeModal();
-    });
-    document.getElementById("__emClose").addEventListener("click", closeModal);
-    document.getElementById("__emClose2").addEventListener("click", closeModal);
+    <!-- 2: DOCUMENTO -->
+    <div class="em-step" id="ems-documento">
+      <div class="em-stitle"><span class="em-snum">3</span>Documento di Identità</div>
+      <div class="emr emr2">
+        ${SEL("em_tdc","Tipo di Documento",["Carta d'Identità","Passaporto","Patente di Guida","Permesso di Soggiorno"])}
+        ${F("em_ndc","Numero Documento","text","Es. AX1234567")}
+      </div>
+      <div class="emr emr2">
+        ${F("em_drl","Data di Rilascio","date","")}
+        ${F("em_dsc","Data di Scadenza","date","")}
+      </div>
+      <div class="emr emr2">
+        ${F("em_rda","Rilasciato da","text","Es. Comune di Roma")}
+        ${F("em_naz","Nazione di Rilascio","text","Italia")}
+      </div>
+    </div>
 
-    // — Unlock handlers
-    document.getElementById("__emUnlockOfferta").addEventListener("click", function () {
-      unlockField("em_offerta");
-      unlockField("em_contatore");
-      this.closest(".em-unlock-note").style.display = "none";
-    });
-    document.getElementById("__emUnlockAnagrafica").addEventListener("click", function () {
-      unlockField("em_ragione");
-      unlockField("em_piva");
-      this.closest(".em-unlock-note").style.display = "none";
-    });
-    document.getElementById("__emUnlockTecnico").addEventListener("click", function () {
-      unlockField("em_pod");
-      unlockField("em_indForn");
-      this.closest(".em-unlock-note").style.display = "none";
+    <!-- 3: TECNICA -->
+    <div class="em-step" id="ems-tecnica">
+      <div class="em-stitle"><span class="em-snum">4</span>Dati Tecnici di Fornitura</div>
+      <div class="emr" style="grid-template-columns:2fr 1fr 1fr">
+        ${F("em_pod","Codice POD","text","IT001E00000000")}
+        ${F("em_kwh","Consumo (kWh/anno)","number","Es. 10000")}
+        ${F("em_kw","Pot. Imp. (kW)","number","Es. 6")}
+      </div>
+      <div class="emr" style="grid-template-columns:2fr 70px 90px">
+        ${F("em_ifn","Indirizzo di Fornitura (se diverso da Residenza)","text","Via...")}
+        ${F("em_nfn","N°","text","1")}
+        ${F("em_cfn","CAP","text","00000")}
+      </div>
+      <div class="emr" style="grid-template-columns:1fr 65px">
+        ${F("em_cfm","Comune","text","Roma")}
+        ${F("em_cfp","Prov.","text","RM")}
+      </div>
+      <div class="emf" style="margin-bottom:11px">
+        <label>Tipologia Impianto</label>
+        ${R("em_imp",[["monofase","Monofase (230 V)"],["trifase","Trifase (400 V)"]])}
+      </div>
+      <div class="emf" style="margin-bottom:11px">
+        <label>Tipo di Fornitura</label>
+        ${R("em_for",[["singola","Singola"],["multisito","Multisito (compilare l'Allegato Multisito)"]])}
+      </div>
+      <div class="emf" style="margin-bottom:0">
+        <label>Tipologia di Titolarità dell'Immobile</label>
+        ${Rcol("em_tit",[
+          ["proprieta","Proprietà / Usufrutto / Abitazione per decesso del convivente di fatto"],
+          ["locazione","Locazione / Comodato (Atto già registrato o in corso di registrazione)"],
+          ["altro","Altro documento che non necessita di registrazione"]
+        ])}
+      </div>
+    </div>
+
+    <!-- 4: PAGAMENTO -->
+    <div class="em-step" id="ems-pagamento">
+      <div class="em-stitle"><span class="em-snum">5</span>Dati di Pagamento</div>
+      <div class="emr emr2">
+        ${F("em_int","Nome Cognome Intestatario / Rapp. Legale","text","Nome e Cognome")}
+        ${F("em_rsp","Ragione Sociale","text","Es. Azienda Srl")}
+      </div>
+      <div class="emr emr1">${F("em_iban","IBAN","text","IT60 X054 2811 1010 0000 0123 456")}</div>
+      <div class="emr emr2">
+        ${F("em_cfi","C.F. Intestatario","text","Codice Fiscale")}
+        ${F("em_pvp","P.IVA (se impresa)","text","IT12345678901")}
+      </div>
+      <div class="emr emr2">
+        <div class="emf">
+          <label>Tipo Cliente</label>
+          ${R("em_tip",[["b2b","B2B"],["b2c","B2C"]])}
+        </div>
+        ${F("em_sdi","Codice SDI","text","Es. 0000000")}
+      </div>
+    </div>
+
+    <!-- 5: FIRMA -->
+    <div class="em-step" id="ems-firma">
+      <div class="em-stitle"><span class="em-snum">6</span>Luogo e Data di Firma</div>
+      <p style="font-size:12px;color:#7a8099;margin:-4px 0 14px;line-height:1.5">
+        Inserisci luogo e data per le sezioni di firma. La firma manuale sarà apposta sul documento cartaceo.
+      </p>
+      <div class="emr emr2">
+        ${F("em_ld1","Firma 1 — Luogo e Data","text","Es. Roma, 07/03/2026")}
+        ${F("em_ld2","Firma 2 — Luogo e Data (B2B / appuntamento)","text","Es. Roma, 07/03/2026")}
+      </div>
+    </div>
+
+  </div>
+  <div id="__emAct"></div>
+</div>`;
+    document.body.appendChild(ov);
+
+    ov.addEventListener("click", e => { if (e.target === ov) closeModal(); });
+    document.getElementById("__emCloseBtn").addEventListener("click", closeModal);
+
+    // Validazione su tutti gli input / select
+    ov.querySelectorAll("input:not([type=radio]),select").forEach(el => {
+      el.addEventListener("input",  () => validateField(el));
+      el.addEventListener("change", () => validateField(el));
+      el.addEventListener("blur",   () => { if(el.value.trim()) validateField(el); });
     });
 
-    // — Generate PDF handler
-    document.getElementById("__emGenerate").addEventListener("click", generatePreventivoPDF);
+    // Dots
+    const dotsEl = document.getElementById("__emDots");
+    STEPS.forEach((_,i) => {
+      const d = document.createElement("div");
+      d.className = "em-dot";
+      d.id = "__emD"+i;
+      dotsEl.appendChild(d);
+    });
+
+    // Default radio selections
+    const r1 = document.querySelector('input[name="em_for"][value="singola"]');
+    if (r1) r1.checked = true;
+    const r2 = document.querySelector('input[name="em_tip"][value="b2b"]');
+    if (r2) r2.checked = true;
+
+    renderStep(0);
   }
 
-  function unlockField(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.readOnly = false;
-    el.classList.remove("em-locked");
-    el.focus();
+  /* ─── VALIDAZIONE ────────────────────────────────────────────── */
+  function validateField(el) {
+    const ic = document.getElementById(el.id + "_ic");
+    if (!ic) return;
+    const v = el.value.trim();
+    ic.className = v ? "em-icon ok" : "em-icon err";
+    ic.textContent = v ? "✓" : "✕";
   }
 
-  /* ─────────────────────────────────────────────
-   * 3. OPEN / CLOSE
-   * ─────────────────────────────────────────────*/
-  function openModal() {
-    const overlay = document.getElementById("__engineModOverlay");
-    if (overlay) {
-      overlay.classList.add("active");
-      // Scroll to top
-      const box = document.getElementById("__engineModBox");
-      if (box) box.scrollTop = 0;
+  /* ─── NAVIGAZIONE ────────────────────────────────────────────── */
+  function renderStep(idx) {
+    cur = idx;
+    STEPS.forEach((s,i) => {
+      const el = document.getElementById("ems-"+s.id);
+      if (el) el.classList.toggle("em-active", i===idx);
+      const dot = document.getElementById("__emD"+i);
+      if (dot) { dot.className="em-dot"+(i<idx?" em-done":i===idx?" em-cur":""); }
+    });
+    document.getElementById("__emLblName").textContent  = STEPS[idx].lbl;
+    document.getElementById("__emLblCount").textContent = `${idx+1} / ${STEPS.length}`;
+
+    const act = document.getElementById("__emAct");
+    act.innerHTML = "";
+
+    const isFirst = idx===0, isLast = idx===STEPS.length-1;
+
+    if (isFirst) {
+      const c = btn("em-cancel","Annulla"); c.addEventListener("click",closeModal); act.appendChild(c);
+    } else {
+      const b = btn("em-back","← Indietro"); b.addEventListener("click",()=>renderStep(cur-1)); act.appendChild(b);
     }
+    if (!isLast) {
+      const n = btn("em-next","Avanti →"); n.addEventListener("click",()=>renderStep(cur+1)); act.appendChild(n);
+    } else {
+      const g = btn("em-gen","📄 Genera PDF Modulistica"); g.addEventListener("click",generatePDF); act.appendChild(g);
+    }
+
+    document.getElementById("__emBox").scrollTop = 0;
   }
 
-  function closeModal() {
-    const overlay = document.getElementById("__engineModOverlay");
-    if (overlay) overlay.classList.remove("active");
+  function btn(cls, txt) {
+    const b = document.createElement("button");
+    b.className = cls; b.textContent = txt; b.type = "button";
+    return b;
   }
 
-  /* ─────────────────────────────────────────────
-   * 4. PRE-POPOLAMENTO CAMPI
-   * ─────────────────────────────────────────────*/
+  /* ─── OPEN / CLOSE ───────────────────────────────────────────── */
+  function openModal()  { document.getElementById("__emOv").classList.add("active"); }
+  function closeModal() { document.getElementById("__emOv").classList.remove("active"); }
+
+  /* ─── PREFILL ────────────────────────────────────────────────── */
   function prefill(data) {
-    function set(id, val) {
+    const set = (id,val) => {
       const el = document.getElementById(id);
-      if (el && val) el.value = val;
+      if (el && val) { el.value = val; validateField(el); }
+    };
+    const offMap = { FIX:"Fastweb Energia Business Fix", FLEX:"Fastweb Energia Business Flex" };
+    const offVal = offMap[data.offerta] || data.offerta || "";
+    if (offVal) {
+      const r = document.querySelector(`input[name="em_off"][value="${offVal}"]`);
+      if (r) r.checked = true;
     }
-
-    // Dati dall'offerta
-    const offertaLabel = data.offerta === "FIX"
-      ? "Fastweb Energia Business Fix"
-      : data.offerta === "FLEX"
-      ? "Fastweb Energia Business Flex"
-      : (data.offerta || "");
-
-    const contatoreLabel = data.tipoContatore === "MULTI"
-      ? "Multiorario (MULTI)"
-      : data.tipoContatore === "MONO"
-      ? "Monorario (MONO)"
-      : (data.tipoContatore || "");
-
-    set("em_offerta",   offertaLabel);
-    set("em_contatore", contatoreLabel);
-    set("em_ragione",   data.ragioneSociale);
-    set("em_piva",      data.piva);
-    set("em_pod",       data.codicePOD);
-    set("em_indForn",   data.indirizzoPOD);
-
-    // Radio offerta (pre-seleziona tipo fornitura singola di default)
-    const r = document.querySelector('input[name="em_fornitura"][value="singola"]');
-    if (r) r.checked = true;
-
-    // B2B di default per offerta Business
-    const rb2b = document.querySelector('input[name="em_tipo_cliente"][value="b2b"]');
-    if (rb2b) rb2b.checked = true;
+    set("em_rag",  data.ragioneSociale);
+    set("em_piv",  data.piva);
+    set("em_pod",  data.codicePOD);
+    set("em_ifn",  data.indirizzoPOD);
   }
 
-  /* ─────────────────────────────────────────────
-   * 5. RACCOLTA DATI FORM
-   * ─────────────────────────────────────────────*/
-  function collectFormData() {
-    function v(id) {
-      const el = document.getElementById(id);
-      return el ? el.value.trim() : "";
-    }
-    function radio(name) {
-      const el = document.querySelector(`input[name="${name}"]:checked`);
-      return el ? el.value : "";
-    }
-
+  /* ─── COLLECT ────────────────────────────────────────────────── */
+  function collect() {
+    const v = id => { const e=document.getElementById(id); return e?e.value.trim():""; };
+    const r = nm => { const e=document.querySelector(`input[name="${nm}"]:checked`); return e?e.value:""; };
     return {
-      offerta:        v("em_offerta"),
-      contatore:      v("em_contatore"),
-      ragioneSociale: v("em_ragione"),
-      piva:           v("em_piva"),
-      cf:             v("em_cf"),
-      ateco:          v("em_ateco"),
-      legale:         v("em_legale"),
-      indirizzo:      v("em_indirizzo"),
-      cap:            v("em_cap"),
-      comune:         v("em_comune"),
-      provincia:      v("em_provincia"),
-      tel:            v("em_tel"),
-      email:          v("em_email"),
-      pec:            v("em_pec"),
-      tipoDoc:        v("em_tipoDoc"),
-      numDoc:         v("em_numDoc"),
-      dataRil:        v("em_dataRil"),
-      dataScad:       v("em_dataScad"),
-      rilDa:          v("em_rilDa"),
-      nazione:        v("em_nazione"),
-      pod:            v("em_pod"),
-      indForn:        v("em_indForn"),
-      consumo:        v("em_consumo"),
-      potenza:        v("em_potenza"),
-      impianto:       radio("em_impianto"),
-      fornitura:      radio("em_fornitura"),
-      titolarita:     radio("em_titolarita"),
-      intestatario:   v("em_intestatario"),
-      ragPag:         v("em_ragPag"),
-      iban:           v("em_iban"),
-      cfInt:          v("em_cfInt"),
-      tipoCliente:    radio("em_tipo_cliente"),
-      pivaPag:        v("em_pivaPag"),
-      sdi:            v("em_sdi"),
-      luogoData1:     v("em_luogoData1"),
-      luogoData2:     v("em_luogoData2"),
+      offerta:r("em_off"), ragione:v("em_rag"), indirizzo:v("em_ind"), numero:v("em_num"),
+      cap:v("em_cap"), comune:v("em_com"), prov:v("em_prv"), cf:v("em_cf"),
+      piva:v("em_piv"), ateco:v("em_ate"), legale:v("em_leg"), cflegale:v("em_cfl"),
+      tel:v("em_tel"), email:v("em_mai"), pec:v("em_pec"),
+      tipoDoc:v("em_tdc"), numDoc:v("em_ndc"),
+      dataRil:v("em_drl"), dataScad:v("em_dsc"), rilDa:v("em_rda"), nazione:v("em_naz"),
+      pod:v("em_pod"), kwh:v("em_kwh"), kw:v("em_kw"),
+      indForn:v("em_ifn"), numForn:v("em_nfn"), capForn:v("em_cfn"),
+      comuneForn:v("em_cfm"), provForn:v("em_cfp"),
+      impianto:r("em_imp"), fornitura:r("em_for"), titolarita:r("em_tit"),
+      intestatario:v("em_int"), ragPag:v("em_rsp"), iban:v("em_iban"),
+      cfInt:v("em_cfi"), pivaPag:v("em_pvp"), tipoCliente:r("em_tip"), sdi:v("em_sdi"),
+      ld1:v("em_ld1"), ld2:v("em_ld2"),
     };
   }
 
-  /* ─────────────────────────────────────────────
-   * 6. GENERAZIONE PDF (window.print)
-   * ─────────────────────────────────────────────*/
-  function generatePreventivoPDF() {
-    const d = collectFormData();
-
-    const chk = (cond) => cond
-      ? '<span style="font-size:12pt">☑</span>'
-      : '<span style="font-size:12pt;color:#ccc">☐</span>';
-
-    const val = (v, fallback) => v
-      ? `<span style="color:#0f1117;font-weight:500">${escHtml(v)}</span>`
-      : `<span style="color:#c8ccd8">${fallback || "________________________"}</span>`;
-
-    function escHtml(s) {
-      return String(s)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-    }
-
-    const impiantoLabel = d.impianto === "monofase"
-      ? "Monofase (230 V)"
-      : d.impianto === "trifase"
-      ? "Trifase (400 V)"
+  /* ─── GENERA PDF ─────────────────────────────────────────────── */
+  function generatePDF() {
+    const d = collect();
+    const esc = s => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    const V = (v,mono) => v
+      ? `<span${mono?' style="font-family:\'Courier New\',monospace"':''}>${esc(v)}</span>`
       : "";
+    const fmtD = s => { if(!s)return""; const p=s.split("-"); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:s; };
 
-    const fornituraLabel = d.fornitura === "singola"
-      ? "Singola"
-      : d.fornitura === "multisito"
-      ? "Multisito"
-      : "";
+    // Checkbox identica all'originale: quadratino 7x7pt con bordo
+    const CHK = ok => ok
+      ? `<span style="display:inline-block;width:7.5pt;height:7.5pt;
+           border:0.5pt solid #000;background:#000;position:relative;
+           vertical-align:middle;margin-right:2pt;">
+           <span style="position:absolute;inset:0;display:flex;align-items:center;
+           justify-content:center;color:#fff;font-size:6pt;line-height:1;font-weight:900">✓</span>
+         </span>`
+      : `<span style="display:inline-block;width:7.5pt;height:7.5pt;
+           border:0.5pt solid #555;vertical-align:middle;margin-right:2pt;"></span>`;
 
-    const titolaritaLabel = d.titolarita === "proprieta"
-      ? "Proprietà / Usufrutto / Abitazione per decesso del convivente di fatto"
-      : d.titolarita === "locazione"
-      ? "Locazione / Comodato (Atto già registrato o in corso di registrazione)"
-      : d.titolarita === "altro"
-      ? "Altro documento che non necessita di registrazione"
-      : "";
+    // Header sezione: rettangolo bianco con bordo 0.75pt nero
+    const SEC = title =>
+      `<tr><td colspan="4" style="padding:0;padding-top:8pt">
+         <div style="border:0.7pt solid #000;padding:3pt 6pt;
+              font-size:6.5pt;font-weight:700;letter-spacing:.09em;
+              text-transform:uppercase;background:#fff">
+           ${esc(title)}
+         </div>
+       </td></tr>`;
+
+    // Campo con label+valore e riga di sottostante
+    const FL = (lbl,val,mono,w) =>
+      `<td${w?` style="width:${w}"`:''}  style="padding:2.5pt 3pt 0${w?";width:"+w:""}">
+         <div style="font-size:5.5pt;color:#444;margin-bottom:1pt">${esc(lbl)}</div>
+         <div style="border-bottom:0.5pt solid #666;min-height:10pt;
+              padding-bottom:1pt;font-size:7pt">${V(val,mono)||"&nbsp;"}</div>
+       </td>`;
+
+    // Riga firma
+    const FIRMA = (luogoData) =>
+      `<table style="width:100%;border-collapse:collapse;margin-top:5pt">
+         <tr>
+           <td style="width:44%;border-bottom:0.5pt solid #000;padding-bottom:2pt">
+             <span style="font-size:5.5pt;color:#444">Luogo e data &nbsp;&nbsp;/&nbsp;&nbsp;/</span>
+             ${luogoData?`<br><span style="font-size:7pt">${esc(luogoData)}</span>`:""}
+           </td>
+           <td style="width:10%"></td>
+           <td style="width:44%;border-bottom:0.5pt solid #000;padding-bottom:2pt">
+             <span style="font-size:5.5pt;color:#444">Firma</span>
+           </td>
+         </tr>
+       </table>`;
 
     const html = `<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>Preventivo Fastweb Energia – ${escHtml(d.ragioneSociale || "")}</title>
+<title>Preventivo di Fornitura Fastweb Energia</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
   *{margin:0;padding:0;box-sizing:border-box;}
-  body{font-family:'DM Sans',sans-serif;font-size:9pt;color:#111;background:#fff;padding:13mm 14mm;}
-  .hdr{text-align:center;border-bottom:2.5px solid #111;padding-bottom:8px;margin-bottom:10px;}
-  .hdr-top{font-size:6.5pt;color:#666;line-height:1.5;}
-  .hdr-title{font-size:15pt;font-weight:800;margin:7px 0 2px;letter-spacing:.04em;}
-  .hdr-sub{font-size:9.5pt;color:#444;font-weight:600;}
-  .hdr-intro{font-size:7.5pt;color:#666;margin-top:5px;line-height:1.5;}
-  .sec{background:#111;color:#fff;font-size:7.5pt;font-weight:700;letter-spacing:.12em;
-       text-transform:uppercase;padding:4px 9px;margin:10px 0 7px;border-radius:4px;}
-  .row{display:flex;gap:10px;margin-bottom:7px;align-items:flex-end;flex-wrap:wrap;}
-  .fld{flex:1;min-width:80px;}
-  .fld-lbl{font-size:6.5pt;color:#777;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:2px;}
-  .fld-val{border-bottom:1px solid #444;min-height:15px;padding:1px 2px;font-size:8.5pt;}
-  .fld-mono .fld-val{font-family:'DM Mono',monospace;font-size:8pt;}
-  .offer-box{border:1px solid #ddd;padding:7px 10px;margin-bottom:8px;border-radius:4px;}
-  .offer-cols{display:flex;gap:20px;}
-  .offer-col-title{font-size:7.5pt;font-weight:700;text-decoration:underline;margin-bottom:4px;}
-  .offer-item{font-size:8pt;margin-bottom:3px;}
-  .chk-row{display:flex;flex-wrap:wrap;gap:5px 14px;margin-bottom:7px;align-items:center;}
-  .chk-item{display:flex;align-items:center;gap:4px;font-size:8pt;}
-  .firma-box{border:1px solid #bbb;padding:8px 10px;margin-top:10px;border-radius:4px;}
-  .firma-row{display:flex;gap:28px;margin-top:7px;align-items:flex-end;}
-  .firma-line{border-bottom:1px solid #444;flex:1;min-height:18px;}
-  .print-btn{position:fixed;bottom:18px;right:18px;background:#1a3a6b;color:#fff;
-             border:none;padding:11px 22px;border-radius:8px;font-size:12pt;
-             font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.2);}
-  .print-btn:hover{background:#2255aa;}
-  @media print{.print-btn{display:none!important;} body{padding:8mm 10mm;}}
+  body{font-family:Arial,Helvetica,sans-serif;font-size:7pt;color:#000;
+       background:#fff;padding:13mm 14mm 10mm;-webkit-print-color-adjust:exact;}
+  table{width:100%;border-collapse:collapse;}
+  .pbtn{position:fixed;bottom:14px;right:14px;background:#1a3a6b;color:#fff;
+        border:none;padding:10px 20px;border-radius:8px;font-family:Arial,sans-serif;
+        font-size:12px;font-weight:700;cursor:pointer;
+        box-shadow:0 4px 14px rgba(0,0,0,.22);}
+  .pbtn:hover{background:#2255aa;}
+  @media print{.pbtn{display:none!important;}body{padding:8mm 10mm;}}
 </style>
 </head>
 <body>
 
-<div class="hdr">
-  <div class="hdr-top">
-    Fastweb S.p.A. — Sede legale e amministrativa Piazza Adriano Olivetti, 1, 20139 Milano — Tel. [+39] 02.45451<br>
-    Capitale Sociale euro 41.344.209,40 i.v. — C.F., P.IVA e Iscrizione Reg. Imprese MI 12878470157<br>
-    N. Iscr. Reg. AEE: IT08020000003838 — N. Iscr. Reg. Pile e Acc.: IT09100P00001900 — Contributo Ambientale CONAI assolto<br>
-    Società soggetta all'attività di direzione e coordinamento di Swisscom AG — Settembre 2024
+<!-- intestazione -->
+<div style="display:flex;align-items:flex-start;gap:8pt;
+     border-bottom:0.5pt solid #000;padding-bottom:6pt;margin-bottom:8pt;">
+  <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:5pt;
+       color:#555;white-space:nowrap;border-right:0.5pt solid #ccc;
+       padding-right:3pt;margin-right:3pt;line-height:1.4">
+    Settembre 2024
   </div>
-  <div class="hdr-title">RICHIESTA DI PREVENTIVO</div>
-  <div class="hdr-sub">Fastweb Energia – Energia Elettrica</div>
-  <div class="hdr-intro">
-    Il cliente, di seguito indicato, richiede a Fastweb S.p.A. Società a socio unico e soggetta all'attività di
-    direzione e coordinamento di Swisscom AG, con sede legale e amministrativa in Piazza Adriano Olivetti, 1,
-    20139 Milano, la fornitura di energia elettrica.
-  </div>
-</div>
-
-<!-- NOME OFFERTA -->
-<div class="sec">Nome Offerta</div>
-<div class="offer-box">
-  <div class="offer-cols">
-    <div>
-      <div class="offer-col-title">Consumer:</div>
-      <div class="offer-item">${chk(false)} Fastweb Energia Light</div>
-      <div class="offer-item">${chk(false)} Fastweb Energia Full</div>
-      <div class="offer-item">${chk(false)} Fastweb Energia Maxi</div>
-      <div class="offer-item">${chk(false)} Fastweb Energia Flex</div>
-      <div class="offer-item">${chk(false)} Fastweb Energia Fix</div>
-    </div>
-    <div>
-      <div class="offer-col-title">Business:</div>
-      <div class="offer-item">${chk(d.offerta === "Fastweb Energia Business Flex" || d.offerta === "FLEX")} Fastweb Energia Business Flex</div>
-      <div class="offer-item">${chk(d.offerta === "Fastweb Energia Business Fix" || d.offerta === "FIX")} Fastweb Energia Business Fix</div>
+  <div>
+    <div style="font-size:5.5pt;color:#444;line-height:1.6">
+      Fastweb S.p.A. - Sede legale e amministrativa Piazza Adriano Olivetti, 1, 20139 Milano
+      &nbsp;Tel. [+39] 02.45451 &nbsp;Capitale Sociale euro 41.344.209,40 i.v. -<br>
+      Codice Fiscale, Partita IVA e Iscrizione nel Registro Imprese di Milano 12878470157
+      &nbsp;Fastweb S.p.A. N. Iscr. Reg. AEE: IT08020000003838 - N. Iscr. Reg. Pile e Acc.: IT09100P00001900 -<br>
+      Contributo Ambientale CONAI assolto - Società soggetta all'attività di direzione e coordinamento di Swisscom AG
     </div>
   </div>
 </div>
 
-<!-- DATI ANAGRAFICI -->
-<div class="sec">Dati Anagrafici e di Residenza</div>
-<div class="row"><div class="fld" style="flex:3">
-  <div class="fld-lbl">Ragione Sociale</div>
-  <div class="fld-val">${val(d.ragioneSociale)}</div>
-</div></div>
-<div class="row">
-  <div class="fld" style="flex:3"><div class="fld-lbl">Indirizzo Sede Legale</div><div class="fld-val">${val(d.indirizzo)}</div></div>
-  <div class="fld" style="flex:.6"><div class="fld-lbl">CAP</div><div class="fld-val">${val(d.cap, "_____")}</div></div>
-</div>
-<div class="row">
-  <div class="fld" style="flex:3"><div class="fld-lbl">Comune</div><div class="fld-val">${val(d.comune)}</div></div>
-  <div class="fld" style="flex:.5"><div class="fld-lbl">Prov.</div><div class="fld-val">${val(d.provincia, "__")}</div></div>
-</div>
-<div class="row">
-  <div class="fld fld-mono"><div class="fld-lbl">Codice Fiscale</div><div class="fld-val">${val(d.cf, "________________")}</div></div>
-  <div class="fld fld-mono"><div class="fld-lbl">P.IVA</div><div class="fld-val">${val(d.piva, "___________")}</div></div>
-  <div class="fld"><div class="fld-lbl">ATECO</div><div class="fld-val">${val(d.ateco, "________")}</div></div>
-</div>
-<div class="row">
-  <div class="fld"><div class="fld-lbl">Legale Rappresentante</div><div class="fld-val">${val(d.legale)}</div></div>
-</div>
-<div class="row">
-  <div class="fld"><div class="fld-lbl">Tipo Documento</div><div class="fld-val">${val(d.tipoDoc)}</div></div>
-  <div class="fld fld-mono"><div class="fld-lbl">Numero Documento</div><div class="fld-val">${val(d.numDoc)}</div></div>
-</div>
-<div class="row">
-  <div class="fld"><div class="fld-lbl">Data Rilascio</div><div class="fld-val">${val(d.dataRil, "__/__/____")}</div></div>
-  <div class="fld"><div class="fld-lbl">Data Scadenza</div><div class="fld-val">${val(d.dataScad, "__/__/____")}</div></div>
-  <div class="fld"><div class="fld-lbl">Rilasciato da</div><div class="fld-val">${val(d.rilDa)}</div></div>
-  <div class="fld"><div class="fld-lbl">Nazione di Rilascio</div><div class="fld-val">${val(d.nazione)}</div></div>
-</div>
-<div class="row">
-  <div class="fld fld-mono"><div class="fld-lbl">Telefono / Cellulare</div><div class="fld-val">${val(d.tel)}</div></div>
-</div>
-<div class="row">
-  <div class="fld"><div class="fld-lbl">E-mail</div><div class="fld-val">${val(d.email)}</div></div>
-  <div class="fld"><div class="fld-lbl">PEC</div><div class="fld-val">${val(d.pec)}</div></div>
+<!-- titolo -->
+<div style="text-align:center;margin-bottom:8pt">
+  <div style="font-size:12pt;font-weight:700;letter-spacing:.03em">RICHIESTA DI PREVENTIVO</div>
+  <div style="font-size:8pt;margin-top:2pt">Fastweb Energia - Energia Elettrica</div>
 </div>
 
-<!-- DATI TECNICI -->
-<div class="sec">Dati Tecnici di Fornitura</div>
-<div class="row">
-  <div class="fld fld-mono" style="flex:2"><div class="fld-lbl">Codice POD</div><div class="fld-val">${val(d.pod, "IT___E_______________")}</div></div>
-  <div class="fld"><div class="fld-lbl">Consumo (kWh/anno)</div><div class="fld-val">${val(d.consumo)}</div></div>
-  <div class="fld" style="flex:.7"><div class="fld-lbl">Pot. Imp. (kW)</div><div class="fld-val">${val(d.potenza)}</div></div>
-  <div class="fld" style="flex:.5"><div class="fld-lbl">Tensione</div><div class="fld-val">BT</div></div>
-</div>
-<div class="row">
-  <div class="fld" style="flex:3"><div class="fld-lbl">Indirizzo di Fornitura POD</div><div class="fld-val">${val(d.indForn)}</div></div>
-</div>
-<div class="chk-row" style="margin-top:4px">
-  <span style="font-size:7pt;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#777">Tipologia impianto:</span>
-  <span class="chk-item">${chk(d.impianto==="monofase")} Monofase (230 V)</span>
-  <span class="chk-item">${chk(d.impianto==="trifase")} Trifase (400 V)</span>
-  <span style="font-size:7pt;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#777;margin-left:12px">Tipo Fornitura:</span>
-  <span class="chk-item">${chk(d.fornitura==="singola")} Singola</span>
-  <span class="chk-item">${chk(d.fornitura==="multisito")} Multisito</span>
-</div>
-<div style="margin-top:5px;font-size:7pt;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#777;margin-bottom:4px">Titolarità immobile:</div>
-<div class="chk-row">
-  <span class="chk-item">${chk(d.titolarita==="proprieta")} Proprietà / Usufrutto / Abitazione per decesso del convivente di fatto</span>
-  <span class="chk-item">${chk(d.titolarita==="locazione")} Locazione / Comodato (Atto già registrato o in corso di registrazione)</span>
-  <span class="chk-item">${chk(d.titolarita==="altro")} Altro documento che non necessita di registrazione</span>
+<!-- intro -->
+<div style="font-size:7pt;line-height:1.5;margin-bottom:7pt">
+  Il cliente, di seguito indicato, richiede a Fastweb S.p.A. Società a socio unico e soggetta
+  all'attività di direzione e coordinamento di Swisscom AG, con sede legale e
+  di energia elettrica.
 </div>
 
-<!-- DATI PAGAMENTO -->
-<div class="sec">Dati di Pagamento</div>
-<div class="row">
-  <div class="fld"><div class="fld-lbl">Intestatario / Rapp. Legale</div><div class="fld-val">${val(d.intestatario)}</div></div>
-  <div class="fld"><div class="fld-lbl">Ragione Sociale</div><div class="fld-val">${val(d.ragPag)}</div></div>
-</div>
-<div class="row">
-  <div class="fld fld-mono" style="flex:2"><div class="fld-lbl">IBAN</div><div class="fld-val">${val(d.iban, "IT__ ____ ____ ____ ____ ____ ___")}</div></div>
-  <div class="fld fld-mono"><div class="fld-lbl">C.F. Intestatario</div><div class="fld-val">${val(d.cfInt, "________________")}</div></div>
-</div>
-<div class="row">
-  <div class="fld fld-mono"><div class="fld-lbl">P.IVA</div><div class="fld-val">${val(d.pivaPag)}</div></div>
-  <div class="fld" style="flex:.6"><div class="fld-lbl">Tipo</div><div class="fld-val">${d.tipoCliente ? (d.tipoCliente==="b2b" ? "☑ B2B  ☐ B2C" : "☐ B2B  ☑ B2C") : "☐ B2B  ☐ B2C"}</div></div>
-  <div class="fld"><div class="fld-lbl">Codice SDI</div><div class="fld-val">${val(d.sdi)}</div></div>
+<!-- offerta -->
+<div style="margin-bottom:6pt">
+  <div style="font-size:7pt;font-weight:700;margin-bottom:4pt">NOME OFFERTA:</div>
+  <table>
+    <tr>
+      <td style="vertical-align:top;width:50%;padding-right:12pt">
+        <div style="font-size:6pt;font-weight:700;margin-bottom:3pt">Consumer:</div>
+        ${["Fastweb Energia Light","Fastweb Energia Full","Fastweb Energia Maxi","Fastweb Energia Flex","Fastweb Energia Fix"].map(o=>
+          `<div style="margin-bottom:2pt">${CHK(d.offerta===o)} <span style="font-size:6.5pt">${o}</span></div>`
+        ).join("")}
+      </td>
+      <td style="vertical-align:top">
+        <div style="font-size:6pt;font-weight:700;margin-bottom:3pt">Business:</div>
+        ${["Fastweb Energia Business Flex","Fastweb Energia Business Fix"].map(o=>
+          `<div style="margin-bottom:2pt">${CHK(d.offerta===o)} <span style="font-size:6.5pt">${o}</span></div>`
+        ).join("")}
+      </td>
+    </tr>
+  </table>
 </div>
 
-<!-- FIRMA -->
-<div class="firma-box">
-  <div style="font-size:7.5pt;line-height:1.5;color:#555">
-    Il Cliente dichiara di aver letto e compreso tutte le clausole contrattuali e di accettare le condizioni
-    relative all'offerta sopra indicata, nonché di aver ricevuto l'informativa privacy.
+<!-- dati anagrafici -->
+<table>
+  ${SEC("DATI ANAGRAFICI E DI RESIDENZA")}
+  <tr>${FL("Nome e Cognome (Ragione Sociale se Impresa)",d.ragione,false)}</tr>
+  <tr>
+    ${FL("Indirizzo di Residenza (Sede Legale se Impresa)",d.indirizzo,false,"65%")}
+    ${FL("N°",d.numero,false,"8%")}
+    ${FL("CAP",d.cap,false)}
+  </tr>
+  <tr>
+    <td colspan="3" style="padding:2.5pt 3pt 0">
+      <div style="font-size:5.5pt;color:#444;margin-bottom:1pt">Comune</div>
+      <div style="border-bottom:0.5pt solid #666;min-height:10pt;padding-bottom:1pt;font-size:7pt">${V(d.comune)||"&nbsp;"}</div>
+    </td>
+    ${FL("Prov.",d.prov,false,"8%")}
+  </tr>
+  <tr>
+    ${FL("Codice Fiscale",d.cf,true,"33%")}
+    ${FL("P.IVA (se Impresa)",d.piva,true,"33%")}
+    ${FL("ATECO (se Impresa)",d.ateco)}
+  </tr>
+  <tr>${FL("Nome e Cognome del Legale Rappresentante (se Impresa)",d.legale)}</tr>
+  <tr>${FL("C.F. del legale rappresentante (se Impresa)",d.cflegale,true)}</tr>
+  <tr>
+    ${FL("Tipo di Documento",d.tipoDoc,false,"50%")}
+    ${FL("Numero Documento",d.numDoc,true)}
+  </tr>
+  <tr>
+    ${FL("Data di rilascio",fmtD(d.dataRil),false,"20%")}
+    ${FL("Data di scadenza",fmtD(d.dataScad),false,"20%")}
+    ${FL("Rilasciato da",d.rilDa,false,"35%")}
+    ${FL("Nazione di Rilascio",d.nazione)}
+  </tr>
+  <tr>${FL("Numero di cellulare di riferimento",d.tel,true)}</tr>
+  <tr>
+    <td style="padding:2.5pt 3pt 0;width:50%">
+      <div style="font-size:5.5pt;color:#444;margin-bottom:1pt">E-mail</div>
+      <div style="border-bottom:0.5pt solid #666;min-height:10pt;padding-bottom:1pt;font-size:7pt">
+        ${d.email?`${esc(d.email.split("@")[0])} <span style="color:#555">@</span> ${esc(d.email.split("@")[1]||"")}`:
+                  `<span style="color:#aaa">@</span>`}
+      </div>
+    </td>
+    <td style="padding:2.5pt 2pt 0">
+      <div style="font-size:5.5pt;color:#444;margin-bottom:1pt">PEC</div>
+      <div style="border-bottom:0.5pt solid #666;min-height:10pt;padding-bottom:1pt;font-size:7pt">
+        ${d.pec?`${esc(d.pec.split("@")[0])} <span style="color:#555">@</span> ${esc(d.pec.split("@")[1]||"")}`:
+                `<span style="color:#aaa">@</span>`}
+      </div>
+    </td>
+  </tr>
+</table>
+
+<!-- dati tecnici -->
+<table style="margin-top:2pt">
+  ${SEC("DATI TECNICI DI FORNITURA")}
+  <tr>
+    ${FL("Codice POD",d.pod,true,"35%")}
+    ${FL("Consumo (kWh/anno)",d.kwh,false,"25%")}
+    ${FL("Pot. Imp. (kW)",d.kw,false,"18%")}
+    ${FL("Tensione","BT",false)}
+  </tr>
+  <tr>
+    ${FL("Indirizzo di Fornitura (se diverso da Residenza)",d.indForn,false,"65%")}
+    ${FL("N°",d.numForn,false,"8%")}
+    ${FL("CAP",d.capForn)}
+  </tr>
+  <tr>
+    <td colspan="3" style="padding:2.5pt 3pt 0">
+      <div style="font-size:5.5pt;color:#444;margin-bottom:1pt">Comune</div>
+      <div style="border-bottom:0.5pt solid #666;min-height:10pt;padding-bottom:1pt;font-size:7pt">${V(d.comuneForn)||"&nbsp;"}</div>
+    </td>
+    ${FL("Prov.",d.provForn,false,"8%")}
+  </tr>
+  <tr>
+    <td colspan="4" style="padding:4pt 3pt 0;font-size:7pt">
+      <span style="font-size:5.5pt;color:#444">Tipologia impianto:</span>&nbsp;
+      ${CHK(d.impianto==="monofase")} <span style="margin-right:12pt">Monofase (230 V)</span>
+      ${CHK(d.impianto==="trifase")} <span style="margin-right:20pt">Trifase (400V)</span>
+      <span style="font-size:5.5pt;color:#444">Tipo di Fornitura:</span>&nbsp;
+      ${CHK(d.fornitura==="singola")} <span style="margin-right:10pt">Singola</span>
+      ${CHK(d.fornitura==="multisito")} Multisito (Compilare l'ALLEGATO MULTISITO)
+    </td>
+  </tr>
+  <tr>
+    <td colspan="4" style="padding:4pt 3pt 0;font-size:7pt">
+      <div style="font-size:5.5pt;color:#444;margin-bottom:2pt">Tipologia di titolarità dell'immobile:</div>
+      ${CHK(d.titolarita==="proprieta")} Proprietà/ Usufrutto/ Abitazione per decesso del convivente di fatto<br>
+      <span style="margin-top:2pt;display:inline-block">
+        ${CHK(d.titolarita==="locazione")} Locazione/ Comodato (Atto già registrato o in corso di registrazione)
+        &nbsp;&nbsp;${CHK(d.titolarita==="altro")} Altro documento che non necessita di registrazione
+      </span>
+    </td>
+  </tr>
+</table>
+
+<!-- dati pagamento -->
+<table style="margin-top:2pt">
+  ${SEC("DATI DI PAGAMENTO")}
+  <tr>
+    ${FL("Nome e Cognome intestatario/Rapp. Legale",d.intestatario,false,"50%")}
+    ${FL("Ragione Sociale",d.ragPag)}
+  </tr>
+  <tr>
+    ${FL("C.F. Intestatario",d.cfInt,true,"30%")}
+    ${FL("IBAN",d.iban,true)}
+  </tr>
+  <tr>
+    ${FL("P.IVA (se impresa)",d.pivaPag,true,"30%")}
+    <td style="padding:2.5pt 3pt 0">
+      <div style="font-size:5.5pt;color:#444;margin-bottom:1pt">Tipo</div>
+      <div style="font-size:7pt;padding-top:3pt">
+        ${CHK(d.tipoCliente==="b2c")} <span style="margin-right:10pt">B2C</span>
+        ${CHK(d.tipoCliente==="b2b")} <span style="margin-right:18pt">B2B</span>
+        <span style="font-size:5.5pt;color:#444">Codice SDI</span>
+        <span style="display:inline-block;border-bottom:0.5pt solid #666;
+               min-width:50pt;font-family:'Courier New',monospace">${V(d.sdi)||"&nbsp;"}</span>
+      </div>
+    </td>
+  </tr>
+</table>
+
+<!-- firme -->
+<div style="margin-top:8pt;border:0.5pt solid #aaa;padding:6pt 7pt">
+  <div style="font-size:6.5pt;line-height:1.5;margin-bottom:6pt">
+    [... le informazioni precontrattuali necessarie a perfezionare la conclusione del contratto
+    relativo all'offerta sopra indicata.]
   </div>
-  <div class="firma-row">
-    <div style="flex:1.5"><div style="font-size:7pt;color:#777;margin-bottom:2px">Luogo e data</div>
-      <div class="firma-line">${val(d.luogoData1, "________________________, __ / __ / ____")}</div></div>
-    <div style="flex:1"><div style="font-size:7pt;color:#777;margin-bottom:2px">Firma</div>
-      <div class="firma-line"></div></div>
+  ${FIRMA(d.ld1)}
+  <div style="font-size:6.5pt;line-height:1.5;margin-top:10pt;margin-bottom:6pt">
+    [... le informazioni precontrattuali necessarie a perfezionare la conclusione del contratto
+    la cui proposta è avvenuta nell'ambito di un appuntamento per la proposizione dei servizi
+    Fastweb all'azienda <span style="border-bottom:0.5pt solid #000;display:inline-block;min-width:50pt">&nbsp;</span>.]
   </div>
-  <div style="margin-top:10px;font-size:7.5pt;line-height:1.5;color:#555">
-    Il Cliente dichiara altresì di aver ricevuto la proposta contrattuale nell'ambito di un appuntamento per la
-    proposizione dei servizi Fastweb all'azienda.
-  </div>
-  <div class="firma-row">
-    <div style="flex:1.5"><div style="font-size:7pt;color:#777;margin-bottom:2px">Luogo e data</div>
-      <div class="firma-line">${val(d.luogoData2, "________________________, __ / __ / ____")}</div></div>
-    <div style="flex:1"><div style="font-size:7pt;color:#777;margin-bottom:2px">Firma</div>
-      <div class="firma-line"></div></div>
-  </div>
+  ${FIRMA(d.ld2)}
 </div>
 
-<button class="print-btn" onclick="window.print()">🖨️ Stampa / Salva PDF</button>
-</body>
-</html>`;
+<button class="pbtn" onclick="window.print()">🖨️ Stampa / Salva PDF</button>
+</body></html>`;
 
-    const w = window.open("", "_blank");
-    if (!w) {
-      alert("Popup bloccato dal browser.\nConsenti i popup per questa pagina e riprova.");
-      return;
-    }
+    const w = window.open("","_blank");
+    if (!w) { alert("Popup bloccato dal browser.\nConsenti i popup e riprova."); return; }
     w.document.write(html);
     w.document.close();
     closeModal();
   }
 
-  /* ─────────────────────────────────────────────
-   * 7. ENTRY POINT PUBBLICO
-   * ─────────────────────────────────────────────*/
-  global.openModulistica = function (data) {
+  /* ─── ENTRY POINT ────────────────────────────────────────────── */
+  G.openModulistica = function(data) {
     buildModal();
+    renderStep(0);
     prefill(data || {});
     openModal();
   };
