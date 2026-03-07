@@ -646,8 +646,8 @@ body{padding:3mm 11mm 20mm;}
 .firma-right{flex:1;display:flex;align-items:flex-end;gap:4pt;}
 .firma-right .firma-label{font-size:7pt;color:#444;white-space:nowrap;}
 .firma-right .fline{flex:1;border-bottom:0.5pt solid #000;}
-.firma-x{font-size:26pt;font-weight:900;line-height:1;
-  border-bottom:0.5pt solid #000;flex:0 0 auto;padding:0 3pt;}
+.firma-x{font-size:22pt;font-weight:900;line-height:1;
+  display:inline-block;vertical-align:middle;margin-left:6pt;}
 
 /* data verticale */
 .side-date{position:fixed;bottom:30mm;left:2mm;
@@ -907,11 +907,8 @@ ${SEC("DATI DI PAGAMENTO")}
       <div class="fline">${d.ld2 ? `<span class="fv">${e(d.ld2)}</span>` : `${dots(14)}<span style="color:#aaa">/</span>${dots(6)}<span style="color:#aaa">/</span>${dots(8)}`}</div>
     </div>
     <div class="firma-right">
-      <div class="firma-label">Firma</div>
-      <div style="display:flex;align-items:flex-end;flex:1;gap:4pt;">
-        <div style="border-bottom:0.5pt solid #000;flex:1;min-height:20pt">&nbsp;</div>
-        <div class="firma-x">&#x2715;</div>
-      </div>
+      <div class="firma-label">Firma &nbsp;&nbsp;&nbsp;&nbsp; <span class="firma-x">&#x2715;</span></div>
+      <div style="border-bottom:0.5pt solid #000;flex:1;min-height:20pt;width:100%">&nbsp;</div>
     </div>
   </div>
 </div>
@@ -938,6 +935,10 @@ ${SEC("DATI DI PAGAMENTO")}
       iframe.contentDocument.write(html);
       iframe.contentDocument.close();
 
+      // Aspetta rendering completo poi misura altezza reale del body
+      const iBody = iframe.contentDocument.body;
+      // Forza altezza iframe uguale al body per evitare pagina bianca
+      iframe.style.height = iBody.scrollHeight + 'px';
       setTimeout(() => {
         const iDoc = iframe.contentDocument.documentElement;
         window.html2canvas(iDoc, {
@@ -945,7 +946,9 @@ ${SEC("DATI DI PAGAMENTO")}
           useCORS: true,
           allowTaint: true,
           width: 794,
+          height: iBody.scrollHeight,
           windowWidth: 794,
+          windowHeight: iBody.scrollHeight,
           logging: false,
         }).then(canvas => {
           const imgData = canvas.toDataURL("image/jpeg", 0.95);
