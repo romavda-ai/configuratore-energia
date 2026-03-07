@@ -579,88 +579,88 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#000;
   background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-body{padding:3mm 11mm 18mm;}
+body{padding:3mm 11mm 20mm;}
 
 /* header */
-.top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2pt;}
-.top-left h1{font-size:14pt;font-weight:700;line-height:1.1;margin-bottom:1pt;}
-.top-left .sub{font-size:8.5pt;}
+.top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:3pt;}
+.top-left h1{font-size:15pt;font-weight:700;line-height:1.1;margin-bottom:2pt;}
+.top-left .sub{font-size:9pt;margin-bottom:2pt;}
 
 
 
 /* intro */
-.intro{font-size:7pt;line-height:1.4;margin-bottom:3pt;}
+.intro{font-size:7.5pt;line-height:1.5;margin-bottom:4pt;}
 
 /* NOME OFFERTA box */
-.offerta-box{border:0.5pt solid #bbb;padding:3pt 5pt;margin-bottom:0;}
-.off-title{font-size:8pt;font-weight:700;margin-bottom:2pt;}
-.off-grid{display:flex;gap:10pt;}
-.off-col-title{font-size:7pt;font-weight:700;margin-bottom:2pt;}
-.off-item{display:flex;align-items:center;gap:3pt;margin-bottom:1.5pt;font-size:7pt;}
+.offerta-box{border:0.5pt solid #bbb;padding:4pt 6pt;margin-bottom:0;}
+.off-title{font-size:9pt;font-weight:700;margin-bottom:3pt;}
+.off-grid{display:flex;gap:14pt;}
+.off-col-title{font-size:7.5pt;font-weight:700;margin-bottom:2.5pt;}
+.off-item{display:flex;align-items:center;gap:3pt;margin-bottom:2.5pt;font-size:7.5pt;}
 
 /* sezione header arancione */
-.sec{background:#F5A01E;color:#fff;font-size:8pt;font-weight:700;
-  text-transform:uppercase;letter-spacing:.07em;
-  padding:2pt 5pt;margin-top:3pt;margin-bottom:2pt;}
+.sec{background:#F5A01E;color:#fff;font-size:8.5pt;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;
+  padding:3pt 6pt;margin-top:4pt;margin-bottom:3pt;}
 
 /* righe campi */
-.frows{display:flex;flex-wrap:wrap;gap:0 4pt;margin-bottom:2pt;align-items:flex-end;}
+.frows{display:flex;flex-wrap:wrap;gap:0 4pt;margin-bottom:3pt;align-items:flex-end;}
 .fr{flex:1;min-width:0;}
-.fl{font-size:6pt;color:#444;margin-bottom:0.5pt;white-space:nowrap;}
-.fline{border-bottom:0.5pt solid #777;min-height:9pt;font-size:8pt;
-  padding-bottom:0.5pt;white-space:nowrap;overflow:hidden;}
+.fl{font-size:6.5pt;color:#444;margin-bottom:1pt;white-space:nowrap;}
+.fline{border-bottom:0.5pt solid #777;min-height:11pt;font-size:8.5pt;
+  padding-bottom:1pt;white-space:nowrap;overflow:hidden;}
 .dt{color:#bbb;letter-spacing:.5pt;}
 .fv{font-weight:400;}
 
 /* celle quadrate */
 .cells{display:inline-flex;gap:0;}
-.cell{display:inline-block;width:7pt;height:9pt;border:0.4pt solid #888;
-  text-align:center;font-size:6pt;line-height:9pt;
+.cell{display:inline-block;width:7.5pt;height:9.5pt;border:0.4pt solid #888;
+  text-align:center;font-size:6.5pt;line-height:9.5pt;
   font-family:'Courier New',monospace;font-weight:500;}
 
 /* IBAN celle */
 .iban{display:inline-flex;gap:1.5pt;flex-wrap:nowrap;}
-.ic{display:inline-block;width:8.5pt;height:10pt;border:0.5pt solid #555;
-  text-align:center;font-size:7pt;line-height:10pt;
+.ic{display:inline-block;width:8.5pt;height:10.5pt;border:0.5pt solid #555;
+  text-align:center;font-size:7pt;line-height:10.5pt;
   font-family:'Courier New',monospace;font-weight:600;}
 
 /* checkbox */
-.chk{display:inline-block;width:7pt;height:7pt;border:0.5pt solid #555;
+.chk{display:inline-block;width:7.5pt;height:7.5pt;border:0.5pt solid #555;
   vertical-align:middle;margin-right:2pt;
-  text-align:center;font-size:6pt;line-height:7pt;font-weight:900;}
+  text-align:center;font-size:6.5pt;line-height:7.5pt;font-weight:900;}
 .chk1{background:#000;color:#fff;border-color:#000;}
 .chk0{background:#fff;}
 
 /* riga inline radio/check */
-.irow{font-size:7pt;margin-bottom:1.5pt;display:flex;flex-wrap:wrap;
-  align-items:center;gap:2pt 8pt;}
+.irow{font-size:7.5pt;margin-bottom:2.5pt;display:flex;flex-wrap:wrap;
+  align-items:center;gap:2pt 9pt;}
 .isep{color:#bbb;margin:0 2pt;}
 
 /* firma */
-.firma-wrap{margin-top:3pt;}
-.firma-txt{font-size:6.5pt;line-height:1.4;margin-bottom:2pt;}
-.firma-fields{display:flex;gap:10pt;align-items:flex-end;margin-top:2pt;}
+.firma-wrap{margin-top:5pt;}
+.firma-txt{font-size:7pt;line-height:1.5;margin-bottom:3pt;}
+.firma-fields{display:flex;gap:10pt;align-items:flex-end;margin-top:3pt;}
 .firma-ld{flex:1.3;}
 .firma-ld .fl{font-size:7pt;color:#444;}
 .firma-ld .fline{border-bottom:0.5pt solid #000;}
 .firma-right{flex:1;display:flex;align-items:flex-end;gap:4pt;}
 .firma-right .firma-label{font-size:7pt;color:#444;white-space:nowrap;}
 .firma-right .fline{flex:1;border-bottom:0.5pt solid #000;}
-.firma-x{font-size:24pt;font-weight:900;line-height:1;
+.firma-x{font-size:26pt;font-weight:900;line-height:1;
   border-bottom:0.5pt solid #000;flex:0 0 auto;padding:0 3pt;}
 
 /* data verticale */
-.side-date{position:fixed;bottom:36mm;left:3mm;
+.side-date{position:fixed;bottom:30mm;left:2mm;
   writing-mode:vertical-rl;transform:rotate(180deg);
-  font-size:6pt;color:#999;letter-spacing:.5pt;}
+  font-size:5pt;color:#999;letter-spacing:.3pt;}
 
 /* footer fisso */
-.footer{position:fixed;bottom:5mm;left:11mm;right:11mm;
-  font-size:6pt;color:#555;text-align:center;
+.footer{position:fixed;bottom:4mm;left:11mm;right:11mm;
+  font-size:5.5pt;color:#555;text-align:center;
   border-top:0.3pt solid #ccc;padding-top:2pt;line-height:1.6;}
 
 @media print{
-  body{padding:2mm 9mm 14mm;}
+  body{padding:2mm 10mm 18mm;}
 }
 </style></head><body>
 
@@ -722,7 +722,7 @@ ${SEC("DATI ANAGRAFICI E DI RESIDENZA")}
   <div class="fr" style="flex:.75"><div class="fl">CAP</div>
     <div class="fline">${CELLS(d.cap,5)}</div></div>
 </div>
-<div style="font-size:5.5pt;color:#555;margin-bottom:2pt;margin-top:-1pt">(Sede Legale se Impresa)</div>
+<div style="font-size:5pt;color:#555;margin-bottom:1pt;margin-top:-0.5pt">(Sede Legale se Impresa)</div>
 
 <div class="frows">
   <div class="fr" style="flex:4"><div class="fl">Comune</div>
@@ -814,7 +814,7 @@ ${SEC("DATI TECNICI DI FORNITURA")}
   <div class="fr" style="flex:.75"><div class="fl">CAP</div>
     <div class="fline">${CELLS(d.cfn,5)}</div></div>
 </div>
-<div style="font-size:5.5pt;color:#555;margin-bottom:2pt;margin-top:-1pt">(se diverso da Residenza)</div>
+<div style="font-size:5pt;color:#555;margin-bottom:1pt;margin-top:-0.5pt">(se diverso da Residenza)</div>
 
 <div class="frows">
   <div class="fr" style="flex:4"><div class="fl">Comune</div>
