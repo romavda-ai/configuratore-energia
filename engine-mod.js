@@ -1,5 +1,5 @@
 /**
- * engine-mod.js  v5.0
+ * engine-mod.js  v5.1
  * ─ Shadow DOM: isolamento CSS totale dal documento host
  * ─ Navigazione step-by-step (Avanti / Indietro)
  * ─ Validazione live ✓ verde / ✕ rosso su ogni campo
@@ -124,6 +124,7 @@
   border-color: ${ORANGE};
   box-shadow: 0 0 0 3px rgba(245,160,30,.18);
 }
+.ef input::placeholder { font-style: italic; color: #b0b8cc; font-weight: 400; opacity: 1; }
 .ef input.inh { background: #fffbf0; border-color: rgba(245,160,30,.45); }
 .ef input[type=date] { font-size: 12px; }
 .ef select { appearance: none; -webkit-appearance: none; padding-right: 28px; cursor: pointer; }
@@ -280,22 +281,31 @@
 .pod-body { padding: 14px; display: grid; gap: 10px; }
 .pod-body.collapsed { display: none; }
 
-/* Campo dentro pod (stessa struttura .ef ma con classe locale) */
+/* Campo dentro pod — identico a .ef con icona ✓/✕ */
 .pf { display: flex; flex-direction: column; gap: 4px; }
 .pf label {
   font-size: 10px; font-weight: 700; color: #999;
   text-transform: uppercase; letter-spacing: .06em; display: block;
 }
+.pf-w { position: relative; }
 .pf input {
-  width: 100%; height: 40px; padding: 0 11px;
-  border: 1.5px solid #e0e6ee; border-radius: 9px;
+  width: 100%; height: 40px; padding: 0 30px 0 11px;
+  border: 1.5px solid rgba(15,17,23,.14); border-radius: 9px;
   font-size: 13px; color: #2c2f3a; background: #fff;
   font-family: inherit; outline: none;
-  transition: border-color .15s, box-shadow .15s;
+  transition: border-color .14s, box-shadow .14s;
+  box-shadow: 0 1px 2px rgba(15,17,23,.05);
 }
-.pf input:focus { border-color: ${ORANGE}; box-shadow: 0 0 0 3px rgba(245,160,30,.13); }
-.pf input.valid   { border-color: #22c55e; }
-.pf input.invalid { border-color: #ef4444; }
+.pf input:focus { border-color: ${ORANGE}; box-shadow: 0 0 0 3px rgba(245,160,30,.18); }
+.pf input:hover:not(:focus) { border-color: rgba(245,160,30,.4); }
+.pf input::placeholder { font-style: italic; color: #b0b8cc; font-weight: 400; opacity: 1; }
+.pf .pi {
+  position: absolute; right: 9px; top: 50%; transform: translateY(-50%);
+  font-size: 13px; font-weight: 900; pointer-events: none;
+  opacity: 0; transition: opacity .18s; line-height: 1;
+}
+.pf .pi.ok  { color: #1a7a3c; opacity: 1; }
+.pf .pi.err { color: #c42b2b; opacity: 1; }
 
 .pod-radio-group { display: flex; flex-direction: column; gap: 6px; }
 .pod-radio-label {
@@ -421,29 +431,29 @@
       <div class="stitle"><span class="sn">2</span>Dati Anagrafici e di Residenza</div>
       <div class="gr g1">${F("a_rag","Nome e Cognome / Ragione Sociale (se Impresa)","text","Es. Mario Rossi / Azienda Srl")}</div>
       <div class="gr" style="grid-template-columns:2fr 70px 95px">
-        ${F("a_ind","Indirizzo di Residenza / Sede Legale","text","Via/Piazza...")}
-        ${F("a_num","N°","text","1")}
-        ${F("a_cap","CAP","text","00000")}
+        ${F("a_ind","Indirizzo di Residenza / Sede Legale","text","Es. Via Roma")}
+        ${F("a_num","N°","text","Es. 1")}
+        ${F("a_cap","CAP","text","Es. 00100")}
       </div>
       <div class="gr" style="grid-template-columns:1fr 68px">
-        ${F("a_com","Comune","text","Roma")}
-        ${F("a_prv","Prov.","text","RM")}
+        ${F("a_com","Comune","text","Es. Roma")}
+        ${F("a_prv","Prov.","text","Es. RM")}
       </div>
       <div class="gr g3">
-        ${F("a_cf","Codice Fiscale","text","RSSMRA80A01H501A")}
-        ${F("a_piv","P.IVA (se Impresa)","text","IT12345678901")}
-        ${F("a_ate","ATECO (se Impresa)","text","35.14.00")}
+        ${F("a_cf","Codice Fiscale","text","Es. RSSMRA80A01H501A")}
+        ${F("a_piv","P.IVA (se Impresa)","text","Es. IT12345678901")}
+        ${F("a_ate","ATECO (se Impresa)","text","Es. 35.14.00")}
       </div>
       <div class="gr" style="grid-template-columns:1.6fr 1fr">
-        ${F("a_leg","Legale Rappresentante (se Impresa)","text","Nome e Cognome")}
-        ${F("a_cfl","C.F. Legale Rappresentante","text","Codice Fiscale")}
+        ${F("a_leg","Legale Rappresentante (se Impresa)","text","Es. Mario Rossi")}
+        ${F("a_cfl","C.F. Legale Rappresentante","text","Es. RSSMRA80A01H501A")}
       </div>
       <div class="ehr"></div>
       <div class="gr g2">
-        ${F("a_tel","Cellulare di Riferimento","tel","+39 3xx xxx xxxx")}
-        ${F("a_mai","E-mail","email","nome@azienda.it")}
+        ${F("a_tel","Cellulare di Riferimento","tel","Es. +39 3xx xxx xxxx")}
+        ${F("a_mai","E-mail","email","Es. nome@azienda.it")}
       </div>
-      <div class="gr g1">${F("a_pec","PEC","email","nome@pec.it")}</div>`,
+      <div class="gr g1">${F("a_pec","PEC","email","Es. nome@pec.it")}</div>`,
 
     documento: `
       <div class="stitle"><span class="sn">3</span>Documento di Identità</div>
@@ -820,25 +830,25 @@
       <div class="pod-body" id="${nm}_body">
         <div class="gr" style="grid-template-columns:2fr 1fr 1fr">
           <div class="pf"><label>Codice POD</label>
-            <input type="text" placeholder="IT001E00000000" data-field="pod" data-pod-id="${nm}"></div>
+            <div class="pf-w"><input type="text" placeholder="Es. IT001E00000000" data-field="pod" data-pod-id="${nm}"><span class="pi"></span></div></div>
           <div class="pf"><label>Consumo (kWh/anno)</label>
-            <input type="number" placeholder="Es. 10000" data-field="kwh"></div>
+            <div class="pf-w"><input type="number" placeholder="Es. 10000" data-field="kwh"><span class="pi"></span></div></div>
           <div class="pf"><label>Pot. Imp. (kW)</label>
-            <input type="number" placeholder="Es. 6" data-field="kw"></div>
+            <div class="pf-w"><input type="number" placeholder="Es. 6" data-field="kw"><span class="pi"></span></div></div>
         </div>
         <div class="gr" style="grid-template-columns:2fr 70px 95px">
           <div class="pf"><label>Indirizzo Fornitura</label>
-            <input type="text" placeholder="Via..." data-field="ifn"></div>
+            <div class="pf-w"><input type="text" placeholder="Es. Via Roma" data-field="ifn"><span class="pi"></span></div></div>
           <div class="pf"><label>N°</label>
-            <input type="text" placeholder="1" data-field="nfn"></div>
+            <div class="pf-w"><input type="text" placeholder="Es. 1" data-field="nfn"><span class="pi"></span></div></div>
           <div class="pf"><label>CAP</label>
-            <input type="text" placeholder="00000" maxlength="5" data-field="cfn"></div>
+            <div class="pf-w"><input type="text" placeholder="Es. 00100" maxlength="5" data-field="cfn"><span class="pi"></span></div></div>
         </div>
         <div class="gr" style="grid-template-columns:1fr 68px">
           <div class="pf"><label>Comune</label>
-            <input type="text" placeholder="Roma" data-field="cfm"></div>
+            <div class="pf-w"><input type="text" placeholder="Es. Roma" data-field="cfm"><span class="pi"></span></div></div>
           <div class="pf"><label>Prov.</label>
-            <input type="text" placeholder="RM" maxlength="3" data-field="cfp"></div>
+            <div class="pf-w"><input type="text" placeholder="Es. RM" maxlength="3" data-field="cfp"><span class="pi"></span></div></div>
         </div>
         <div>
           <div class="pod-radio-label">Tipologia Impianto</div>
@@ -870,18 +880,21 @@
         </div>
       </div>`;
 
-    // Validazione live sui campi del pod
+    // Validazione live sui campi del pod — icona ✓/✕ come nei campi normali
     card.querySelectorAll(".pf input").forEach(inp => {
       inp.addEventListener("input", () => {
-        const v = inp.value.trim();
-        inp.classList.toggle("valid",   v.length > 0);
-        inp.classList.toggle("invalid", v.length === 0);
-        // Aggiorna preview codice POD
+        const ok = inp.value.trim() !== "";
+        const ic = inp.parentElement.querySelector(".pi");
+        if (ic) { ic.className = ok ? "pi ok" : "pi err"; ic.textContent = ok ? "✓" : "✕"; }
+        // Aggiorna preview codice POD nell'header
         if (inp.dataset.podId) {
           const prev = shadow.getElementById(inp.dataset.podId + "_preview");
-          if (prev) prev.textContent = v ? " — " + v : "";
+          if (prev) prev.textContent = ok ? " — " + inp.value.trim() : "";
         }
       });
+      // Stato iniziale: ✕ su campo vuoto
+      const ic = inp.parentElement.querySelector(".pi");
+      if (ic) { ic.className = "pi err"; ic.textContent = "✕"; }
     });
 
     list.appendChild(card);
@@ -1110,37 +1123,36 @@ ${SEC("DATI ANAGRAFICI E DI RESIDENZA")}
 
 ${SEC("DATI TECNICI DI FORNITURA")}
 <div class="frows">
-  <div class="fr" style="flex:1.6"><div class="fl">Codice POD</div><div class="fline">${CELLS(d.pod,14)}</div></div>
-  <div class="fr" style="flex:1.2"><div class="fl">Consumo (kWh/anno)</div><div class="fline">${CELLS(d.kwh,8)}</div></div>
-  <div class="fr" style="flex:1"><div class="fl">Pot. Imp. (kW)</div><div class="fline">${CELLS(d.kw,6)}</div></div>
+  <div class="fr" style="flex:1.6"><div class="fl">Codice POD</div><div class="fline">${d.forn==="multisito" ? dots(14) : CELLS(d.pod,14)}</div></div>
+  <div class="fr" style="flex:1.2"><div class="fl">Consumo (kWh/anno)</div><div class="fline">${d.forn==="multisito" ? dots(8) : CELLS(d.kwh,8)}</div></div>
+  <div class="fr" style="flex:1"><div class="fl">Pot. Imp. (kW)</div><div class="fline">${d.forn==="multisito" ? dots(6) : CELLS(d.kw,6)}</div></div>
   <div class="fr" style="flex:.5"><div class="fl">Tensione</div><div class="fline"><strong>BT</strong></div></div>
 </div>
 <div class="frows">
-  <div class="fr" style="flex:3.5"><div class="fl">Indirizzo di Fornitura</div><div class="fline">${V(d.ifn,40)}</div></div>
-  <div class="fr" style="flex:.45"><div class="fl">N°</div><div class="fline">${CELLS(d.nfn,4)}</div></div>
-  <div class="fr" style="flex:.75"><div class="fl">CAP</div><div class="fline">${CELLS(d.cfn,5)}</div></div>
+  <div class="fr" style="flex:3.5"><div class="fl">Indirizzo di Fornitura</div><div class="fline">${d.forn==="multisito" ? dots(40) : V(d.ifn,40)}</div></div>
+  <div class="fr" style="flex:.45"><div class="fl">N°</div><div class="fline">${d.forn==="multisito" ? dots(4) : CELLS(d.nfn,4)}</div></div>
+  <div class="fr" style="flex:.75"><div class="fl">CAP</div><div class="fline">${d.forn==="multisito" ? dots(5) : CELLS(d.cfn,5)}</div></div>
 </div>
 <div style="font-size:5pt;color:#555;margin-bottom:1pt;margin-top:-0.5pt">(se diverso da Residenza)</div>
 <div class="frows">
-  <div class="fr" style="flex:4"><div class="fl">Comune</div><div class="fline">${V(d.cfm,50)}</div></div>
-  <div class="fr" style="flex:.5"><div class="fl">Prov.</div><div class="fline">${CELLS(d.cfp,2)}</div></div>
+  <div class="fr" style="flex:4"><div class="fl">Comune</div><div class="fline">${d.forn==="multisito" ? dots(50) : V(d.cfm,50)}</div></div>
+  <div class="fr" style="flex:.5"><div class="fl">Prov.</div><div class="fline">${d.forn==="multisito" ? dots(2) : CELLS(d.cfp,2)}</div></div>
 </div>
 <div class="irow">
   <span>Tipologia impianto:</span>
-  ${CHK(d.imp==="monofase")} <span>Monofase (230 V)</span>
-  ${CHK(d.imp==="trifase")} <span>Trifase (400V)</span>
+  ${d.forn==="multisito" ? `${CHK(false)} <span>Monofase (230 V)</span> ${CHK(false)} <span>Trifase (400V)</span>` : `${CHK(d.imp==="monofase")} <span>Monofase (230 V)</span> ${CHK(d.imp==="trifase")} <span>Trifase (400V)</span>`}
   <span class="isep">|</span>
   <span>Tipo di Fornitura:</span>
   ${CHK(d.forn==="singola")} <span>Singola</span>
-  ${CHK(d.forn==="multisito")} <span>Multisito (Compilare l'ALLEGATO MULTISITO)</span>
+  &nbsp;${CHK(d.forn==="multisito")} <span>Multisito (Compilare l'ALLEGATO MULTISITO)</span>
 </div>
 <div class="irow" style="margin-bottom:1pt">
   <span>Tipologia di titolarità dell'immobile:</span>
-  ${CHK(d.tit==="proprieta")} <span>Proprietà/ Usufrutto/ Abitazione per decesso del convivente di fatto</span>
+  ${d.forn==="multisito" ? CHK(false) : CHK(d.tit==="proprieta")} <span>Proprietà/ Usufrutto/ Abitazione per decesso del convivente di fatto</span>
 </div>
 <div class="irow">
-  ${CHK(d.tit==="locazione")} <span>Locazione/ Comodato (Atto già registrato o in corso di registrazione)</span>
-  ${CHK(d.tit==="altro")} <span>Altro documento che non necessita di registrazione</span>
+  ${d.forn==="multisito" ? CHK(false) : CHK(d.tit==="locazione")} <span>Locazione/ Comodato (Atto già registrato o in corso di registrazione)</span>
+  ${d.forn==="multisito" ? CHK(false) : CHK(d.tit==="altro")} <span>Altro documento che non necessita di registrazione</span>
 </div>
 
 ${SEC("DATI DI PAGAMENTO")}
@@ -1203,7 +1215,7 @@ ${SEC("DATI DI PAGAMENTO")}
 </div>
 
 <div class="footer">
-  Fastweb S.p.A. - Sede legale e amministrativa Piazza Adriano Olivetti, 1, 20139 Milano Tel. [+39] 02.45451 Capitale Sociale euro 41.344.209,40 i.v. -<br>
+  Fastweb S.p.A. - Sede legale e amministrativa Piazza Adriano Olivetti, 1, 20139 Milano Tel. (+39) 02.45451 Capitale Sociale euro 41.344.209,40 i.v. -<br>
   Codice Fiscale, Partita IVA e Iscrizione nel Registro Imprese di Milano 12878470157 Fastweb S.p.A. N. Iscr. Reg. AEE: IT08020000003838 - N. Iscr. Reg. Pile e Acc.: IT09100P00001900 -<br>
   Contributo Ambientale CONAI assolto - Società soggetta all'attività di direzione e coordinamento di Swisscom AG
 </div>
@@ -1286,9 +1298,9 @@ ${SEC("DATI DI PAGAMENTO")}
       return '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Allegato Multisito</title><style>'
         +'*{margin:0;padding:0;box-sizing:border-box;}'
         +'html,body{font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#000;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
-        +'body{padding:4mm 11mm 20mm;}'
+        +'body{padding:4mm 11mm 22mm;}'
         +'.sec{background:#F5A01E;color:#fff;font-size:8.5pt;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2.5pt 6pt;margin-bottom:4pt;}'
-        +'.footer{position:fixed;bottom:4mm;left:11mm;right:11mm;font-size:5pt;color:#555;text-align:center;border-top:0.3pt solid #ccc;padding-top:2pt;line-height:1.6;}'
+        +'.footer{position:fixed;bottom:0;left:0;right:0;padding:2pt 11mm 3pt;font-size:4.8pt;color:#555;text-align:center;border-top:0.4pt solid #bbb;background:#fff;line-height:1.6;}'
         +'.sidedate{position:fixed;bottom:30mm;left:2mm;writing-mode:vertical-rl;transform:rotate(180deg);font-size:5pt;color:#999;letter-spacing:.3pt;}'
         +'</style></head><body>'
         +'<div style="margin-bottom:5pt;"><div style="font-size:15pt;font-weight:700;line-height:1.1;">ALLEGATO MULTISITO</div>'
@@ -1322,7 +1334,7 @@ ${SEC("DATI DI PAGAMENTO")}
           +'</div>'
         +'</div>'
         +'<div class="sidedate">Settembre 2024</div>'
-        +'<div class="footer">Fastweb S.p.A. - Sede legale e amministrativa Piazza Adriano Olivetti, 1, 20139 Milano Tel. [+39] 02.45451 Capitale Sociale euro 41.344.209,40 i.v. -<br>'
+        +'<div class="footer">Fastweb S.p.A. - Sede legale e amministrativa Piazza Adriano Olivetti, 1, 20139 Milano Tel. (+39) 02.45451 Capitale Sociale euro 41.344.209,40 i.v. -<br>'
         +'Codice Fiscale, Partita IVA e Iscrizione nel Registro Imprese di Milano 12878470157 Fastweb S.p.A. N. Iscr. Reg. AEE: IT08020000003838 - N. Iscr. Reg. Pile e Acc.: IT09100P00001900 -<br>'
         +'Contributo Ambientale CONAI assolto - Societ\u00e0 soggetta all\u2019attivit\u00e0 di direzione e coordinamento di Swisscom AG</div>'
         +'</body></html>';
