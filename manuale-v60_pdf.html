@@ -1051,7 +1051,7 @@ function FS(v){ return v * __PDF_FONT_SCALE; }
 // Se presente, ./newconfig.json viene caricato all'avvio e applicato a tutti.
 // Dal pannello Admin, al click su "Salva e applica" viene anche scaricato automaticamente un nuovo newconfig.json.
 const CONFIG_FILE = "./newconfig.json";
-const AUTOLOAD_CONFIG = false; // evita fetch automatico con 404 se newconfig.json non esiste
+const AUTOLOAD_CONFIG = true; // evita fetch automatico con 404 se newconfig.json non esiste
 
 function downloadJSON(filename, obj){
   const json = JSON.stringify(obj, null, 2);
