@@ -289,10 +289,10 @@
         <label>Tipo di Fornitura</label>
         ${R("t_for",[["singola","Singola"],["multisito","Multisito (compilare l'Allegato Multisito)"]])}
       </div>
-      <!-- Badge POD 1 — visibile solo quando multisito è selezionato -->
-      <div class="ms-main-badge" id="ms-main-badge">
-        <span class="ms-pod-num">1</span>
-        <span style="font-size:12px;font-weight:700;color:#555;letter-spacing:.02em">POD</span>
+      <!-- Badge "1 POD" — appare solo quando multisito è selezionato -->
+      <div id="pod-main-badge">
+        <span class="pod-num">1</span>
+        <span style="font-size:12px;font-weight:700;color:#444;letter-spacing:.03em">POD</span>
       </div>
       <div class="gr" style="grid-template-columns:2fr 1fr 1fr">
         ${F("t_pod","Codice POD","text","IT001E00000000")}
@@ -320,16 +320,16 @@
           ["altro","Altro documento che non necessita di registrazione"]
         ])}
       </div>
-      <!-- ══ SEZIONE POD AGGIUNTIVI — visibile solo in multisito ══ -->
-      <div class="ms-section" id="ms-section">
-        <hr class="ms-sep">
-        <div class="ms-sec-lbl">POD Aggiuntivi</div>
-        <div class="ms-pod-list" id="ms-pod-list"></div>
-        <button type="button" class="ms-add-btn" id="ms-add-btn">
-          <span class="ap">+</span> Aggiungi POD
+      <!-- ══ SEZIONE POD AGGIUNTIVI (solo multisito) ══ -->
+      <div id="multisito-section">
+        <hr class="ms-divider">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#999;margin-bottom:10px">POD Aggiuntivi</div>
+        <div class="pod-list" id="ms-pod-list"></div>
+        <button class="btn-add-pod" onclick="addPod()">
+          <span class="plus-icon">+</span> Aggiungi POD
         </button>
-        <div class="ms-counter" id="ms-counter" style="display:none">
-          Aggiuntivi: <b id="ms-count">0</b> &nbsp;(totale con principale: <b id="ms-total">1</b>)
+        <div class="pod-counter" id="pod-counter" style="display:none">
+          Totale POD: <span id="pod-count">0</span> aggiuntivi (+ 1 principale)
         </div>
       </div>
     </div>
@@ -366,8 +366,16 @@
     // chiudi overlay
     ov.addEventListener("click", e => { if(e.target===ov) closeModal(); });
     document.getElementById("__emX").addEventListener("click", closeModal);
-    // Toggle sezione multisito quando cambia Tipo Fornitura
-    ov.addEventListener("change", function(e) { if(e.target.name==="t_for") msToggleSec(e.target.value); });
+    // Toggle sezione multisito
+    ov.addEventListener("change", e => {
+      if (e.target.name === "t_for") {
+        const on = e.target.value === "multisito";
+        const sec   = document.getElementById("multisito-section");
+        const badge = document.getElementById("pod-main-badge");
+        if (sec)   sec.classList.toggle("visible", on);
+        if (badge) badge.classList.toggle("ms-on", on);
+      }
+    });
 
     // validazione live — X rossa di default, verde appena compilato
     ov.querySelectorAll("input:not([type=radio]),select").forEach(el => {
@@ -541,13 +549,17 @@
       pod:v("t_pod"), kwh:v("t_kwh"), kw:v("t_kw"),
       ifn:v("t_ifn"), nfn:v("t_nfn"), cfn:v("t_cfn"), cfm:v("t_cfm"), cfp:v("t_cfp"),
       imp:r("t_imp"), forn:r("t_for"), tit:r("t_tit"),
-      extraPods: (function() {
-        var pods = [];
-        document.querySelectorAll(".ms-pod-card").forEach(function(card) {
-          var g = function(f) { var el=card.querySelector("[data-field=\""+f+"\"]"); return el?el.value.trim():""; };
-          var chk = function(nm) { var el=card.querySelector("input[name=\""+nm+"\"]:checked"); return el?el.value:""; };
-          pods.push({pod:g("pod"),kwh:g("kwh"),kw:g("kw"),ifn:g("ifn"),nfn:g("nfn"),cfn:g("cfn"),cfm:g("cfm"),cfp:g("cfp"),
-            imp:chk("ms_imp_"+card.dataset.idx), tit:chk("ms_tit_"+card.dataset.idx)});
+      extraPods: (() => {
+        const pods = [];
+        document.querySelectorAll('#ms-pod-list .pod-card').forEach(card => {
+          const g = f => card.querySelector('[data-field="'+f+'"]')?.value?.trim()||'';
+          const idx = card.dataset.idx;
+          pods.push({
+            pod:g('pod'), kwh:g('kwh'), kw:g('kw'),
+            ifn:g('ifn'), nfn:g('nfn'), cfn:g('cfn'), cfm:g('cfm'), cfp:g('cfp'),
+            imp: card.querySelector('input[name="ms_imp_'+idx+'"]:checked')?.value||'',
+            tit: card.querySelector('input[name="ms_tit_'+idx+'"]:checked')?.value||''
+          });
         });
         return pods;
       })(),
@@ -560,23 +572,45 @@
      GENERA PDF  — identico a Modulo_energia_monosito.pdf
   ════════════════════════════════════════════════════ */
   function generatePDF() {
-    var d = collect();
-    var isMulti = (d.forn === "multisito");
-    var allPods = [{pod:d.pod,kwh:d.kwh,kw:d.kw,ifn:d.ifn,nfn:d.nfn,cfn:d.cfn,cfm:d.cfm,cfp:d.cfp,imp:d.imp,tit:d.tit}].concat(d.extraPods||[]);
-    var today = new Date();
-    var todayStr = today.toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit",year:"numeric"});
+    const d = collect();
+    const todayStr = new Date().toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit",year:"numeric"});
+    const e  = s => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    const fd = s => { if(!s)return""; const p=s.split("-"); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:s; };
 
-    var e   = function(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");};
-    var fd  = function(s){if(!s)return"";var p=s.split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:s;};
-    var dots= function(n){return '<span class="dt">'+Array(n+1).join(".")+'</span>';};
-    var V   = function(val,n){n=n||40;return val?'<span class="fv">'+e(val)+'</span>':dots(n);};
-    var CELLS=function(val,n){var ch=(val||"").replace(/\s/g,"").split("");var r="";for(var k=0;k<n;k++)r+='<span class="cell">'+(ch[k]||"")+"</span>";return'<span class="cells">'+r+"</span>";};
-    var IBAN=function(val){var ch=(val||"").replace(/\s/g,"").toUpperCase().split("");var r="";for(var k=0;k<27;k++)r+='<span class="ic">'+(ch[k]||"")+"</span>";return'<span class="iban">'+r+"</span>";};
-    var CHK =function(ok){return ok?'<span class="chk chk1">&#x2713;</span>':'<span class="chk chk0"></span>';};
-    var SEC =function(t){return'<div class="sec">'+e(t)+"</div>";};
-    var FR  =function(lbl,val,wlbl,mono,n){return'<div class="fr"'+(wlbl?' style="flex:'+wlbl+'"':"")+'>'+
-      '<div class="fl">'+e(lbl)+'</div><div class="fline">'+(mono?CELLS(val,n||16):V(val,n||40))+'</div></div>';};
+    /* ── puntini tratteggiati come sull'originale ── */
+    const dots = n => `<span class="dt">${Array(n+1).join(".")}</span>`;
 
+    /* ── valore o puntini ── */
+    const V = (val, n=40) => val ? `<span class="fv">${e(val)}</span>` : dots(n);
+
+    /* ── celle quadrate (CF, PIVA, POD, CAP…) ── */
+    const CELLS = (val, n) => {
+      const ch = (val||"").replace(/\s/g,"").split("");
+      return `<span class="cells">${Array.from({length:n},(_,i)=>
+        `<span class="cell">${e(ch[i]||"")}</span>`).join("")}</span>`;
+    };
+
+    /* ── IBAN: celle grandi con separatori ── */
+    const IBAN = val => {
+      const ch = (val||"").replace(/\s/g,"").toUpperCase().split("");
+      return `<span class="iban">${Array.from({length:27},(_,i)=>
+        `<span class="ic">${e(ch[i]||"")}</span>`).join("")}</span>`;
+    };
+
+    /* ── checkbox come sull'originale ── */
+    const CHK = ok => ok
+      ? `<span class="chk chk1">&#x2713;</span>`
+      : `<span class="chk chk0"></span>`;
+
+    /* ── header sezione arancione ── */
+    const SEC = t => `<div class="sec">${e(t)}</div>`;
+
+    /* ── riga di campo con label e tratteggio ── */
+    const FR = (lbl,val,wlbl,mono,n) =>
+      `<div class="fr" ${wlbl?`style="flex:${wlbl}"`:""}><div class="fl">${e(lbl)}</div>
+       <div class="fline">${mono?CELLS(val,n||16):V(val,n||40)}</div></div>`;
+
+    const LOGO = ``;
 
     const html = `<!DOCTYPE html>
 <html lang="it"><head><meta charset="UTF-8">
@@ -656,41 +690,43 @@ body{padding:3mm 11mm 20mm;}
   display:inline-block;vertical-align:middle;margin-left:6pt;}
 
 
-/* ── Multisito POD ── */
-.ms-main-badge{display:none;align-items:center;gap:8px;margin-bottom:12px;padding:6px 10px;
-  background:#fff8ee;border-radius:10px;border:1.5px solid #F5A01E;}
-.ms-main-badge.ms-on{display:flex;}
-.ms-pod-num{background:#F5A01E;color:#fff;border-radius:6px;width:22px;height:22px;
-  display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
-.ms-section{display:none;margin-top:16px;}
-.ms-section.ms-on{display:block;}
-.ms-sep{border:none;border-top:1.5px solid #f0f0f0;margin:0 0 12px;}
-.ms-sec-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;margin-bottom:10px;}
-.ms-pod-list{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
-.ms-pod-card{border:1.5px solid #ebebeb;border-radius:12px;overflow:hidden;}
-.ms-pod-card:focus-within{border-color:#F5A01E;box-shadow:0 0 0 3px rgba(245,160,30,.12);}
-.ms-pod-hdr{display:flex;align-items:center;justify-content:space-between;
-  padding:8px 12px;background:#f9f9f9;border-bottom:1px solid #f0f0f0;cursor:pointer;user-select:none;}
-.ms-pod-hdr:hover{background:#f5f5f5;}
-.ms-pod-hdr-left{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:#333;}
-.ms-pod-prev{font-size:11px;color:#bbb;font-weight:400;}
-.ms-pod-hdr-right{display:flex;align-items:center;gap:6px;}
-.ms-chv{background:none;border:none;cursor:pointer;color:#bbb;font-size:14px;padding:2px 4px;
-  transition:transform .2s;line-height:1;}
-.ms-chv.collapsed{transform:rotate(-90deg);}
-.ms-rm{background:none;border:1px solid #f5c5c5;border-radius:7px;cursor:pointer;
-  color:#d94f4f;font-size:11px;padding:2px 9px;font-weight:600;line-height:1.5;transition:all .15s;}
-.ms-rm:hover{background:#fff0f0;border-color:#d94f4f;}
-.ms-pod-body{padding:12px;display:grid;gap:9px;}
-.ms-pod-body.collapsed{display:none;}
-.ms-add-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
-  padding:11px;border:2px dashed #F5A01E;border-radius:12px;background:#fffcf4;
-  color:#c47f00;font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;margin-bottom:6px;}
-.ms-add-btn:hover{background:#fff5d6;border-color:#c47f00;transform:translateY(-1px);}
-.ms-add-btn .ap{width:22px;height:22px;background:#F5A01E;color:#fff;border-radius:6px;
-  display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0;}
-.ms-counter{font-size:11px;color:#bbb;text-align:right;margin-top:4px;}
-.ms-counter b{color:#F5A01E;}
+/* ─── Multisito ─── */
+#pod-main-badge{display:none;align-items:center;gap:8px;margin-bottom:10px;}
+#pod-main-badge.ms-on{display:flex;}
+#multisito-section{display:none;margin-top:16px;animation:fadeSlide .25s ease;}
+#multisito-section.visible{display:block;}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.pod-list{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
+.pod-card{border:1.5px solid #e8e8e8;border-radius:12px;overflow:hidden;transition:box-shadow .18s;}
+.pod-card:focus-within{box-shadow:0 0 0 3px rgba(245,160,30,.18);border-color:#F5A01E;}
+.pod-card-header{display:flex;align-items:center;justify-content:space-between;
+  padding:9px 14px;background:#fafafa;border-bottom:1px solid #f0f0f0;cursor:pointer;user-select:none;}
+.pod-card-header:hover{background:#f5f5f5;}
+.pod-badge{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#444;letter-spacing:.03em;}
+.pod-num{background:#F5A01E;color:#fff;border-radius:6px;width:22px;height:22px;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
+.pod-preview{font-size:11px;color:#aaa;font-weight:400;margin-left:4px;}
+.pod-card-actions{display:flex;align-items:center;gap:6px;}
+.btn-collapse{background:none;border:none;cursor:pointer;color:#aaa;font-size:16px;
+  padding:2px 4px;line-height:1;transition:color .15s,transform .2s;}
+.btn-collapse:hover{color:#555;}
+.btn-collapse.collapsed{transform:rotate(-90deg);}
+.btn-remove{background:none;border:1px solid #f0c0c0;border-radius:7px;cursor:pointer;
+  color:#e05555;font-size:12px;padding:3px 8px;font-weight:600;transition:all .15s;line-height:1.4;}
+.btn-remove:hover{background:#fff0f0;border-color:#e05555;}
+.pod-card-body{padding:14px;display:grid;gap:10px;}
+.pod-card-body.collapsed{display:none;}
+.btn-add-pod{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  padding:11px;border:2px dashed #F5A01E;border-radius:12px;background:#fffbf2;
+  color:#d4860a;font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;letter-spacing:.02em;}
+.btn-add-pod:hover{background:#fff3d6;border-color:#d4860a;transform:translateY(-1px);
+  box-shadow:0 4px 12px rgba(245,160,30,.18);}
+.btn-add-pod:active{transform:translateY(0);}
+.btn-add-pod .plus-icon{width:22px;height:22px;background:#F5A01E;color:#fff;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0;}
+.pod-counter{text-align:right;font-size:11px;color:#bbb;margin-top:6px;font-weight:500;}
+.pod-counter span{color:#F5A01E;font-weight:700;}
+.ms-divider{border:none;border-top:1.5px solid #f0f0f0;margin:20px 0 12px;}
 /* data verticale */
 .side-date{position:fixed;bottom:30mm;left:2mm;
   writing-mode:vertical-rl;transform:rotate(180deg);
@@ -964,89 +1000,124 @@ ${SEC("DATI DI PAGAMENTO")}
 
 </body></html>`;
 
-    /* ══════════ ALLEGATO MULTISITO ══════════ */
-    function buildMultisitoPage(pods, d) {
-      function CE(val,n){var ch=(val||"").replace(/\s/g,"").split("");var r="";
-        var cellStyle='display:inline-block;width:7pt;height:9pt;border:0.4pt solid #888;text-align:center;font-size:6pt;line-height:9pt;font-family:Courier New,monospace;';
-        for(var k=0;k<n;k++)r+='<span style="'+cellStyle+'">'+(ch[k]||"")+"</span>";
-        return'<span style="display:inline-flex;gap:0;">'+r+"</span>";}
-      function TX(val,n){n=n||40;
-        return val?'<span style="font-weight:400;">'+String(val||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</span>'
-          :'<span style="color:#bbb;letter-spacing:.5pt;">'+Array(n+1).join(".")+"</span>";}
-      function MK(ok){return ok
-        ?'<span style="display:inline-block;width:8pt;height:8pt;border:0.5pt solid #555;background:#000;text-align:center;line-height:8pt;font-size:5.5pt;color:#fff">&#x2713;</span>'
-        :'<span style="display:inline-block;width:8pt;height:8pt;border:0.5pt solid #555;background:#fff"></span>';}
+    // Genera PDF reale via iframe nascosto + jsPDF + html2canvas
+    const btn = document.querySelector(".btn-gen");
+    if (btn) { btn.textContent = "⏳ Generazione PDF..."; btn.disabled = true; }
 
-      var podBlocks = pods.map(function(p,i){
-        var ri='display:flex;gap:4pt;margin-bottom:2pt;align-items:flex-end;';
-        var lbl='font-size:5.5pt;color:#666;margin-bottom:1pt;';
-        var bot='border-bottom:0.5pt solid #777;';
+    /* ══ Render HTML → PDF page ══ */
+    function renderPage(htmlStr, pdfInst, addPage) {
+      return new Promise((resolve, reject) => {
+        const iframe = document.createElement("iframe");
+        iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:794px;height:1123px;border:none;";
+        document.body.appendChild(iframe);
+        iframe.contentDocument.open();
+        iframe.contentDocument.write(htmlStr);
+        iframe.contentDocument.close();
+        const iBody = iframe.contentDocument.body;
+        iframe.style.height = iBody.scrollHeight + "px";
+        setTimeout(() => {
+          window.html2canvas(iframe.contentDocument.documentElement, {
+            scale:2, useCORS:true, allowTaint:true,
+            width:794, height:iBody.scrollHeight,
+            windowWidth:794, windowHeight:iBody.scrollHeight, logging:false
+          }).then(canvas => {
+            const pW=210, pH=297;
+            const trimH = Math.min(canvas.height, Math.round(canvas.width*(pH/pW)));
+            const tc = document.createElement("canvas");
+            tc.width=canvas.width; tc.height=trimH;
+            tc.getContext("2d").drawImage(canvas,0,0,canvas.width,trimH,0,0,canvas.width,trimH);
+            if (addPage) pdfInst.addPage();
+            pdfInst.addImage(tc.toDataURL("image/jpeg",0.95),"JPEG",0,0,pW,pW*(trimH/canvas.width));
+            document.body.removeChild(iframe);
+            resolve();
+          }).catch(err => { document.body.removeChild(iframe); reject(err); });
+        }, 700);
+      });
+    }
+
+    /* ══ Allegato multisito HTML ══ */
+    function buildMultisitoPage(pods) {
+      const e2 = s => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+      const TX = (v,n) => v ? '<span style="font-weight:400">'+e2(v)+'</span>' : '<span style="color:#bbb">'+'.'.repeat(n||40)+'</span>';
+      const CE = (v,n) => {
+        const ch=(v||"").replace(/\s/g,"").split("");
+        let r=""; for(let k=0;k<n;k++) r+='<span style="display:inline-block;width:7pt;height:9pt;border:0.4pt solid #888;text-align:center;font-size:6pt;line-height:9pt;font-family:Courier New,monospace">'+(ch[k]||"")+"</span>";
+        return '<span style="display:inline-flex;gap:0">'+r+"</span>";
+      };
+      const MK = ok => ok
+        ? '<span style="display:inline-block;width:8pt;height:8pt;border:0.5pt solid #555;background:#000;text-align:center;line-height:8pt;font-size:5.5pt;color:#fff">&#x2713;</span>'
+        : '<span style="display:inline-block;width:8pt;height:8pt;border:0.5pt solid #555;background:#fff;border:0.5pt solid #555"></span>';
+
+      const podBlocks = pods.map((p,i) => {
+        const ro = 'display:flex;gap:4pt;margin-bottom:2pt;align-items:flex-end;';
+        const lb = 'font-size:5.5pt;color:#666;margin-bottom:1pt;';
+        const bb = 'border-bottom:0.5pt solid #777;';
         return '<div style="border:0.5pt solid #e8c060;border-radius:2pt;padding:4pt 6pt;margin-bottom:5pt;">'
           +'<div style="display:flex;align-items:center;gap:5pt;margin-bottom:3pt;">'
-            +'<span style="background:#F5A01E;color:#fff;border-radius:4pt;width:14pt;height:14pt;display:inline-flex;align-items:center;justify-content:center;font-size:8pt;font-weight:800;">'+(i+1)+'</span>'
-            +'<span style="font-size:7pt;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;">POD</span>'
+            +'<span style="background:#F5A01E;color:#fff;border-radius:4pt;width:14pt;height:14pt;display:inline-flex;align-items:center;justify-content:center;font-size:8pt;font-weight:800">'+(i+1)+'</span>'
+            +'<span style="font-size:7pt;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em">POD</span>'
           +'</div>'
-          +'<div style="'+ri+'">'
-            +'<div style="flex:2;"><div style="'+lbl+'">Codice POD</div><div style="'+bot+'">'+CE(p.pod,14)+'</div></div>'
-            +'<div style="flex:0 0 30pt;"><div style="'+lbl+'">Tensione</div><div style="font-size:8pt;font-weight:700;padding-bottom:1pt;">BT</div></div>'
+          +'<div style="'+ro+'">'
+            +'<div style="flex:2"><div style="'+lb+'">Codice POD</div><div style="'+bb+'">'+CE(p.pod,14)+'</div></div>'
+            +'<div style="flex:0 0 30pt"><div style="'+lb+'">Tensione</div><div style="font-size:8pt;font-weight:700;padding-bottom:1pt">BT</div></div>'
           +'</div>'
-          +'<div style="'+ri+'">'
-            +'<div style="flex:2.5;"><div style="'+lbl+'">Indirizzo di Fornitura</div><div style="'+bot+'font-size:7pt;">'+TX(p.ifn,30)+'</div></div>'
-            +'<div style="flex:1;"><div style="'+lbl+'">N°</div><div style="'+bot+'font-size:7pt;">'+TX(p.nfn,4)+'</div></div>'
-            +'<div style="flex:1;"><div style="'+lbl+'">CAP</div><div style="'+bot+'">'+CE(p.cfn,5)+'</div></div>'
-            +'<div style="flex:2;"><div style="'+lbl+'">Comune</div><div style="'+bot+'font-size:7pt;">'+TX(p.cfm,20)+'</div></div>'
-            +'<div style="flex:0 0 22pt;"><div style="'+lbl+'">Prov.</div><div style="'+bot+'">'+CE(p.cfp,2)+'</div></div>'
+          +'<div style="'+ro+'">'
+            +'<div style="flex:2.5"><div style="'+lb+'">Indirizzo di Fornitura</div><div style="'+bb+'font-size:7pt">'+TX(p.ifn,30)+'</div></div>'
+            +'<div style="flex:1"><div style="'+lb+'">N\u00b0</div><div style="'+bb+'font-size:7pt">'+TX(p.nfn,4)+'</div></div>'
+            +'<div style="flex:1"><div style="'+lb+'">CAP</div><div style="'+bb+'">'+CE(p.cfn,5)+'</div></div>'
+            +'<div style="flex:2"><div style="'+lb+'">Comune</div><div style="'+bb+'font-size:7pt">'+TX(p.cfm,20)+'</div></div>'
+            +'<div style="flex:0 0 22pt"><div style="'+lb+'">Prov.</div><div style="'+bb+'">'+CE(p.cfp,2)+'</div></div>'
           +'</div>'
-          +'<div style="'+ri+'">'
-            +'<div style="flex:1;"><div style="'+lbl+'">Pot. Impegnata (kW)</div><div style="'+bot+'">'+CE(p.kw,6)+'</div></div>'
-            +'<div style="flex:0 0 auto;font-size:7pt;padding-bottom:1pt;">Tipologia impianto: '+MK(p.imp==="monofase")+' Monofase (230V) &nbsp;'+MK(p.imp==="trifase")+' Trifase (400V)</div>'
-            +'<div style="flex:1;"><div style="'+lbl+'">Consumo (kWh/anno)</div><div style="'+bot+'">'+CE(p.kwh,8)+'</div></div>'
+          +'<div style="'+ro+'">'
+            +'<div style="flex:1"><div style="'+lb+'">Pot. Impegnata (kW)</div><div style="'+bb+'">'+CE(p.kw,6)+'</div></div>'
+            +'<div style="flex:0 0 auto;font-size:7pt;padding-bottom:1pt">Tipologia impianto: '+MK(p.imp==="monofase")+' Monofase (230V) &nbsp;'+MK(p.imp==="trifase")+' Trifase (400V)</div>'
+            +'<div style="flex:1"><div style="'+lb+'">Consumo (kWh/anno)</div><div style="'+bb+'">'+CE(p.kwh,8)+'</div></div>'
           +'</div>'
-          +'<div style="font-size:6.5pt;margin-bottom:1.5pt;">Tipologia di titolarità dell’immobile: '+MK(p.tit==="proprieta")+' Proprietà/ Usufrutto/ Abitazione per decesso del convivente di fatto</div>'
-          +'<div style="font-size:6.5pt;">'+MK(p.tit==="locazione")+' Locazione/ Comodato (Atto già registrato o in corso di registrazione) &nbsp;&nbsp;'+MK(p.tit==="altro")+' Altro documento che non necessita di registrazione</div>'
+          +'<div style="font-size:6.5pt;margin-bottom:1.5pt">Tipologia di titolarit\u00e0 dell\u2019immobile: '+MK(p.tit==="proprieta")+' Propriet\u00e0/ Usufrutto/ Abitazione per decesso del convivente di fatto</div>'
+          +'<div style="font-size:6.5pt">'+MK(p.tit==="locazione")+' Locazione/ Comodato (Atto gi\u00e0 registrato o in corso di registrazione) &nbsp;&nbsp;'+MK(p.tit==="altro")+' Altro documento che non necessita di registrazione</div>'
           +'</div>';
       }).join("");
 
-      var css='*{margin:0;padding:0;box-sizing:border-box;}'
+      const tel2 = (d.tel||"").replace(/[\s+]/g,"");
+      const rowS = 'display:flex;gap:4pt;margin-bottom:2pt;align-items:flex-end;';
+      const lblS = 'font-size:5.5pt;color:#666;margin-bottom:1pt;';
+      const botS = 'border-bottom:0.5pt solid #777;';
+
+      return '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">'
+        +'<title>Allegato Multisito</title><style>'
+        +'*{margin:0;padding:0;box-sizing:border-box;}'
         +'html,body{font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#000;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
         +'body{padding:4mm 11mm 20mm;}'
         +'.sec{background:#F5A01E;color:#fff;font-size:8.5pt;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2.5pt 6pt;margin-bottom:4pt;}'
         +'.footer{position:fixed;bottom:4mm;left:11mm;right:11mm;font-size:5pt;color:#555;text-align:center;border-top:0.3pt solid #ccc;padding-top:2pt;line-height:1.6;}'
-        +'.sidedate{position:fixed;bottom:30mm;left:2mm;writing-mode:vertical-rl;transform:rotate(180deg);font-size:5pt;color:#999;letter-spacing:.3pt;}';
-
-      var tel2=(d.tel||"").replace(/[\s+]/g,"");
-      var row='display:flex;gap:4pt;margin-bottom:2pt;align-items:flex-end;';
-      var lbl2='font-size:5.5pt;color:#666;margin-bottom:1pt;';
-      var bot2='border-bottom:0.5pt solid #777;';
-
-      return '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Allegato Multisito</title>'
-        +'<style>'+css+'</style></head><body>'
+        +'.sidedate{position:fixed;bottom:30mm;left:2mm;writing-mode:vertical-rl;transform:rotate(180deg);font-size:5pt;color:#999;letter-spacing:.3pt;}'
+        +'</style></head><body>'
         +'<div style="margin-bottom:5pt;">'
           +'<div style="font-size:15pt;font-weight:700;line-height:1.1;">ALLEGATO MULTISITO</div>'
-          +'<div style="font-size:8.5pt;color:#444;">Contratto Fastweb Energia • Energia Elettrica</div>'
+          +'<div style="font-size:8.5pt;color:#444;">Contratto Fastweb Energia \u2022 Energia Elettrica</div>'
         +'</div>'
         +'<div class="sec">DATI ANAGRAFICI E DI RESIDENZA</div>'
-        +'<div style="'+row+'"><div style="flex:1;"><div style="'+lbl2+'">Nome e Cognome (Ragione Sociale se Impresa)</div><div style="'+bot2+'font-size:8pt;">'+TX(d.rag,60)+'</div></div></div>'
-        +'<div style="'+row+'">'
-          +'<div style="flex:2.5;"><div style="'+lbl2+'">Indirizzo di Residenza (Sede Legale se Impresa)</div><div style="'+bot2+'font-size:8pt;">'+TX(d.ind,40)+'</div></div>'
-          +'<div style="flex:0 0 auto;"><div style="'+lbl2+'">N°</div><div style="'+bot2+'">'+CE(d.num,4)+'</div></div>'
-          +'<div style="flex:0 0 auto;"><div style="'+lbl2+'">CAP</div><div style="'+bot2+'">'+CE(d.cap,5)+'</div></div>'
+        +'<div style="'+rowS+'"><div style="flex:1;"><div style="'+lblS+'">Nome e Cognome (Ragione Sociale se Impresa)</div><div style="'+botS+'font-size:8pt;">'+TX(d.rag,60)+'</div></div></div>'
+        +'<div style="'+rowS+'">'
+          +'<div style="flex:2.5;"><div style="'+lblS+'">Indirizzo di Residenza (Sede Legale se Impresa)</div><div style="'+botS+'font-size:8pt;">'+TX(d.ind,40)+'</div></div>'
+          +'<div style="flex:0 0 auto;"><div style="'+lblS+'">N\u00b0</div><div style="'+botS+'">'+CE(d.num,4)+'</div></div>'
+          +'<div style="flex:0 0 auto;"><div style="'+lblS+'">CAP</div><div style="'+botS+'">'+CE(d.cap,5)+'</div></div>'
         +'</div>'
-        +'<div style="'+row+'">'
-          +'<div style="flex:2;"><div style="'+lbl2+'">Comune</div><div style="'+bot2+'font-size:8pt;">'+TX(d.com,30)+'</div></div>'
-          +'<div style="flex:0 0 22pt;"><div style="'+lbl2+'">Prov.</div><div style="'+bot2+'">'+CE(d.prv,2)+'</div></div>'
+        +'<div style="'+rowS+'">'
+          +'<div style="flex:2;"><div style="'+lblS+'">Comune</div><div style="'+botS+'font-size:8pt;">'+TX(d.com,30)+'</div></div>'
+          +'<div style="flex:0 0 22pt;"><div style="'+lblS+'">Prov.</div><div style="'+botS+'">'+CE(d.prv,2)+'</div></div>'
         +'</div>'
-        +'<div style="'+row+'">'
-          +'<div style="flex:1;"><div style="'+lbl2+'">Codice Fiscale</div><div style="'+bot2+'">'+CE(d.cf,16)+'</div></div>'
-          +'<div style="flex:1;"><div style="'+lbl2+'">P.IVA (se Impresa)</div><div style="'+bot2+'">'+CE(d.piv,11)+'</div></div>'
+        +'<div style="'+rowS+'">'
+          +'<div style="flex:1;"><div style="'+lblS+'">Codice Fiscale</div><div style="'+botS+'">'+CE(d.cf,16)+'</div></div>'
+          +'<div style="flex:1;"><div style="'+lblS+'">P.IVA (se Impresa)</div><div style="'+botS+'">'+CE(d.piv,11)+'</div></div>'
         +'</div>'
-        +'<div style="'+row+'"><div style="flex:1;"><div style="'+lbl2+'">Numero di cellulare</div><div style="'+bot2+'">'+CE(tel2,13)+'</div></div></div>'
-        +'<div style="'+row+'"><div style="flex:1;"><div style="'+lbl2+'">E-mail</div><div style="'+bot2+'font-size:7.5pt;">'+TX(d.mai,50)+'</div></div></div>'
-        +'<div style="'+row+'margin-bottom:5pt;"><div style="flex:1;"><div style="'+lbl2+'">PEC</div><div style="'+bot2+'font-size:7.5pt;">'+TX(d.pec,50)+'</div></div></div>'
+        +'<div style="'+rowS+'"><div style="flex:1;"><div style="'+lblS+'">Numero di cellulare</div><div style="'+botS+'">'+CE(tel2,13)+'</div></div></div>'
+        +'<div style="'+rowS+'"><div style="flex:1;"><div style="'+lblS+'">E-mail</div><div style="'+botS+'font-size:7.5pt;">'+TX(d.mai,50)+'</div></div></div>'
+        +'<div style="'+rowS+'margin-bottom:5pt;"><div style="flex:1;"><div style="'+lblS+'">PEC</div><div style="'+botS+'font-size:7.5pt;">'+TX(d.pec,50)+'</div></div></div>'
         +'<div class="sec">DATI TECNICI DI FORNITURA</div>'
         +'<div style="margin-top:4pt;">'+podBlocks+'</div>'
         +'<div style="margin-top:5pt;border-top:0.5pt solid #ddd;padding-top:4pt;">'
-          +'<div style="font-size:7pt;margin-bottom:3pt;"><strong>Il cliente conferma di aver scelto l’offerta</strong>'
+          +'<div style="font-size:7pt;margin-bottom:3pt;"><strong>Il cliente conferma di aver scelto l\u2019offerta</strong> '
           +'<span style="border-bottom:0.5pt solid #000;display:inline-block;min-width:130pt;">&nbsp;</span></div>'
           +'<div style="display:flex;gap:20pt;align-items:flex-end;">'
             +'<div style="flex:0 0 auto;"><div style="font-size:5.5pt;color:#666;margin-bottom:1pt;">Data</div>'
@@ -1054,258 +1125,198 @@ ${SEC("DATI DI PAGAMENTO")}
             +'<div style="flex:1;font-size:7.5pt;font-weight:700;">TIMBRO E FIRMA DEL CLIENTE '
             +'<span style="font-size:20pt;font-weight:900;vertical-align:middle;">&#x2715;</span>'
             +'<span style="border-bottom:0.5pt solid #000;display:inline-block;min-width:110pt;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>'
-            +'&nbsp;&nbsp; Accettato in {data}</div>'
+            +' &nbsp;&nbsp;Accettato in {data}</div>'
           +'</div>'
         +'</div>'
         +'<div class="sidedate">Settembre 2024</div>'
         +'<div class="footer">Fastweb S.p.A. - Sede legale e amministrativa Piazza Adriano Olivetti, 1, 20139 Milano Tel. [+39] 02.45451 Capitale Sociale euro 41.344.209,40 i.v. -<br>'
         +'Codice Fiscale, Partita IVA e Iscrizione nel Registro Imprese di Milano 12878470157 Fastweb S.p.A. N. Iscr. Reg. AEE: IT08020000003838 - N. Iscr. Reg. Pile e Acc.: IT09100P00001900 -<br>'
-        +'Contributo Ambientale CONAI assolto - Società soggetta all’attività di direzione e coordinamento di Swisscom AG</div>'
+        +'Contributo Ambientale CONAI assolto - Societ\u00e0 soggetta all\u2019attivit\u00e0 di direzione e coordinamento di Swisscom AG</div>'
         +'</body></html>';
     }
 
-    /* ══════════ RENDER PAGINA → PDF ══════════ */
-    var btn = document.querySelector(".btn-gen");
-    if (btn) { btn.textContent = "⏳ Generazione PDF..."; btn.disabled = true; }
-
-    function renderPage(htmlStr, pdfInst, addPage) {
-      return new Promise(function(resolve, reject) {
-        var iframe = document.createElement("iframe");
-        iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:794px;height:1123px;border:none;";
-        document.body.appendChild(iframe);
-        iframe.contentDocument.open();
-        iframe.contentDocument.write(htmlStr);
-        iframe.contentDocument.close();
-        var iBody = iframe.contentDocument.body;
-        iframe.style.height = iBody.scrollHeight + "px";
-        setTimeout(function() {
-          window.html2canvas(iframe.contentDocument.documentElement, {
-            scale:2, useCORS:true, allowTaint:true,
-            width:794, height:iBody.scrollHeight,
-            windowWidth:794, windowHeight:iBody.scrollHeight, logging:false
-          }).then(function(canvas) {
-            var pW=210, pH=297;
-            var trimH = Math.min(canvas.height, Math.round(canvas.width*(pH/pW)));
-            var tc = document.createElement("canvas");
-            tc.width=canvas.width; tc.height=trimH;
-            tc.getContext("2d").drawImage(canvas,0,0,canvas.width,trimH,0,0,canvas.width,trimH);
-            if (addPage) pdfInst.addPage();
-            pdfInst.addImage(tc.toDataURL("image/jpeg",0.95),"JPEG",0,0,pW,pW*(trimH/canvas.width));
-            document.body.removeChild(iframe);
-            resolve();
-          }).catch(function(err){ document.body.removeChild(iframe); reject(err); });
-        }, 700);
-      });
-    }
-
+    /* ══ Download PDF ══ */
     function doDownload() {
-      var jsPDF = window.jspdf.jsPDF;
-      var pdf = new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
-      renderPage(html, pdf, false).then(function() {
+      const isMulti = d.forn === "multisito";
+      const allPods = [
+        {pod:d.pod,kwh:d.kwh,kw:d.kw,ifn:d.ifn,nfn:d.nfn,cfn:d.cfn,cfm:d.cfm,cfp:d.cfp,imp:d.imp,tit:d.tit},
+        ...(d.extraPods||[])
+      ];
+      const {jsPDF} = window.jspdf;
+      const pdf = new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
+
+      renderPage(html, pdf, false).then(() => {
         if (!isMulti || allPods.length === 0) {
-          pdf.save("Modulo_FW_Energia.pdf");
-          closeModal();
-          return Promise.resolve();
+          pdf.save("Modulo_FW_Energia.pdf"); closeModal(); return;
         }
-        // Pagine allegato multisito: 4 POD per pagina
-        var chunks = [];
-        for (var i=0; i<allPods.length; i+=4) chunks.push(allPods.slice(i,i+4));
-        return chunks.reduce(function(chain, chunk) {
-          return chain.then(function() {
-            return renderPage(buildMultisitoPage(chunk, d), pdf, true);
-          });
-        }, Promise.resolve()).then(function() {
-          pdf.save("Modulo_FW_Energia.pdf");
-          closeModal();
-        });
-      }).catch(function(err) {
+        // Allegato multisito: 4 POD per pagina
+        const chunks = [];
+        for (let i=0; i<allPods.length; i+=4) chunks.push(allPods.slice(i,i+4));
+        return chunks.reduce((chain, chunk) =>
+          chain.then(() => renderPage(buildMultisitoPage(chunk), pdf, true))
+        , Promise.resolve()).then(() => { pdf.save("Modulo_FW_Energia.pdf"); closeModal(); });
+      }).catch(err => {
         console.error("PDF error:", err);
         if (btn) { btn.textContent = "📄 Genera PDF Modulistica"; btn.disabled = false; }
         alert("Errore generazione PDF. Riprova.");
       });
     }
 
+    // Carica librerie se non già presenti
     function loadScript(src, cb) {
       if (document.querySelector('script[src="'+src+'"]')) { cb(); return; }
-      var s = document.createElement("script");
+      const s = document.createElement("script");
       s.src = src; s.onload = cb;
-      s.onerror = function(){ alert("Errore caricamento librerie PDF."); };
+      s.onerror = () => alert("Errore caricamento librerie PDF. Verifica la connessione.");
       document.head.appendChild(s);
     }
 
-    if (window.html2canvas && window.jspdf) { doDownload(); }
-    else {
-      loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js", function() {
-        loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js", doDownload);
+    if (window.html2canvas && window.jspdf) {
+      doDownload();
+    } else {
+      loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js", () => {
+        loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js", () => {
+          doDownload();
+        });
       });
     }
   }
 
+  /* ════════════════════════════════════════════════════
+     ENTRY POINT
+  ════════════════════════════════════════════════════ */
+  /* ═══════════════════════════════════════════════════════
+     MULTISITO — POD manager  (dalla preview approvata)
+  ═══════════════════════════════════════════════════════ */
+  let podCount = 1; // POD 1 = principale
 
-  /* ═══════════════════════════════════
-     MULTISITO — POD manager
-  ═══════════════════════════════════ */
-  var _msPodIdx = 1;
-
-  function msToggleSec(val) {
-    var sec   = document.getElementById("ms-section");
-    var badge = document.getElementById("ms-main-badge");
-    var on = (val === "multisito");
-    if (sec)   { if(on) sec.classList.add("ms-on");   else sec.classList.remove("ms-on"); }
-    if (badge) { if(on) badge.classList.add("ms-on"); else badge.classList.remove("ms-on"); }
-  }
-
-  function msAddPod() {
-    _msPodIdx++;
-    var idx = _msPodIdx;
-    var id  = "ms_pod_" + idx;
-    var list = document.getElementById("ms-pod-list");
+  function addPod() {
+    podCount++;
+    const list = document.getElementById('ms-pod-list');
     if (!list) return;
+    const id = 'pod_' + podCount;
+    const idx = podCount;
 
-    var card = document.createElement("div");
-    card.className = "ms-pod-card";
+    const card = document.createElement('div');
+    card.className = 'pod-card';
     card.id = id;
     card.dataset.idx = idx;
 
-    // Header
-    var hdr = document.createElement("div");
-    hdr.className = "ms-pod-hdr";
-    hdr.onclick = function(){ msToggleCard(id); };
+    // Build innerHTML con string concatenation (niente template literals annidati)
+    card.innerHTML =
+      '<div class="pod-card-header" onclick="togglePod(\'' + id + '\')">'
+        + '<div class="pod-badge">'
+          + '<span class="pod-num">' + idx + '</span>'
+          + 'POD'
+          + '<span class="pod-preview" id="' + id + '_preview"></span>'
+        + '</div>'
+        + '<div class="pod-card-actions">'
+          + '<button class="btn-collapse" id="' + id + '_chevron" title="Comprimi">&#9662;</button>'
+          + '<button class="btn-remove" onclick="removePod(event,\'' + id + '\')">&#x2715; Rimuovi</button>'
+        + '</div>'
+      + '</div>'
+      + '<div class="pod-card-body" id="' + id + '_body">'
+        + '<div class="gr" style="grid-template-columns:2fr 1fr 1fr">'
+          + '<div class="ef"><label>Codice POD</label>'
+            + '<input class="ef-inp" type="text" placeholder="IT001E00000000"'
+            + ' data-field="pod" oninput="validatePod(this);updatePreview(\'' + id + '\',this.value)"></div>'
+          + '<div class="ef"><label>Consumo (kWh/anno)</label>'
+            + '<input class="ef-inp" type="number" placeholder="Es. 10000" data-field="kwh" oninput="validatePod(this)"></div>'
+          + '<div class="ef"><label>Pot. Imp. (kW)</label>'
+            + '<input class="ef-inp" type="number" placeholder="Es. 6" data-field="kw" oninput="validatePod(this)"></div>'
+        + '</div>'
+        + '<div class="gr" style="grid-template-columns:2fr 70px 95px">'
+          + '<div class="ef"><label>Indirizzo Fornitura</label>'
+            + '<input class="ef-inp" type="text" placeholder="Via..." data-field="ifn" oninput="validatePod(this)"></div>'
+          + '<div class="ef"><label>N°</label>'
+            + '<input class="ef-inp" type="text" placeholder="1" data-field="nfn" oninput="validatePod(this)"></div>'
+          + '<div class="ef"><label>CAP</label>'
+            + '<input class="ef-inp" type="text" placeholder="00000" maxlength="5" data-field="cfn" oninput="validatePod(this)"></div>'
+        + '</div>'
+        + '<div class="gr" style="grid-template-columns:1fr 68px">'
+          + '<div class="ef"><label>Comune</label>'
+            + '<input class="ef-inp" type="text" placeholder="Roma" data-field="cfm" oninput="validatePod(this)"></div>'
+          + '<div class="ef"><label>Prov.</label>'
+            + '<input class="ef-inp" type="text" placeholder="RM" maxlength="3" data-field="cfp" oninput="validatePod(this)"></div>'
+        + '</div>'
+        + '<div class="ef" style="margin-bottom:0"><label>Tipologia Impianto</label>'
+          + '<div style="display:flex;gap:18px;margin-top:4px">'
+            + '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">'
+              + '<input type="radio" name="ms_imp_' + idx + '" value="monofase"> Monofase (230 V)</label>'
+            + '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">'
+              + '<input type="radio" name="ms_imp_' + idx + '" value="trifase"> Trifase (400V)</label>'
+          + '</div></div>'
+        + '<div class="ef" style="margin-bottom:0"><label>Tipologia Titolarità</label>'
+          + '<div style="display:flex;flex-direction:column;gap:5px;margin-top:4px">'
+            + '<label style="display:flex;align-items:flex-start;gap:6px;font-size:12px;cursor:pointer">'
+              + '<input type="radio" name="ms_tit_' + idx + '" value="proprieta" style="margin-top:2px">'
+              + ' Proprietà / Usufrutto / Abitazione per decesso del convivente di fatto</label>'
+            + '<label style="display:flex;align-items:flex-start;gap:6px;font-size:12px;cursor:pointer">'
+              + '<input type="radio" name="ms_tit_' + idx + '" value="locazione" style="margin-top:2px">'
+              + ' Locazione / Comodato (Atto già registrato o in corso di registrazione)</label>'
+            + '<label style="display:flex;align-items:flex-start;gap:6px;font-size:12px;cursor:pointer">'
+              + '<input type="radio" name="ms_tit_' + idx + '" value="altro" style="margin-top:2px">'
+              + ' Altro documento che non necessita di registrazione</label>'
+          + '</div></div>'
+      + '</div>';
 
-    var hleft = document.createElement("div");
-    hleft.className = "ms-pod-hdr-left";
-    var numBadge = document.createElement("span");
-    numBadge.className = "ms-pod-num";
-    numBadge.textContent = idx;
-    var podLbl = document.createElement("span");
-    podLbl.textContent = "POD";
-    var prevLbl = document.createElement("span");
-    prevLbl.className = "ms-pod-prev";
-    prevLbl.id = id + "_prev";
-    hleft.appendChild(numBadge); hleft.appendChild(podLbl); hleft.appendChild(prevLbl);
-
-    var hright = document.createElement("div");
-    hright.className = "ms-pod-hdr-right";
-    var chvBtn = document.createElement("button");
-    chvBtn.type = "button"; chvBtn.className = "ms-chv"; chvBtn.id = id + "_chv"; chvBtn.textContent = "▾";
-    var rmBtn = document.createElement("button");
-    rmBtn.type = "button"; rmBtn.className = "ms-rm"; rmBtn.textContent = "✕ Rimuovi";
-    rmBtn.onclick = function(e){ e.stopPropagation(); msRemovePod(id); };
-    hright.appendChild(chvBtn); hright.appendChild(rmBtn);
-
-    hdr.appendChild(hleft); hdr.appendChild(hright);
-
-    // Body
-    var body = document.createElement("div");
-    body.className = "ms-pod-body"; body.id = id + "_body";
-
-    function makeField(lbl, placeholder, df, type, maxlen) {
-      var wrap = document.createElement("div"); wrap.className = "ef";
-      var label = document.createElement("label"); label.textContent = lbl;
-      var inp = document.createElement("input"); inp.className = "ef-inp ef-inv";
-      inp.type = type||"text"; inp.placeholder = placeholder; inp.dataset.field = df;
-      if (maxlen) inp.maxLength = maxlen;
-      inp.oninput = function(){
-        var ok = inp.value.trim().length > 0;
-        inp.classList.toggle("valid", ok);
-        inp.classList.toggle("invalid", !ok);
-        if (df==="pod") { var p=document.getElementById(id+"_prev"); if(p) p.textContent = inp.value.trim() ? "— "+inp.value.trim() : ""; }
-      };
-      wrap.appendChild(label); wrap.appendChild(inp); return wrap;
-    }
-
-    function makeRow(style) {
-      var r = document.createElement("div"); r.className = "gr"; r.style.cssText = style||""; return r;
-    }
-
-    function makeRadioGroup(name, opts, direction) {
-      var wrap = document.createElement("div"); wrap.className = "ef"; wrap.style.marginBottom = "0";
-      var lbl = document.createElement("label"); lbl.textContent = name;
-      var grp = document.createElement("div");
-      grp.style.cssText = direction==="col" ? "display:flex;flex-direction:column;gap:5px;margin-top:4px;"
-                                             : "display:flex;gap:18px;margin-top:4px;";
-      opts.forEach(function(opt) {
-        var ll = document.createElement("label");
-        ll.style.cssText = "display:flex;align-items:"+(direction==="col"?"flex-start":"center")+";gap:6px;font-size:"+(direction==="col"?"12":"13")+"px;cursor:pointer;";
-        var inp = document.createElement("input"); inp.type = "radio";
-        inp.name = (name==="Tipologia Impianto" ? "ms_imp_"+idx : "ms_tit_"+idx);
-        inp.value = opt[0];
-        if (direction==="col") inp.style.marginTop = "2px";
-        ll.appendChild(inp); ll.appendChild(document.createTextNode(opt[1]));
-        grp.appendChild(ll);
-      });
-      wrap.appendChild(lbl); wrap.appendChild(grp); return wrap;
-    }
-
-    var r1 = makeRow("grid-template-columns:2fr 1fr 1fr");
-    r1.appendChild(makeField("Codice POD","IT001E00000000","pod","text"));
-    r1.appendChild(makeField("Consumo (kWh/anno)","Es. 10000","kwh","number"));
-    r1.appendChild(makeField("Pot. Imp. (kW)","Es. 6","kw","number"));
-
-    var r2 = makeRow("grid-template-columns:2fr 70px 95px");
-    r2.appendChild(makeField("Indirizzo Fornitura","Via...","ifn","text"));
-    r2.appendChild(makeField("N°","1","nfn","text"));
-    r2.appendChild(makeField("CAP","00000","cfn","text",5));
-
-    var r3 = makeRow("grid-template-columns:1fr 68px");
-    r3.appendChild(makeField("Comune","Roma","cfm","text"));
-    r3.appendChild(makeField("Prov.","RM","cfp","text",3));
-
-    var impGrp = makeRadioGroup("Tipologia Impianto",[["monofase","Monofase (230 V)"],["trifase","Trifase (400V)"]],"row");
-    var titGrp = makeRadioGroup("Tipologia Titolarità",[
-      ["proprieta","Proprietà / Usufrutto / Abitazione per decesso del convivente di fatto"],
-      ["locazione","Locazione / Comodato (Atto già registrato o in corso di registrazione)"],
-      ["altro","Altro documento che non necessita di registrazione"]
-    ],"col");
-
-    body.appendChild(r1); body.appendChild(r2); body.appendChild(r3);
-    body.appendChild(impGrp); body.appendChild(titGrp);
-
-    card.appendChild(hdr); card.appendChild(body);
-
-    card.style.opacity = "0"; card.style.transform = "translateY(-6px)";
-    card.style.transition = "opacity .22s, transform .22s";
     list.appendChild(card);
-    requestAnimationFrame(function(){ card.style.opacity="1"; card.style.transform="translateY(0)"; });
-    setTimeout(function(){ var fi=card.querySelector("input"); if(fi) fi.focus(); }, 250);
-    msUpdateCount();
+    updateCounter();
+
+    // Animazione ingresso
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(-6px)';
+    requestAnimationFrame(() => {
+      card.style.transition = 'opacity .22s ease, transform .22s ease';
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+    });
+    setTimeout(() => { const fi = card.querySelector('input'); if(fi) fi.focus(); }, 250);
   }
 
-  function msRemovePod(id) {
-    var c = document.getElementById(id);
-    if (!c) return;
-    c.style.transition = "opacity .18s, transform .18s";
-    c.style.opacity = "0"; c.style.transform = "translateY(-6px)";
-    setTimeout(function(){ c.remove(); msRenumber(); msUpdateCount(); }, 200);
+  function removePod(e, id) {
+    e.stopPropagation();
+    const card = document.getElementById(id);
+    if (!card) return;
+    card.style.transition = 'opacity .18s, transform .18s';
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(-6px)';
+    setTimeout(() => { card.remove(); renumberPods(); updateCounter(); }, 200);
   }
 
-  function msToggleCard(id) {
-    var b = document.getElementById(id+"_body");
-    var v = document.getElementById(id+"_chv");
-    if(b) b.classList.toggle("collapsed");
-    if(v) v.classList.toggle("collapsed");
+  function togglePod(id) {
+    const body = document.getElementById(id + '_body');
+    const btn  = document.getElementById(id + '_chevron');
+    if (body) body.classList.toggle('collapsed');
+    if (btn)  btn.classList.toggle('collapsed');
   }
 
-  function msRenumber() {
-    var cards = document.querySelectorAll(".ms-pod-card");
-    _msPodIdx = cards.length + 1;
-    cards.forEach(function(c, i) {
-      var n = c.querySelector(".ms-pod-num"); if(n) n.textContent = i+2;
-      c.dataset.idx = i+2;
+  function updatePreview(id, val) {
+    const el = document.getElementById(id + '_preview');
+    if (el) el.textContent = val ? '— ' + val : '';
+  }
+
+  function renumberPods() {
+    const cards = document.querySelectorAll('#ms-pod-list .pod-card');
+    podCount = cards.length + 1;
+    cards.forEach((c, i) => {
+      const n = c.querySelector('.pod-num'); if(n) n.textContent = i + 2;
+      c.dataset.idx = i + 2;
     });
   }
 
-  function msUpdateCount() {
-    var n   = document.querySelectorAll(".ms-pod-card").length;
-    var cnt = document.getElementById("ms-counter");
-    var el  = document.getElementById("ms-count");
-    var tot = document.getElementById("ms-total");
-    if(el)  el.textContent  = n;
-    if(tot) tot.textContent = n+1;
-    if(cnt) cnt.style.display = n>0 ? "block" : "none";
-    // Aggiorna anche il pulsante aggiungi
-    var addBtn = document.getElementById("ms-add-btn");
-    if (addBtn) addBtn.onclick = msAddPod;
+  function updateCounter() {
+    const n   = document.querySelectorAll('#ms-pod-list .pod-card').length;
+    const cnt = document.getElementById('pod-counter');
+    const el  = document.getElementById('pod-count');
+    if (el)  el.textContent = n;
+    if (cnt) cnt.style.display = n > 0 ? 'block' : 'none';
+  }
+
+  function validatePod(input) {
+    const v = input.value.trim();
+    input.classList.toggle('valid',   v.length > 0);
+    input.classList.toggle('invalid', v.length === 0);
   }
 
 
