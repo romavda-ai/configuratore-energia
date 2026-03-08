@@ -976,7 +976,7 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#000;
   background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-body{padding:3mm 11mm 20mm;}
+body{padding:3mm 7mm 20mm;}
 .top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:3pt;}
 .top-left h1{font-size:15pt;font-weight:700;line-height:1.1;margin-bottom:2pt;}
 .top-left .sub{font-size:9pt;margin-bottom:2pt;}
@@ -1010,7 +1010,9 @@ body{padding:3mm 11mm 20mm;}
 .chk1{background:#000;color:#fff;border-color:#000;}
 .chk0{background:#fff;}
 .irow{font-size:7.5pt;margin-bottom:2.5pt;display:flex;flex-wrap:wrap;
-  align-items:center;gap:2pt 9pt;}
+  align-items:center;gap:2pt 6pt;}
+.irow-nowrap{font-size:7.5pt;margin-bottom:2.5pt;display:flex;flex-wrap:nowrap;
+  align-items:center;gap:2pt 5pt;white-space:nowrap;}
 .isep{color:#bbb;margin:0 2pt;}
 .firma-wrap{margin-top:5pt;}
 .firma-txt{font-size:7pt;line-height:1.5;margin-bottom:3pt;}
@@ -1138,13 +1140,13 @@ ${SEC("DATI TECNICI DI FORNITURA")}
   <div class="fr" style="flex:4"><div class="fl">Comune</div><div class="fline">${d.forn==="multisito" ? dots(50) : V(d.cfm,50)}</div></div>
   <div class="fr" style="flex:.5"><div class="fl">Prov.</div><div class="fline">${d.forn==="multisito" ? dots(2) : CELLS(d.cfp,2)}</div></div>
 </div>
-<div class="irow">
+<div class="irow-nowrap">
   <span>Tipologia impianto:</span>
-  ${d.forn==="multisito" ? `${CHK(false)} <span>Monofase (230 V)</span> ${CHK(false)} <span>Trifase (400V)</span>` : `${CHK(d.imp==="monofase")} <span>Monofase (230 V)</span> ${CHK(d.imp==="trifase")} <span>Trifase (400V)</span>`}
+  ${d.forn==="multisito" ? `${CHK(false)}&nbsp;<span>Monofase (230 V)</span>&nbsp;${CHK(false)}&nbsp;<span>Trifase (400V)</span>` : `${CHK(d.imp==="monofase")}&nbsp;<span>Monofase (230 V)</span>&nbsp;${CHK(d.imp==="trifase")}&nbsp;<span>Trifase (400V)</span>`}
   <span class="isep">|</span>
   <span>Tipo di Fornitura:</span>
-  ${CHK(d.forn==="singola")} <span>Singola</span>
-  &nbsp;${CHK(d.forn==="multisito")} <span>Multisito (Compilare l'ALLEGATO MULTISITO)</span>
+  ${CHK(d.forn==="singola")}&nbsp;<span>Singola</span>
+  &nbsp;${CHK(d.forn==="multisito")}&nbsp;<span>Multisito (Compilare l'ALLEGATO MULTISITO)</span>
 </div>
 <div class="irow" style="margin-bottom:1pt">
   <span>Tipologia di titolarità dell'immobile:</span>
@@ -1225,23 +1227,35 @@ ${SEC("DATI DI PAGAMENTO")}
     const btn = shadow.querySelector(".btn-gen");
     if (btn) { btn.textContent = "⏳ Generazione PDF..."; btn.disabled = true; }
 
-    function renderPage(htmlStr, pdfInst, addPage) {
+    function renderPage(htmlStr, pdfInst, addPage, forceA4Height) {
       return new Promise((resolve, reject) => {
+        const A4H = 1123; // px at 96dpi — altezza A4 per 794px di larghezza
         const iframe = document.createElement("iframe");
-        iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:794px;height:1123px;border:none;";
+        iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:794px;height:" + A4H + "px;border:none;";
         document.body.appendChild(iframe);
         iframe.contentDocument.open();
         iframe.contentDocument.write(htmlStr);
         iframe.contentDocument.close();
-        const iBody = iframe.contentDocument.body;
-        iframe.style.height = iBody.scrollHeight + "px";
+        const iDoc  = iframe.contentDocument;
+        const iBody = iDoc.body;
+        // Per pagine multisito: fissa l'altezza a A4 so che flexbox metta il footer in fondo
+        // Per pagina principale: usa scrollHeight (contenuto può essere più lungo)
+        const renderH = forceA4Height ? A4H : Math.max(iBody.scrollHeight, A4H);
+        iframe.style.height = renderH + "px";
+        // Forza anche html e body ad avere altezza fissa per le pagine A4
+        if (forceA4Height) {
+          iBody.style.minHeight = A4H + "px";
+          iDoc.documentElement.style.minHeight = A4H + "px";
+        }
         setTimeout(() => {
-          window.html2canvas(iframe.contentDocument.documentElement, {
+          window.html2canvas(iDoc.documentElement, {
             scale:2, useCORS:true, allowTaint:true,
-            width:794, height:iBody.scrollHeight,
-            windowWidth:794, windowHeight:iBody.scrollHeight, logging:false
+            width:794, height:renderH,
+            windowWidth:794, windowHeight:renderH, logging:false
           }).then(canvas => {
-            const pW=210, trimH=Math.min(canvas.height,Math.round(canvas.width*(297/210)));
+            const pW  = 210;
+            const pH  = 297;
+            const trimH = Math.min(canvas.height, Math.round(canvas.width*(pH/pW)));
             const tc = document.createElement("canvas");
             tc.width=canvas.width; tc.height=trimH;
             tc.getContext("2d").drawImage(canvas,0,0,canvas.width,trimH,0,0,canvas.width,trimH);
@@ -1297,12 +1311,14 @@ ${SEC("DATI DI PAGAMENTO")}
       const tel2=(d.tel||"").replace(/[\s+]/g,"");
       return '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Allegato Multisito</title><style>'
         +'*{margin:0;padding:0;box-sizing:border-box;}'
-        +'html,body{font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#000;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
-        +'body{padding:4mm 11mm 22mm;}'
+        +'html{height:100%;}'
+        +'body{font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#000;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;min-height:100%;display:flex;flex-direction:column;padding:4mm 8mm 0;}'
+        +'.content{flex:1;}'
         +'.sec{background:#F5A01E;color:#fff;font-size:8.5pt;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2.5pt 6pt;margin-bottom:4pt;}'
-        +'.footer{position:fixed;bottom:0;left:0;right:0;padding:2pt 11mm 3pt;font-size:4.8pt;color:#555;text-align:center;border-top:0.4pt solid #bbb;background:#fff;line-height:1.6;}'
+        +'.footer{width:100%;padding:2.5pt 0 3pt;font-size:4.8pt;color:#555;text-align:center;border-top:0.4pt solid #bbb;margin-top:8pt;line-height:1.6;}'
         +'.sidedate{position:fixed;bottom:30mm;left:2mm;writing-mode:vertical-rl;transform:rotate(180deg);font-size:5pt;color:#999;letter-spacing:.3pt;}'
         +'</style></head><body>'
+        +'<div class="content">'
         +'<div style="margin-bottom:5pt;"><div style="font-size:15pt;font-weight:700;line-height:1.1;">ALLEGATO MULTISITO</div>'
         +'<div style="font-size:8.5pt;color:#444;">Contratto Fastweb Energia \u2022 Energia Elettrica</div></div>'
         +'<div class="sec">DATI ANAGRAFICI E DI RESIDENZA</div>'
@@ -1333,10 +1349,11 @@ ${SEC("DATI DI PAGAMENTO")}
             +' &nbsp;&nbsp;Accettato in {data}</div>'
           +'</div>'
         +'</div>'
-        +'<div class="sidedate">Settembre 2024</div>'
+        +'</div>'
         +'<div class="footer">Fastweb S.p.A. - Sede legale e amministrativa Piazza Adriano Olivetti, 1, 20139 Milano Tel. (+39) 02.45451 Capitale Sociale euro 41.344.209,40 i.v. -<br>'
         +'Codice Fiscale, Partita IVA e Iscrizione nel Registro Imprese di Milano 12878470157 Fastweb S.p.A. N. Iscr. Reg. AEE: IT08020000003838 - N. Iscr. Reg. Pile e Acc.: IT09100P00001900 -<br>'
         +'Contributo Ambientale CONAI assolto - Societ\u00e0 soggetta all\u2019attivit\u00e0 di direzione e coordinamento di Swisscom AG</div>'
+        +'</div>'
         +'</body></html>';
     }
 
@@ -1348,11 +1365,13 @@ ${SEC("DATI DI PAGAMENTO")}
       ];
       const {jsPDF} = window.jspdf;
       const pdf = new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
-      renderPage(html, pdf, false).then(() => {
+      // Pagina 1 (Richiesta Preventivo): altezza libera (scrollHeight)
+      renderPage(html, pdf, false, false).then(() => {
         if (!isMulti) { pdf.save("Modulo_FW_Energia.pdf"); closeModal(); return; }
         const chunks = [];
         for (let i=0;i<allPods.length;i+=4) chunks.push(allPods.slice(i,i+4));
-        return chunks.reduce((chain,chunk)=>chain.then(()=>renderPage(buildMultisitoPage(chunk),pdf,true)),Promise.resolve())
+        // Pagine multisito: forceA4Height=true — footer sempre in fondo
+        return chunks.reduce((chain,chunk)=>chain.then(()=>renderPage(buildMultisitoPage(chunk),pdf,true,true)),Promise.resolve())
           .then(()=>{ pdf.save("Modulo_FW_Energia.pdf"); closeModal(); });
       }).catch(err=>{
         console.error("PDF error:",err);
