@@ -285,14 +285,9 @@
     <!-- ── 3: TECNICA ── -->
     <div class="em-step" id="ems-tecnica">
       <div class="em-stitle"><span class="em-sn">4</span>Dati Tecnici di Fornitura</div>
-      <div class="ef" style="margin-bottom:11px">
+      <div class="ef" style="margin-bottom:16px">
         <label>Tipo di Fornitura</label>
         ${R("t_for",[["singola","Singola"],["multisito","Multisito (compilare l'Allegato Multisito)"]])}
-      </div>
-      <!-- Badge "1 POD" — appare solo quando multisito è selezionato -->
-      <div id="pod-main-badge">
-        <span class="pod-num">1</span>
-        <span style="font-size:12px;font-weight:700;color:#444;letter-spacing:.03em">POD</span>
       </div>
       <div class="gr" style="grid-template-columns:2fr 1fr 1fr">
         ${F("t_pod","Codice POD","text","IT001E00000000")}
@@ -320,7 +315,7 @@
           ["altro","Altro documento che non necessita di registrazione"]
         ])}
       </div>
-      <!-- ══ SEZIONE POD AGGIUNTIVI (solo multisito) ══ -->
+      <!-- ══ SEZIONE POD AGGIUNTIVI — visibile SOLO con Multisito ══ -->
       <div id="multisito-section">
         <hr class="ms-divider">
         <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#999;margin-bottom:10px">POD Aggiuntivi</div>
@@ -369,11 +364,12 @@
     // Toggle sezione multisito
     ov.addEventListener("change", e => {
       if (e.target.name === "t_for") {
-        const on = e.target.value === "multisito";
-        const sec   = document.getElementById("multisito-section");
-        const badge = document.getElementById("pod-main-badge");
-        if (sec)   sec.classList.toggle("visible", on);
-        if (badge) badge.classList.toggle("ms-on", on);
+        const on  = e.target.value === "multisito";
+        const sec = document.getElementById("multisito-section");
+        if (sec) {
+          if (on) { sec.classList.add("visible"); sec.style.removeProperty("display"); }
+          else    { sec.classList.remove("visible"); sec.style.display = "none"; }
+        }
       }
     });
 
@@ -399,6 +395,9 @@
     });
 
     // default radio
+    // Nascondi sezione multisito al build
+    const _ms = document.getElementById("multisito-section");
+    if (_ms) { _ms.classList.remove("visible"); _ms.style.display = "none"; }
     [["t_for","singola"],["p_tip","b2b"]].forEach(([nm,val]) => {
       const el = document.querySelector(`input[name="${nm}"][value="${val}"]`);
       if (el) el.checked = true;
@@ -693,8 +692,14 @@ body{padding:3mm 11mm 20mm;}
 /* ─── Multisito ─── */
 #pod-main-badge{display:none;align-items:center;gap:8px;margin-bottom:10px;}
 #pod-main-badge.ms-on{display:flex;}
-#multisito-section{display:none;margin-top:16px;animation:fadeSlide .25s ease;}
-#multisito-section.visible{display:block;}
+#multisito-section{display:none!important;margin-top:16px;}
+#multisito-section.visible{display:block!important;animation:fadeSlide .25s ease;}
+/* input dentro le card POD aggiuntivi */
+.ef-inp{width:100%;height:40px;padding:0 11px;border:1.5px solid #e0e6ee;border-radius:9px;
+  font-size:13px;color:#2c2f3a;background:#fff;outline:none;transition:border-color .15s,box-shadow .15s;}
+.ef-inp:focus{border-color:#F5A01E;box-shadow:0 0 0 3px rgba(245,160,30,.13);}
+.ef-inp.valid{border-color:#22c55e;}
+.ef-inp.invalid{border-color:#ef4444;}
 @keyframes fadeSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 .pod-list{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
 .pod-card{border:1.5px solid #e8e8e8;border-radius:12px;overflow:hidden;transition:box-shadow .18s;}
@@ -1186,7 +1191,8 @@ ${SEC("DATI DI PAGAMENTO")}
      ENTRY POINT
   ════════════════════════════════════════════════════ */
   /* ═══════════════════════════════════════════════════════
-     MULTISITO — POD manager  (dalla preview approvata)
+     MULTISITO — POD manager
+     Stilizzazione identica alla preview approvata
   ═══════════════════════════════════════════════════════ */
   let podCount = 1; // POD 1 = principale
 
@@ -1194,7 +1200,7 @@ ${SEC("DATI DI PAGAMENTO")}
     podCount++;
     const list = document.getElementById('ms-pod-list');
     if (!list) return;
-    const id = 'pod_' + podCount;
+    const id  = 'pod_' + podCount;
     const idx = podCount;
 
     const card = document.createElement('div');
@@ -1202,12 +1208,12 @@ ${SEC("DATI DI PAGAMENTO")}
     card.id = id;
     card.dataset.idx = idx;
 
-    // Build innerHTML con string concatenation (niente template literals annidati)
+    // Struttura identica alla preview approvata — string concat, no template literals
     card.innerHTML =
       '<div class="pod-card-header" onclick="togglePod(\'' + id + '\')">'
         + '<div class="pod-badge">'
           + '<span class="pod-num">' + idx + '</span>'
-          + 'POD'
+          + '&nbsp;POD'
           + '<span class="pod-preview" id="' + id + '_preview"></span>'
         + '</div>'
         + '<div class="pod-card-actions">'
@@ -1216,54 +1222,85 @@ ${SEC("DATI DI PAGAMENTO")}
         + '</div>'
       + '</div>'
       + '<div class="pod-card-body" id="' + id + '_body">'
-        + '<div class="gr" style="grid-template-columns:2fr 1fr 1fr">'
-          + '<div class="ef"><label>Codice POD</label>'
+
+        // riga 1: POD / kWh / kW
+        + '<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px">'
+          + '<div style="display:flex;flex-direction:column;gap:4px">'
+            + '<label style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#999">Codice POD</label>'
             + '<input class="ef-inp" type="text" placeholder="IT001E00000000"'
-            + ' data-field="pod" oninput="validatePod(this);updatePreview(\'' + id + '\',this.value)"></div>'
-          + '<div class="ef"><label>Consumo (kWh/anno)</label>'
-            + '<input class="ef-inp" type="number" placeholder="Es. 10000" data-field="kwh" oninput="validatePod(this)"></div>'
-          + '<div class="ef"><label>Pot. Imp. (kW)</label>'
-            + '<input class="ef-inp" type="number" placeholder="Es. 6" data-field="kw" oninput="validatePod(this)"></div>'
+            + ' data-field="pod" oninput="validatePod(this);updatePreview(\'' + id + '\',this.value)">'
+          + '</div>'
+          + '<div style="display:flex;flex-direction:column;gap:4px">'
+            + '<label style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#999">Consumo (kWh/anno)</label>'
+            + '<input class="ef-inp" type="number" placeholder="Es. 10000" data-field="kwh" oninput="validatePod(this)">'
+          + '</div>'
+          + '<div style="display:flex;flex-direction:column;gap:4px">'
+            + '<label style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#999">Pot. Imp. (kW)</label>'
+            + '<input class="ef-inp" type="number" placeholder="Es. 6" data-field="kw" oninput="validatePod(this)">'
+          + '</div>'
         + '</div>'
-        + '<div class="gr" style="grid-template-columns:2fr 70px 95px">'
-          + '<div class="ef"><label>Indirizzo Fornitura</label>'
-            + '<input class="ef-inp" type="text" placeholder="Via..." data-field="ifn" oninput="validatePod(this)"></div>'
-          + '<div class="ef"><label>N°</label>'
-            + '<input class="ef-inp" type="text" placeholder="1" data-field="nfn" oninput="validatePod(this)"></div>'
-          + '<div class="ef"><label>CAP</label>'
-            + '<input class="ef-inp" type="text" placeholder="00000" maxlength="5" data-field="cfn" oninput="validatePod(this)"></div>'
+
+        // riga 2: Indirizzo / N° / CAP
+        + '<div style="display:grid;grid-template-columns:2fr 70px 95px;gap:10px">'
+          + '<div style="display:flex;flex-direction:column;gap:4px">'
+            + '<label style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#999">Indirizzo Fornitura</label>'
+            + '<input class="ef-inp" type="text" placeholder="Via..." data-field="ifn" oninput="validatePod(this)">'
+          + '</div>'
+          + '<div style="display:flex;flex-direction:column;gap:4px">'
+            + '<label style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#999">N°</label>'
+            + '<input class="ef-inp" type="text" placeholder="1" data-field="nfn" oninput="validatePod(this)">'
+          + '</div>'
+          + '<div style="display:flex;flex-direction:column;gap:4px">'
+            + '<label style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#999">CAP</label>'
+            + '<input class="ef-inp" type="text" placeholder="00000" maxlength="5" data-field="cfn" oninput="validatePod(this)">'
+          + '</div>'
         + '</div>'
-        + '<div class="gr" style="grid-template-columns:1fr 68px">'
-          + '<div class="ef"><label>Comune</label>'
-            + '<input class="ef-inp" type="text" placeholder="Roma" data-field="cfm" oninput="validatePod(this)"></div>'
-          + '<div class="ef"><label>Prov.</label>'
-            + '<input class="ef-inp" type="text" placeholder="RM" maxlength="3" data-field="cfp" oninput="validatePod(this)"></div>'
+
+        // riga 3: Comune / Prov
+        + '<div style="display:grid;grid-template-columns:1fr 68px;gap:10px">'
+          + '<div style="display:flex;flex-direction:column;gap:4px">'
+            + '<label style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#999">Comune</label>'
+            + '<input class="ef-inp" type="text" placeholder="Roma" data-field="cfm" oninput="validatePod(this)">'
+          + '</div>'
+          + '<div style="display:flex;flex-direction:column;gap:4px">'
+            + '<label style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#999">Prov.</label>'
+            + '<input class="ef-inp" type="text" placeholder="RM" maxlength="3" data-field="cfp" oninput="validatePod(this)">'
+          + '</div>'
         + '</div>'
-        + '<div class="ef" style="margin-bottom:0"><label>Tipologia Impianto</label>'
-          + '<div style="display:flex;gap:18px;margin-top:4px">'
-            + '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">'
-              + '<input type="radio" name="ms_imp_' + idx + '" value="monofase"> Monofase (230 V)</label>'
-            + '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">'
-              + '<input type="radio" name="ms_imp_' + idx + '" value="trifase"> Trifase (400V)</label>'
-          + '</div></div>'
-        + '<div class="ef" style="margin-bottom:0"><label>Tipologia Titolarità</label>'
-          + '<div style="display:flex;flex-direction:column;gap:5px;margin-top:4px">'
-            + '<label style="display:flex;align-items:flex-start;gap:6px;font-size:12px;cursor:pointer">'
-              + '<input type="radio" name="ms_tit_' + idx + '" value="proprieta" style="margin-top:2px">'
+
+        // riga 4: Tipologia Impianto
+        + '<div style="display:flex;flex-direction:column;gap:6px">'
+          + '<label style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#999">Tipologia Impianto</label>'
+          + '<div style="display:flex;gap:18px">'
+            + '<label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;cursor:pointer;color:#555">'
+              + '<input type="radio" name="ms_imp_' + idx + '" value="monofase" style="accent-color:#F5A01E;width:16px;height:16px"> Monofase (230 V)</label>'
+            + '<label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;cursor:pointer;color:#555">'
+              + '<input type="radio" name="ms_imp_' + idx + '" value="trifase" style="accent-color:#F5A01E;width:16px;height:16px"> Trifase (400V)</label>'
+          + '</div>'
+        + '</div>'
+
+        // riga 5: Tipologia Titolarità
+        + '<div style="display:flex;flex-direction:column;gap:6px">'
+          + '<label style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#999">Tipologia Titolarità Immobile</label>'
+          + '<div style="display:flex;flex-direction:column;gap:6px">'
+            + '<label style="display:flex;align-items:flex-start;gap:7px;font-size:13px;font-weight:500;cursor:pointer;color:#555">'
+              + '<input type="radio" name="ms_tit_' + idx + '" value="proprieta" style="accent-color:#F5A01E;width:16px;height:16px;margin-top:1px;flex-shrink:0">'
               + ' Proprietà / Usufrutto / Abitazione per decesso del convivente di fatto</label>'
-            + '<label style="display:flex;align-items:flex-start;gap:6px;font-size:12px;cursor:pointer">'
-              + '<input type="radio" name="ms_tit_' + idx + '" value="locazione" style="margin-top:2px">'
+            + '<label style="display:flex;align-items:flex-start;gap:7px;font-size:13px;font-weight:500;cursor:pointer;color:#555">'
+              + '<input type="radio" name="ms_tit_' + idx + '" value="locazione" style="accent-color:#F5A01E;width:16px;height:16px;margin-top:1px;flex-shrink:0">'
               + ' Locazione / Comodato (Atto già registrato o in corso di registrazione)</label>'
-            + '<label style="display:flex;align-items:flex-start;gap:6px;font-size:12px;cursor:pointer">'
-              + '<input type="radio" name="ms_tit_' + idx + '" value="altro" style="margin-top:2px">'
+            + '<label style="display:flex;align-items:flex-start;gap:7px;font-size:13px;font-weight:500;cursor:pointer;color:#555">'
+              + '<input type="radio" name="ms_tit_' + idx + '" value="altro" style="accent-color:#F5A01E;width:16px;height:16px;margin-top:1px;flex-shrink:0">'
               + ' Altro documento che non necessita di registrazione</label>'
-          + '</div></div>'
-      + '</div>';
+          + '</div>'
+        + '</div>'
+
+      + '</div>'; // fine pod-card-body
 
     list.appendChild(card);
     updateCounter();
 
-    // Animazione ingresso
+    // Animazione ingresso (identica alla preview)
     card.style.opacity = '0';
     card.style.transform = 'translateY(-6px)';
     requestAnimationFrame(() => {
@@ -1271,7 +1308,7 @@ ${SEC("DATI DI PAGAMENTO")}
       card.style.opacity = '1';
       card.style.transform = 'translateY(0)';
     });
-    setTimeout(() => { const fi = card.querySelector('input'); if(fi) fi.focus(); }, 250);
+    setTimeout(() => { const fi = card.querySelector('.ef-inp'); if(fi) fi.focus(); }, 250);
   }
 
   function removePod(e, id) {
@@ -1293,7 +1330,7 @@ ${SEC("DATI DI PAGAMENTO")}
 
   function updatePreview(id, val) {
     const el = document.getElementById(id + '_preview');
-    if (el) el.textContent = val ? '— ' + val : '';
+    if (el) el.textContent = val ? ' — ' + val : '';
   }
 
   function renumberPods() {
@@ -1318,7 +1355,6 @@ ${SEC("DATI DI PAGAMENTO")}
     input.classList.toggle('valid',   v.length > 0);
     input.classList.toggle('invalid', v.length === 0);
   }
-
 
   // Esponi funzioni multisito su window (necessario per onclick nell'HTML del modal)
   G.addPod        = addPod;
