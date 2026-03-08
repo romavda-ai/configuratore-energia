@@ -554,7 +554,7 @@
       <label data-text-key="lblSpesaAtt1"><span class="lbl-icon">€</span>Spesa attuale 1° Mese</label>
       <div class="input-group"><span class="input-prefix">€</span><input id="spesaAtt1" class="edit" inputmode="decimal" /></div>
     </div>
-    <div id="wrapSpesaFissa1" class="field">
+    <div id="wrapSpesaFissa1" class="field" style="display:none">
       <label class="lbl-strong">QUOTA FISSA (€)</label>
       <div class="input-group"><span class="input-prefix">€</span><input id="spesaAtt1Fissa" class="edit" inputmode="decimal" /></div>
     </div>
@@ -2886,7 +2886,7 @@ if(bApply) bApply.addEventListener("click", (e)=>{ e.preventDefault(); applyBimS
 
     <div class="grid2">
       <div>
-        <label id="bimLblConsumi" class="lbl-strong">QUOTA COMSUMI (€)</label>
+        <label id="bimLblConsumi" class="lbl-strong">QUOTA CONSUMI (€)</label>
         <input id="bimQuotaConsumi" type="text" inputmode="decimal" pattern="[0-9.,\s]*" placeholder="0,00" />
       </div>
       <div>
