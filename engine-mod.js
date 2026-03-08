@@ -1146,7 +1146,7 @@ ${SEC("DATI DI PAGAMENTO")}
       const pdf = new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
 
       renderPage(html, pdf, false).then(() => {
-        if (!isMulti || allPods.length === 0) {
+        if (!isMulti) {
           pdf.save("Modulo_FW_Energia.pdf"); closeModal(); return;
         }
         // Allegato multisito: 4 POD per pagina
@@ -1319,6 +1319,13 @@ ${SEC("DATI DI PAGAMENTO")}
     input.classList.toggle('invalid', v.length === 0);
   }
 
+
+  // Esponi funzioni multisito su window (necessario per onclick nell'HTML del modal)
+  G.addPod        = addPod;
+  G.removePod     = removePod;
+  G.togglePod     = togglePod;
+  G.updatePreview = updatePreview;
+  G.validatePod   = validatePod;
 
   G.openModulistica = function(data) {
     build(); renderStep(0); prefill(data||{}); openModal();
