@@ -554,7 +554,7 @@
       <label data-text-key="lblSpesaAtt1"><span class="lbl-icon">€</span>Spesa attuale 1° Mese (€)</label>
       <div class="input-group"><span class="input-prefix">€</span><input id="spesaAtt1" class="edit" inputmode="decimal" /></div>
     </div>
-    <div id="wrapSpesaFissa1" class="field" style="display:none">
+    <div id="wrapSpesaFissa1" class="field">
       <label class="lbl-strong">QUOTA FISSA (€)</label>
       <div class="input-group"><span class="input-prefix">€</span><input id="spesaAtt1Fissa" class="edit" inputmode="decimal" /></div>
     </div>
@@ -1456,7 +1456,7 @@ function setup() {
   // default "come file"
   document.getElementById("cltVodafone").value = "SI";
   document.getElementById("fasce").value = "MULTI";
-  document.getElementById("mensilita").value = "2";
+  document.getElementById("mensilita").value = "1";
 
   // prova a settare mesi/anni se esistono, altrimenti usa la prima opzione disponibile
   const setIfExists = (sel, val) => {
