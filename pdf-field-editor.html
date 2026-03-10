@@ -2,600 +2,518 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PDF Field Position Editor — Fastweb Energia</title>
+<title>PDF Cell Editor v2 — Fastweb Energia</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1a1d2e; color: #e0e4f0; min-height: 100vh; }
-
-#topbar {
-  position: sticky; top: 0; z-index: 100;
-  background: #12141f; border-bottom: 1px solid #2a2d42;
-  padding: 8px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0b12;--surf:#11131e;--surf2:#171928;--border:#1e2235;--border2:#252840;
+  --txt:#cdd3f0;--muted:#4a5278;--acc:#f5a624;--blue:#4f8ef7;
+  --green:#34d399;--red:#f87171;--purple:#a78bfa;
 }
-#topbar h1 { font-size: 13px; font-weight: 700; color: #fff; white-space: nowrap; }
-.tb-sep { width: 1px; height: 20px; background: #2a2d42; flex-shrink: 0; }
-#topbar select, #topbar button {
-  font-family: inherit; font-size: 11.5px; border-radius: 7px; border: 1px solid #2e3250;
-  padding: 5px 10px; background: #1e2138; color: #c8cce8; cursor: pointer;
-}
-#topbar button:hover { background: #2a2e50; }
-#btn-copy   { background: #1a4a8a; color: #fff; border-color: #2255bb; font-weight: 600; }
-#btn-copy:hover { background: #2255bb; }
-#btn-reset  { background: #5a1a1a; color: #ffaaaa; border-color: #992222; }
-#btn-export { background: #1a5a2a; color: #aaffaa; border-color: #22992a; }
-#btn-export:hover { background: #22992a; color: #fff; }
-#status { font-size: 11px; color: #7a8099; margin-left: auto; white-space: nowrap; }
-
-#main { display: flex; height: calc(100vh - 50px); overflow: hidden; }
-
-#canvas-wrap {
-  flex: 1; overflow: auto; background: #0d0f1a;
-  display: flex; justify-content: center; align-items: flex-start; padding: 20px;
-}
-#pdf-container { position: relative; display: inline-block; cursor: crosshair; }
-#pdf-canvas { display: block; box-shadow: 0 8px 40px rgba(0,0,0,.7); }
-
-.field-pin {
-  position: absolute; cursor: grab; user-select: none; z-index: 10;
-  transform: translate(-50%, -50%);
-}
-.field-pin:active { cursor: grabbing; }
-.pin-dot {
-  width: 11px; height: 11px; border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.85);
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
-  transition: transform .12s;
-}
-.field-pin:hover .pin-dot { transform: translate(-50%,-50%) scale(1.4); }
-.field-pin.selected .pin-dot { box-shadow: 0 0 0 3px rgba(255,255,255,.45); transform: translate(-50%,-50%) scale(1.2); }
-.pin-label {
-  position: absolute; left: 50%; transform: translateX(-50%);
-  bottom: 13px; background: rgba(8,10,22,.92);
-  color: #fff; font-size: 9px; font-weight: 700;
-  padding: 2px 5px; border-radius: 4px; white-space: nowrap;
-  pointer-events: none; border: 1px solid rgba(255,255,255,.12);
-}
-.pin-crossh { position: absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:20px; height:1px; background:rgba(255,255,255,.5); }
-.pin-crossv { position: absolute; left:50%; top:50%; transform:translate(-50%,-50%); height:20px; width:1px; background:rgba(255,255,255,.5); }
-
-#sidebar {
-  width: 300px; flex-shrink: 0; background: #12141f;
-  border-left: 1px solid #2a2d42; display: flex; flex-direction: column; overflow: hidden;
-}
-#sidebar-tabs { display: flex; border-bottom: 1px solid #2a2d42; }
-.stab {
-  flex: 1; padding: 9px; font-size: 11px; font-weight: 700; color: #5a6080;
-  cursor: pointer; text-align: center; border: none; background: none;
-  font-family: inherit; border-bottom: 2px solid transparent; transition: all .15s;
-}
-.stab.active { color: #c8cce8; border-bottom-color: #4466cc; }
-.stab:hover:not(.active) { color: #9090b0; }
-
-#tab-fields, #tab-add { display: none; flex-direction: column; flex: 1; overflow: hidden; }
-#tab-fields.active, #tab-add.active { display: flex; }
-
-#field-search {
-  margin: 8px; padding: 6px 10px; background: #1e2138;
-  border: 1px solid #2e3250; border-radius: 7px;
-  color: #c8cce8; font-size: 11.5px; font-family: inherit; outline: none;
-}
-#field-search:focus { border-color: #4466cc; }
-
-#field-list { flex: 1; overflow-y: auto; }
-.field-row {
-  padding: 6px 12px; border-bottom: 1px solid #1a1d30;
-  display: flex; align-items: center; gap: 7px; cursor: pointer; transition: background .1s;
-}
-.field-row:hover { background: #1e2138; }
-.field-row.active { background: #1e2545; }
-.fr-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-.fr-name { font-size: 11px; font-weight: 600; color: #c8cce8; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fr-coords { font-size: 9.5px; color: #4a5070; font-family: monospace; white-space: nowrap; }
-.fr-del { background: none; border: none; color: #883333; cursor: pointer; font-size: 12px; padding: 1px 4px; border-radius: 4px; font-family: inherit; line-height: 1; opacity: 0; transition: opacity .12s; }
-.field-row:hover .fr-del { opacity: 1; }
-.fr-del:hover { background: #3a1010; color: #ff6666; }
-
-#detail { padding: 12px; border-top: 1px solid #2a2d42; background: #0d0f1a; flex-shrink: 0; }
-#detail h3 { font-size: 11.5px; font-weight: 700; color: #fff; margin-bottom: 9px; display: flex; align-items: center; gap: 6px; }
-.det-row { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
-.det-label { font-size: 10px; color: #7a8099; width: 36px; flex-shrink: 0; }
-.det-input { flex: 1; background: #1e2138; border: 1px solid #2e3250; border-radius: 6px; color: #c8cce8; font-size: 12px; font-family: monospace; padding: 4px 8px; outline: none; }
-.det-input:focus { border-color: #4466cc; }
-#code-out { margin-top: 8px; background: #070810; border: 1px solid #2a2d42; border-radius: 7px; padding: 8px 10px; font-family: monospace; font-size: 10px; color: #7a9ee0; line-height: 1.7; max-height: 100px; overflow-y: auto; white-space: pre; }
-
-#add-form { padding: 12px; display: flex; flex-direction: column; gap: 9px; overflow-y: auto; flex: 1; }
-#add-form h3 { font-size: 11.5px; font-weight: 700; color: #fff; }
-.click-hint { font-size: 10px; color: #4a5580; background: #0d1020; border: 1px dashed #2a2d42; border-radius: 7px; padding: 7px 9px; line-height: 1.5; text-align: center; }
-.af-row { display: flex; flex-direction: column; gap: 3px; }
-.af-label { font-size: 10px; color: #7a8099; text-transform: uppercase; letter-spacing: .06em; }
-.af-input, .af-select { background: #1e2138; border: 1px solid #2e3250; border-radius: 7px; color: #c8cce8; font-size: 12px; font-family: inherit; padding: 6px 9px; outline: none; width: 100%; }
-.af-input:focus, .af-select:focus { border-color: #4466cc; }
-.af-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.color-grid { display: flex; flex-wrap: wrap; gap: 5px; padding: 4px 0; }
-.color-swatch { width: 22px; height: 22px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; transition: transform .1s; }
-.color-swatch:hover { transform: scale(1.15); }
-.color-swatch.selected { border-color: #fff; }
-#btn-add-field { padding: 9px; border: none; border-radius: 9px; background: linear-gradient(135deg,#1a4a8a,#2255bb); color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; transition: filter .14s; }
-#btn-add-field:hover { filter: brightness(1.15); }
-
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--txt);
+  display:flex;flex-direction:column;height:100vh;overflow:hidden}
+#top{background:var(--surf);border-bottom:1px solid var(--border2);
+  height:46px;padding:0 12px;display:flex;align-items:center;gap:8px;flex-shrink:0;z-index:100}
+#top h1{font-size:12.5px;font-weight:800;color:#fff;white-space:nowrap;letter-spacing:.02em}
+.sep{width:1px;height:20px;background:var(--border2);flex-shrink:0}
+.tb{font-family:'Syne',inherit;font-size:10.5px;border-radius:6px;border:1px solid var(--border2);
+  padding:3px 9px;background:var(--bg);color:var(--txt);cursor:pointer;white-space:nowrap;transition:all .12s}
+.tb:hover{border-color:var(--muted)}
+select.tb{padding:3px 7px}
+#btn-copy{background:var(--blue);color:#fff;border-color:#5590f7;font-weight:700}
+#btn-copy:hover{filter:brightness(1.15)}
+#btn-prev{background:#0f2d1a;color:var(--green);border-color:#34d39940;font-weight:700}
+#btn-prev.on{background:var(--green);color:#000}
+#mode-box{background:#1a1428;color:var(--purple);border-color:#a78bfa50;font-weight:700}
+#mode-box.on{background:var(--purple);color:#0a0b12}
+#stat{margin-left:auto;font-size:10px;font-family:'JetBrains Mono',mono;color:var(--muted);white-space:nowrap}
+#main{display:flex;flex:1;min-height:0}
+#cwrap{flex:1;overflow:auto;background:#060710;display:flex;
+  justify-content:flex-start;align-items:flex-start;padding:20px}
+#pcont{position:relative;display:inline-block;flex-shrink:0}
+#pcanv{display:block;box-shadow:0 8px 48px #000c}
+#rubberband{position:absolute;border:2px dashed var(--purple);
+  background:rgba(167,139,250,.08);pointer-events:none;display:none;z-index:90}
+.fov{position:absolute;pointer-events:none;z-index:10}
+.fov-cells{display:flex}
+.cell-box{height:100%;border:1px solid rgba(255,255,255,.15);position:relative;flex-shrink:0}
+.cell-char{position:absolute;bottom:1px;left:0;width:100%;
+  text-align:center;font-family:'JetBrains Mono',mono;font-weight:700;pointer-events:none}
+.tval{position:absolute;bottom:2px;left:0;
+  font-family:'JetBrains Mono',mono;font-weight:600;white-space:nowrap;pointer-events:none}
+.xval{position:absolute;bottom:0;left:0;width:100%;
+  text-align:center;font-family:'JetBrains Mono',mono;font-weight:800;pointer-events:none}
+.pin{position:absolute;width:10px;height:10px;border-radius:50%;
+  transform:translate(-50%,-50%);cursor:grab;pointer-events:all;z-index:50;
+  border:1.5px solid rgba(255,255,255,.5);transition:transform .1s}
+.pin:active{cursor:grabbing}
+.pin:hover{transform:translate(-50%,-50%) scale(1.5)}
+.pin-tip{position:absolute;left:50%;transform:translateX(-50%);
+  bottom:9px;background:#000d;color:#fff;font-size:8px;font-weight:700;
+  font-family:'JetBrains Mono',mono;padding:1px 5px;border-radius:3px;
+  white-space:nowrap;pointer-events:none;border:1px solid rgba(255,255,255,.1);
+  opacity:0;transition:opacity .15s}
+.pin:hover .pin-tip{opacity:1}
+#sb{width:300px;flex-shrink:0;background:var(--surf);border-left:1px solid var(--border2);
+  display:flex;flex-direction:column;overflow:hidden}
+#stabs{display:flex;border-bottom:1px solid var(--border2);flex-shrink:0}
+.stab{flex:1;padding:9px 3px;font-size:10px;font-weight:700;color:var(--muted);
+  cursor:pointer;border:none;background:none;font-family:'Syne',inherit;
+  text-align:center;border-bottom:2px solid transparent;transition:all .13s}
+.stab.on{color:var(--txt);border-bottom-color:var(--acc)}
+#tlist{flex:1;overflow-y:auto;display:none;flex-direction:column}
+#tlist.on{display:flex}
+#fsrch{margin:8px;padding:5px 9px;background:var(--bg);border:1px solid var(--border2);
+  border-radius:6px;color:var(--txt);font-size:10.5px;font-family:'JetBrains Mono',mono;outline:none}
+#fsrch:focus{border-color:var(--acc)}
+#frows{flex:1;overflow-y:auto}
+.fr{padding:5px 10px;border-bottom:1px solid var(--border);display:flex;
+  align-items:center;gap:6px;cursor:pointer;transition:background .1s}
+.fr:hover{background:var(--surf2)}
+.fr.on{background:#141830}
+.fd{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.fn{font-size:10px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ft{font-size:8.5px;font-family:'JetBrains Mono',mono;white-space:nowrap}
+.fco{font-size:8.5px;font-family:'JetBrains Mono',mono;color:var(--border2)}
+#det{padding:10px;border-top:1px solid var(--border2);background:#080912;
+  display:none;flex-shrink:0}
+.dtitle{font-size:10.5px;font-weight:800;color:#fff;margin-bottom:8px;
+  display:flex;align-items:center;gap:5px}
+.dr{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.dl{font-size:9px;color:var(--muted);width:38px;flex-shrink:0;font-family:'JetBrains Mono',mono}
+.di{flex:1;background:var(--surf);border:1px solid var(--border2);border-radius:5px;
+  color:var(--txt);font-size:10.5px;font-family:'JetBrains Mono',mono;
+  padding:3px 7px;outline:none}
+.di:focus{border-color:var(--acc)}
+.di-s{width:62px;flex:none}
+#codeout{margin-top:6px;background:var(--bg);border:1px solid var(--border2);
+  border-radius:6px;padding:7px 9px;font-family:'JetBrains Mono',mono;font-size:9px;
+  color:#6a9ee0;line-height:1.8;max-height:90px;overflow-y:auto;white-space:pre}
+#tprev{flex:1;overflow-y:auto;display:none;flex-direction:column;padding:10px;gap:8px}
+#tprev.on{display:flex}
+#tprev h3{font-size:10.5px;font-weight:800;color:#fff}
+.pnote{font-size:9px;color:var(--muted);line-height:1.6;
+  background:#0d1020;border:1px dashed var(--border2);border-radius:6px;padding:7px 8px}
+#pvrows{display:flex;flex-direction:column;gap:5px;overflow-y:auto}
+.pvr{display:flex;align-items:center;gap:6px}
+.pvd{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.pvn{font-size:9px;color:var(--muted);width:84px;flex-shrink:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pvi{flex:1;background:var(--surf);border:1px solid var(--border2);border-radius:5px;
+  color:var(--txt);font-size:9.5px;font-family:'JetBrains Mono',mono;
+  padding:2px 6px;outline:none}
+.pvi:focus{border-color:var(--acc)}
+#tadd{flex:1;overflow-y:auto;display:none;flex-direction:column;padding:10px;gap:8px}
+#tadd.on{display:flex}
+#tadd h3{font-size:10.5px;font-weight:800;color:#fff}
+.addhint{font-size:9px;color:var(--muted);line-height:1.6;text-align:center;
+  background:#0d1020;border:1px dashed var(--purple)44;border-radius:6px;padding:7px 8px}
+.al{font-size:9px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.06em;margin-bottom:2px;font-family:'JetBrains Mono',mono}
+.ai{width:100%;background:var(--surf);border:1px solid var(--border2);border-radius:6px;
+  color:var(--txt);font-size:10.5px;font-family:'JetBrains Mono',mono;
+  padding:5px 8px;outline:none}
+.ai:focus{border-color:var(--acc)}
+.ag2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.palette{display:flex;flex-wrap:wrap;gap:4px;padding:2px 0}
+.sw{width:18px;height:18px;border-radius:4px;cursor:pointer;
+  border:2px solid transparent;transition:transform .1s}
+.sw:hover{transform:scale(1.2)}
+.sw.on{border-color:#fff}
+#btnadd{padding:8px;border:none;border-radius:8px;font-family:'Syne',inherit;
+  font-size:12px;font-weight:800;cursor:pointer;
+  background:linear-gradient(135deg,var(--blue),#6a5af9);color:#fff;transition:filter .13s}
+#btnadd:hover{filter:brightness(1.15)}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.07);border-radius:3px}
 </style>
 </head>
 <body>
-
-<div id="topbar">
-  <h1>🎯 PDF Field Positioner</h1>
-  <div class="tb-sep"></div>
-  <label style="font-size:11px;color:#8a8fb0">PDF:</label>
-  <select id="sel-pdf">
-    <option value="preventivo">Modulo_energia_preventivo.pdf</option>
-    <option value="multisito">Modulo_energia_multisito.pdf</option>
+<div id="top">
+  <h1>🎯 PDF Cell Editor v2</h1>
+  <div class="sep"></div>
+  <label style="font-size:10px;color:var(--muted)">PDF</label>
+  <select id="sel-pdf" class="tb">
+    <option value="preventivo">preventivo.pdf</option>
+    <option value="multisito">multisito.pdf</option>
   </select>
-  <div class="tb-sep"></div>
-  <label style="font-size:11px;color:#8a8fb0">Zoom:</label>
-  <select id="sel-zoom">
-    <option value="0.75">75%</option>
+  <div class="sep"></div>
+  <label style="font-size:10px;color:var(--muted)">Zoom</label>
+  <select id="sel-zoom" class="tb">
     <option value="1">100%</option>
     <option value="1.5" selected>150%</option>
     <option value="2">200%</option>
+    <option value="2.5">250%</option>
   </select>
-  <div class="tb-sep"></div>
-  <button id="btn-copy">📋 Copia JS</button>
-  <button id="btn-export">💾 Esporta JSON</button>
-  <button id="btn-reset">↩ Reset</button>
-  <span id="status">Caricamento…</span>
+  <div class="sep"></div>
+  <button id="btn-prev" class="tb">👁 Anteprima OFF</button>
+  <button id="mode-box" class="tb">📦 Disegna box OFF</button>
+  <button id="btn-copy" class="tb">📋 Copia JS</button>
+  <span id="stat">Caricamento…</span>
 </div>
-
 <div id="main">
-  <div id="canvas-wrap">
-    <div id="pdf-container">
-      <canvas id="pdf-canvas"></canvas>
+  <div id="cwrap">
+    <div id="pcont">
+      <canvas id="pcanv"></canvas>
+      <div id="rubberband"></div>
     </div>
   </div>
-
-  <div id="sidebar">
-    <div id="sidebar-tabs">
-      <button class="stab active" data-tab="fields">📍 Campi</button>
-      <button class="stab" data-tab="add">➕ Aggiungi</button>
+  <div id="sb">
+    <div id="stabs">
+      <button class="stab on" data-tab="list">📍 Campi</button>
+      <button class="stab" data-tab="prev">✏️ Testi</button>
+      <button class="stab" data-tab="add">➕ Nuovo</button>
     </div>
-
-    <div id="tab-fields" class="active">
-      <input id="field-search" type="text" placeholder="🔍 Cerca campo…">
-      <div id="field-list"></div>
-      <div id="detail" style="display:none">
-        <h3 id="det-title">Campo</h3>
-        <div class="det-row"><span class="det-label">Label</span><input class="det-input" id="inp-label" type="text"></div>
-        <div class="det-row"><span class="det-label">X</span><input class="det-input" id="inp-x" type="number"></div>
-        <div class="det-row"><span class="det-label">top</span><input class="det-input" id="inp-y" type="number"></div>
-        <div class="det-row">
-          <span class="det-label">Tipo</span>
-          <select class="det-input" id="inp-type">
-            <option value="text">text — T()</option>
-            <option value="cells">cells — CL()</option>
-            <option value="check">check — CK()</option>
+    <div id="tlist" class="on">
+      <input id="fsrch" placeholder="🔍 cerca…" autocomplete="off">
+      <div id="frows"></div>
+      <div id="det">
+        <div class="dtitle" id="dtitle">—</div>
+        <div class="dr"><span class="dl">Label</span><input class="di" id="di-lbl"></div>
+        <div class="dr">
+          <span class="dl">X</span><input class="di di-s" id="di-x" type="number">
+          <span class="dl" style="width:26px">top</span><input class="di di-s" id="di-top" type="number">
+        </div>
+        <div class="dr"><span class="dl">Tipo</span>
+          <select class="di" id="di-type">
+            <option value="text">T() testo</option>
+            <option value="cells">CL() celle</option>
+            <option value="check">CK() checkbox</option>
           </select>
         </div>
-        <div id="code-out"></div>
+        <div id="di-cells-row" class="dr" style="display:none">
+          <span class="dl">n</span><input class="di di-s" id="di-n" type="number" min="1" max="60">
+          <span class="dl" style="width:26px">cw</span><input class="di di-s" id="di-cw" type="number" step="0.1">
+        </div>
+        <div id="codeout"></div>
       </div>
     </div>
-
-    <div id="tab-add">
-      <div id="add-form">
-        <h3>Nuovo campo</h3>
-        <div class="click-hint">💡 Clicca sul PDF per impostare le coordinate, poi compila qui e premi Aggiungi</div>
-        <div class="af-row"><div class="af-label">Key (d.???)</div><input class="af-input" id="new-key" placeholder="es: nome_campo" autocomplete="off"></div>
-        <div class="af-row"><div class="af-label">Etichetta visiva</div><input class="af-input" id="new-label" placeholder="es: Nome Cognome" autocomplete="off"></div>
-        <div class="af-row">
-          <div class="af-label">Tipo</div>
-          <select class="af-select" id="new-type">
-            <option value="text">text — T(d.key, x, top, SZ)</option>
-            <option value="cells">cells — CL(d.key, x, top, cw, n)</option>
-            <option value="check">check — CK(condition, x, top)</option>
-          </select>
-        </div>
-        <div class="af-row-2">
-          <div class="af-row"><div class="af-label">X</div><input class="af-input" id="new-x" type="number" value="100"></div>
-          <div class="af-row"><div class="af-label">top</div><input class="af-input" id="new-top" type="number" value="100"></div>
-        </div>
-        <div class="af-row"><div class="af-label">Colore</div><div class="color-grid" id="color-grid"></div></div>
-        <button id="btn-add-field">➕ Aggiungi Campo</button>
+    <div id="tprev">
+      <h3>Testi fittizi</h3>
+      <div class="pnote">Modifica i valori. Con <b style="color:#fff">Anteprima ON</b> compaiono sul PDF. Trascina i <b style="color:#fff">pin</b> per spostare ogni campo.</div>
+      <div id="pvrows"></div>
+    </div>
+    <div id="tadd">
+      <h3>Nuovo campo</h3>
+      <div class="addhint"><b style="color:var(--purple)">Modalità Disegna box:</b> attiva il pulsante in alto, poi trascina sul PDF per definire il rettangolo del campo.<br>Le coordinate e la <b>cw</b> vengono calcolate automaticamente.</div>
+      <div><div class="al">Key</div><input class="ai" id="nk" placeholder="es: extra_firma" autocomplete="off"></div>
+      <div><div class="al">Etichetta</div><input class="ai" id="nl" placeholder="es: Data Firma 3" autocomplete="off"></div>
+      <div><div class="al">Tipo</div>
+        <select class="ai" id="nt">
+          <option value="text">T() — testo libero</option>
+          <option value="cells">CL() — celle separate</option>
+          <option value="check">CK() — checkbox</option>
+        </select>
       </div>
+      <div class="ag2">
+        <div><div class="al">X</div><input class="ai" id="nx" type="number" value="100"></div>
+        <div><div class="al">top</div><input class="ai" id="ntop" type="number" value="100"></div>
+      </div>
+      <div id="nadd-cells" style="display:none">
+        <div class="ag2" style="margin-top:8px">
+          <div><div class="al">N celle</div><input class="ai" id="nn" type="number" value="5" min="1"></div>
+          <div><div class="al">cw (pt)</div><input class="ai" id="ncw" type="number" step="0.1" value="11"></div>
+        </div>
+      </div>
+      <div><div class="al">Colore</div><div class="palette" id="pal"></div></div>
+      <button id="btnadd">➕ Aggiungi Campo</button>
     </div>
   </div>
 </div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const COLORS=["#f5a624","#4f8ef7","#a78bfa","#34d399","#fbbf24","#f87171","#67e8f9","#fbcfe8","#86efac","#c4b5fd"];
+let newCol=COLORS[0];
+const BASE={preventivo:[{key:"off_light",lbl:"☐ Light",x:39,top:176,c:"#f5a624",type:"check",test:"X"},{key:"off_full",lbl:"☐ Full",x:39,top:188,c:"#f5a624",type:"check",test:""},{key:"off_maxi",lbl:"☐ Maxi",x:39,top:199,c:"#f5a624",type:"check",test:""},{key:"off_flex",lbl:"☐ Flex",x:168,top:176,c:"#f5a624",type:"check",test:""},{key:"off_fix",lbl:"☐ Fix",x:167,top:187,c:"#f5a624",type:"check",test:""},{key:"off_bizflex",lbl:"☐ Biz Flex",x:297,top:176,c:"#f5a624",type:"check",test:""},{key:"off_bizfix",lbl:"☐ Biz Fix",x:298,top:188,c:"#f5a624",type:"check",test:"X"},{key:"rag",lbl:"Ragione Sociale",x:204,top:231,c:"#4f8ef7",type:"text",test:"Rossi Mario Srl"},{key:"ind",lbl:"Indirizzo",x:130,top:251,c:"#4f8ef7",type:"text",test:"Via Roma"},{key:"num",lbl:"N°",x:457,top:250,c:"#4f8ef7",type:"text",test:"10"},{key:"cap",lbl:"CAP",x:514,top:251,c:"#4f8ef7",type:"cells",test:"00185",cw:11,n:5},{key:"com",lbl:"Comune",x:111,top:279,c:"#4f8ef7",type:"text",test:"Roma"},{key:"prv",lbl:"Prov",x:544,top:280,c:"#4f8ef7",type:"cells",test:"RM",cw:11,n:2},{key:"cf",lbl:"C.F.",x:91,top:300,c:"#4f8ef7",type:"cells",test:"RSSMRA80A01H501A",cw:11.8,n:16},{key:"piv",lbl:"P.IVA",x:320,top:300,c:"#4f8ef7",type:"cells",test:"12345678901",cw:10.6,n:11},{key:"ate",lbl:"ATECO",x:504,top:300,c:"#4f8ef7",type:"cells",test:"35140000",cw:10,n:8},{key:"leg",lbl:"Legale Rappr.",x:234,top:320,c:"#4f8ef7",type:"text",test:"Mario Rossi"},{key:"cfl",lbl:"CF Legale",x:183,top:340,c:"#4f8ef7",type:"cells",test:"RSSMRA80A01H501A",cw:11.8,n:16},{key:"tdc",lbl:"Tipo Doc",x:107,top:362,c:"#a78bfa",type:"text",test:"Carta d'Identità"},{key:"ndc",lbl:"N° Doc",x:367,top:361,c:"#a78bfa",type:"text",test:"AX1234567"},{key:"drl_dd",lbl:"Rilascio DD",x:87,top:380,c:"#a78bfa",type:"cells",test:"15",cw:11,n:2},{key:"drl_mm",lbl:"Rilascio MM",x:112,top:380,c:"#a78bfa",type:"cells",test:"03",cw:11,n:2},{key:"drl_yy",lbl:"Rilascio YYYY",x:137,top:380,c:"#a78bfa",type:"cells",test:"2020",cw:11,n:4},{key:"dsc_dd",lbl:"Scadenza DD",x:213,top:380,c:"#a78bfa",type:"cells",test:"15",cw:11,n:2},{key:"dsc_mm",lbl:"Scadenza MM",x:238,top:380,c:"#a78bfa",type:"cells",test:"03",cw:11,n:2},{key:"dsc_yy",lbl:"Scadenza YYYY",x:263,top:380,c:"#a78bfa",type:"cells",test:"2030",cw:11,n:4},{key:"rda",lbl:"Rilasciato da",x:87,top:400,c:"#a78bfa",type:"text",test:"Comune di Roma"},{key:"tel",lbl:"Cellulare",x:146,top:419,c:"#a78bfa",type:"cells",test:"3331234567",cw:10,n:10},{key:"mai_lp",lbl:"Email locale",x:87,top:439,c:"#a78bfa",type:"text",test:"mario.rossi"},{key:"mai_dm",lbl:"Email dominio",x:318,top:438,c:"#a78bfa",type:"text",test:"azienda.it"},{key:"pec_lp",lbl:"PEC locale",x:87,top:456,c:"#a78bfa",type:"text",test:"mario.rossi"},{key:"pec_dm",lbl:"PEC dominio",x:318,top:456,c:"#a78bfa",type:"text",test:"pec.it"},{key:"pod",lbl:"POD",x:83,top:492,c:"#34d399",type:"cells",test:"IT001E00012345678",cw:11.8,n:14},{key:"kwh",lbl:"kWh/anno",x:297,top:491,c:"#34d399",type:"cells",test:"12000",cw:11,n:8},{key:"kw",lbl:"Pot. kW",x:418,top:492,c:"#34d399",type:"cells",test:"6",cw:12,n:4},{key:"ifn",lbl:"Ind. Fornitura",x:140,top:512,c:"#34d399",type:"text",test:"Via Roma"},{key:"nfn",lbl:"N° Fornitura",x:455,top:512,c:"#34d399",type:"text",test:"10"},{key:"cfn",lbl:"CAP Fornitura",x:515,top:513,c:"#34d399",type:"cells",test:"00185",cw:11,n:5},{key:"cfm",lbl:"Comune Fornitura",x:87,top:540,c:"#34d399",type:"text",test:"Roma"},{key:"cfp",lbl:"Prov Fornitura",x:544,top:542,c:"#34d399",type:"cells",test:"RM",cw:11,n:2},{key:"ck_mono",lbl:"☐ Monofase",x:104,top:563,c:"#34d399",type:"check",test:"X"},{key:"ck_tri",lbl:"☐ Trifase",x:177,top:564,c:"#34d399",type:"check",test:""},{key:"ck_sing",lbl:"☐ Singola",x:321,top:563,c:"#34d399",type:"check",test:""},{key:"ck_mult",lbl:"☐ Multisito",x:356,top:563,c:"#34d399",type:"check",test:"X"},{key:"ck_prop",lbl:"☐ Proprietà",x:155,top:580,c:"#34d399",type:"check",test:"X"},{key:"ck_loc",lbl:"☐ Locazione",x:40,top:593,c:"#34d399",type:"check",test:""},{key:"ck_alt",lbl:"☐ Altro",x:266,top:593,c:"#34d399",type:"check",test:""},{key:"int",lbl:"Intestatario",x:186,top:626,c:"#fbbf24",type:"text",test:"Mario Rossi"},{key:"rsp",lbl:"Rag.Soc.Pag.",x:390,top:627,c:"#fbbf24",type:"text",test:"Rossi Mario Srl"},{key:"cfi",lbl:"CF Intestatario",x:94,top:646,c:"#fbbf24",type:"cells",test:"RSSMRA80A01H501A",cw:11.7,n:16},{key:"iban",lbl:"IBAN",x:271,top:644,c:"#fbbf24",type:"cells",test:"IT60X0542811101000000123456",cw:9.7,n:27},{key:"pvp",lbl:"PIVA Pag.",x:103,top:668,c:"#fbbf24",type:"cells",test:"12345678901",cw:10.7,n:11},{key:"ck_b2c",lbl:"☐ B2C",x:234,top:669,c:"#fbbf24",type:"check",test:""},{key:"ck_b2b",lbl:"☐ B2B",x:262,top:670,c:"#fbbf24",type:"check",test:"X"},{key:"sdi",lbl:"SDI",x:334,top:667,c:"#fbbf24",type:"cells",test:"0000000",cw:10,n:7},{key:"firma1",lbl:"Data firma 1",x:140,top:715,c:"#f87171",type:"text",test:"10/03/2026"},{key:"firma2",lbl:"Data firma 2",x:140,top:779,c:"#f87171",type:"text",test:"10/03/2026"}],multisito:[{key:"m_rag",lbl:"Ragione Sociale",x:202,top:89,c:"#4f8ef7",type:"text",test:"Rossi Mario Srl"},{key:"m_ind",lbl:"Indirizzo",x:130,top:107,c:"#4f8ef7",type:"text",test:"Via Roma"},{key:"m_num",lbl:"N°",x:457,top:108,c:"#4f8ef7",type:"text",test:"10"},{key:"m_cap",lbl:"CAP",x:515,top:108,c:"#4f8ef7",type:"cells",test:"00185",cw:11,n:5},{key:"m_com",lbl:"Comune",x:163,top:137,c:"#4f8ef7",type:"text",test:"Roma"},{key:"m_prv",lbl:"Prov",x:544,top:138,c:"#4f8ef7",type:"cells",test:"RM",cw:11,n:2},{key:"m_cf",lbl:"C.F.",x:91,top:158,c:"#4f8ef7",type:"cells",test:"RSSMRA80A01H501A",cw:11.7,n:16},{key:"m_piv",lbl:"P.IVA",x:320,top:158,c:"#4f8ef7",type:"cells",test:"12345678901",cw:10.4,n:11},{key:"m_tel",lbl:"Tel",x:107,top:177,c:"#4f8ef7",type:"cells",test:"3331234567",cw:10,n:10},{key:"m_mai_lp",lbl:"Email locale",x:87,top:199,c:"#4f8ef7",type:"text",test:"mario.rossi"},{key:"m_mai_dm",lbl:"Email dominio",x:312,top:199,c:"#4f8ef7",type:"text",test:"azienda.it"},{key:"m_pec_lp",lbl:"PEC locale",x:87,top:214,c:"#4f8ef7",type:"text",test:"mario.rossi"},{key:"m_pec_dm",lbl:"PEC dominio",x:315,top:214,c:"#4f8ef7",type:"text",test:"pec.it"},{key:"p1_pod",lbl:"POD 1",x:84,top:255,c:"#34d399",type:"cells",test:"IT001E00012345678",cw:11.8,n:14},{key:"p1_ifn",lbl:"Ind.For.1",x:256,top:276,c:"#34d399",type:"text",test:"Via Roma"},{key:"p1_nfn",lbl:"N°For.1",x:530,top:276,c:"#34d399",type:"text",test:"10"},{key:"p1_cfn",lbl:"CAP For.1",x:60,top:294,c:"#34d399",type:"cells",test:"00185",cw:12.4,n:5},{key:"p1_cfm",lbl:"Comune For.1",x:148,top:295,c:"#34d399",type:"text",test:"Roma"},{key:"p1_prv",lbl:"Prov For.1",x:543,top:295,c:"#34d399",type:"cells",test:"RM",cw:11,n:2},{key:"p1_kw",lbl:"kW 1",x:125,top:315,c:"#34d399",type:"cells",test:"6",cw:12,n:4},{key:"p1_mono",lbl:"☐ Mono 1",x:245,top:317,c:"#34d399",type:"check",test:"X"},{key:"p1_tri",lbl:"☐ Tri 1",x:318,top:317,c:"#34d399",type:"check",test:""},{key:"p1_kwh",lbl:"kWh 1",x:456,top:315,c:"#34d399",type:"cells",test:"12000",cw:11,n:8},{key:"p1_prop",lbl:"☐ Prop 1",x:154,top:333,c:"#34d399",type:"check",test:"X"},{key:"p1_loc",lbl:"☐ Loc 1",x:39,top:347,c:"#34d399",type:"check",test:""},{key:"p1_alt",lbl:"☐ Alt 1",x:265,top:346,c:"#34d399",type:"check",test:""},{key:"p2_pod",lbl:"POD 2",x:84,top:369,c:"#a78bfa",type:"cells",test:"IT001E00098765432",cw:11.8,n:14},{key:"p2_ifn",lbl:"Ind.For.2",x:255,top:391,c:"#a78bfa",type:"text",test:"Via Nazionale"},{key:"p2_nfn",lbl:"N°For.2",x:530,top:381,c:"#a78bfa",type:"text",test:"5"},{key:"p2_cfn",lbl:"CAP For.2",x:60,top:409,c:"#a78bfa",type:"cells",test:"00184",cw:12.4,n:5},{key:"p2_cfm",lbl:"Comune For.2",x:148,top:410,c:"#a78bfa",type:"text",test:"Roma"},{key:"p2_prv",lbl:"Prov For.2",x:542,top:410,c:"#a78bfa",type:"cells",test:"RM",cw:11,n:2},{key:"p2_kw",lbl:"kW 2",x:125,top:430,c:"#a78bfa",type:"cells",test:"3",cw:12,n:4},{key:"p2_mono",lbl:"☐ Mono 2",x:246,top:433,c:"#a78bfa",type:"check",test:""},{key:"p2_tri",lbl:"☐ Tri 2",x:318,top:432,c:"#a78bfa",type:"check",test:"X"},{key:"p2_kwh",lbl:"kWh 2",x:456,top:430,c:"#a78bfa",type:"cells",test:"8000",cw:11,n:8},{key:"p2_prop",lbl:"☐ Prop 2",x:154,top:449,c:"#a78bfa",type:"check",test:""},{key:"p2_loc",lbl:"☐ Loc 2",x:39,top:461,c:"#a78bfa",type:"check",test:"X"},{key:"p2_alt",lbl:"☐ Alt 2",x:265,top:461,c:"#a78bfa",type:"check",test:""},{key:"p3_pod",lbl:"POD 3",x:84,top:485,c:"#fbbf24",type:"cells",test:"IT001E00011112222",cw:11.8,n:14},{key:"p3_ifn",lbl:"Ind.For.3",x:256,top:503,c:"#fbbf24",type:"text",test:"Corso Vittorio"},{key:"p3_nfn",lbl:"N°For.3",x:530,top:502,c:"#fbbf24",type:"text",test:"22"},{key:"p3_cfn",lbl:"CAP For.3",x:60,top:524,c:"#fbbf24",type:"cells",test:"00186",cw:12.4,n:5},{key:"p3_cfm",lbl:"Comune For.3",x:148,top:525,c:"#fbbf24",type:"text",test:"Roma"},{key:"p3_prv",lbl:"Prov For.3",x:543,top:524,c:"#fbbf24",type:"cells",test:"RM",cw:11,n:2},{key:"p3_kw",lbl:"kW 3",x:124,top:545,c:"#fbbf24",type:"cells",test:"10",cw:12,n:4},{key:"p3_mono",lbl:"☐ Mono 3",x:246,top:547,c:"#fbbf24",type:"check",test:"X"},{key:"p3_tri",lbl:"☐ Tri 3",x:318,top:547,c:"#fbbf24",type:"check",test:""},{key:"p3_kwh",lbl:"kWh 3",x:456,top:544,c:"#fbbf24",type:"cells",test:"15000",cw:11,n:8},{key:"p3_prop",lbl:"☐ Prop 3",x:153,top:564,c:"#fbbf24",type:"check",test:"X"},{key:"p3_loc",lbl:"☐ Loc 3",x:39,top:574,c:"#fbbf24",type:"check",test:""},{key:"p3_alt",lbl:"☐ Alt 3",x:265,top:576,c:"#fbbf24",type:"check",test:""},{key:"p4_pod",lbl:"POD 4",x:83,top:598,c:"#f87171",type:"cells",test:"IT001E00033334444",cw:11.8,n:14},{key:"p4_ifn",lbl:"Ind.For.4",x:255,top:619,c:"#f87171",type:"text",test:"Piazza Venezia"},{key:"p4_nfn",lbl:"N°For.4",x:530,top:619,c:"#f87171",type:"text",test:"1"},{key:"p4_cfn",lbl:"CAP For.4",x:60,top:639,c:"#f87171",type:"cells",test:"00187",cw:12.4,n:5},{key:"p4_cfm",lbl:"Comune For.4",x:148,top:640,c:"#f87171",type:"text",test:"Roma"},{key:"p4_prv",lbl:"Prov For.4",x:543,top:639,c:"#f87171",type:"cells",test:"RM",cw:11,n:2},{key:"p4_kw",lbl:"kW 4",x:125,top:660,c:"#f87171",type:"cells",test:"4",cw:12,n:4},{key:"p4_mono",lbl:"☐ Mono 4",x:244,top:662,c:"#f87171",type:"check",test:"X"},{key:"p4_tri",lbl:"☐ Tri 4",x:318,top:662,c:"#f87171",type:"check",test:""},{key:"p4_kwh",lbl:"kWh 4",x:455,top:660,c:"#f87171",type:"cells",test:"6000",cw:11,n:8},{key:"p4_prop",lbl:"☐ Prop 4",x:154,top:677,c:"#f87171",type:"check",test:"X"},{key:"p4_loc",lbl:"☐ Loc 4",x:39,top:691,c:"#f87171",type:"check",test:""},{key:"p4_alt",lbl:"☐ Alt 4",x:265,top:691,c:"#f87171",type:"check",test:""},{key:"m_firma",lbl:"Data firma",x:55,top:751,c:"#f87171",type:"text",test:"10/03/2026"}]};
+const extra={preventivo:[],multisito:[]};
+const testVals={};
+let cur="preventivo",sc=1.5,selKey=null,pdfDoc=null,prevOn=false,boxMode=false;
+const PDFS={preventivo:"Modulo_energia_preventivo.pdf",multisito:"Modulo_energia_multisito.pdf"};
+const FONT_PX=7.5;
+function allF(){return[...BASE[cur],...extra[cur]];}
+function fnd(k){return allF().find(f=>f.key===k);}
+function testOf(k){const v=testVals[cur+":"+k];return v!==undefined?v:(fnd(k)?.test||"");}
+const px=v=>v*sc,pt=v=>v/sc;
 
-const PALETTE = ["#f5a01e","#4fc3f7","#ce93d8","#81c784","#ffb74d","#ef9a9a","#80cbc4","#fff176","#ff8a65","#90caf9"];
-let newFieldColor = PALETTE[0];
-
-const BASE_FIELDS = {
-  preventivo: [
-    { key:"off_light",   label:"☐ Light",          x:39,  top:176, color:"#f5a01e", type:"check" },
-    { key:"off_full",    label:"☐ Full",            x:39,  top:188, color:"#f5a01e", type:"check" },
-    { key:"off_maxi",    label:"☐ Maxi",            x:40,  top:201, color:"#f5a01e", type:"check" },
-    { key:"off_flex",    label:"☐ Flex",            x:168, top:176, color:"#f5a01e", type:"check" },
-    { key:"off_fix",     label:"☐ Fix",             x:167, top:187, color:"#f5a01e", type:"check" },
-    { key:"off_bizflex", label:"☐ Biz Flex",        x:297, top:176, color:"#f5a01e", type:"check" },
-    { key:"off_bizfix",  label:"☐ Biz Fix",         x:298, top:188, color:"#f5a01e", type:"check" },
-    { key:"rag",         label:"Ragione Sociale",   x:205, top:233, color:"#4fc3f7", type:"text" },
-    { key:"ind",         label:"Indirizzo",          x:130, top:252, color:"#4fc3f7", type:"text" },
-    { key:"num",         label:"N°",                x:457, top:250, color:"#4fc3f7", type:"text" },
-    { key:"cap",         label:"CAP",               x:514, top:251, color:"#4fc3f7", type:"cells" },
-    { key:"com",         label:"Comune",            x:111, top:282, color:"#4fc3f7", type:"text" },
-    { key:"prv",         label:"Prov",              x:545, top:281, color:"#4fc3f7", type:"cells" },
-    { key:"cf",          label:"C.F.",              x:90,  top:300, color:"#4fc3f7", type:"cells" },
-    { key:"piv",         label:"P.IVA",             x:320, top:301, color:"#4fc3f7", type:"cells" },
-    { key:"ate",         label:"ATECO",             x:504, top:300, color:"#4fc3f7", type:"cells" },
-    { key:"leg",         label:"Legale Rappr.",     x:234, top:321, color:"#4fc3f7", type:"text" },
-    { key:"cfl",         label:"CF Legale",         x:183, top:341, color:"#4fc3f7", type:"cells" },
-    { key:"tdc",         label:"Tipo Doc",          x:107, top:362, color:"#ce93d8", type:"text" },
-    { key:"ndc",         label:"N° Doc",            x:367, top:361, color:"#ce93d8", type:"text" },
-    { key:"drl_dd",      label:"Rilascio DD",       x:87,  top:380, color:"#ce93d8", type:"cells" },
-    { key:"drl_mm",      label:"Rilascio MM",       x:112, top:380, color:"#ce93d8", type:"cells" },
-    { key:"drl_yy",      label:"Rilascio YYYY",     x:137, top:380, color:"#ce93d8", type:"cells" },
-    { key:"dsc_dd",      label:"Scadenza DD",       x:213, top:380, color:"#ce93d8", type:"cells" },
-    { key:"dsc_mm",      label:"Scadenza MM",       x:238, top:380, color:"#ce93d8", type:"cells" },
-    { key:"dsc_yy",      label:"Scadenza YYYY",     x:263, top:380, color:"#ce93d8", type:"cells" },
-    { key:"rda",         label:"Rilasciato da",     x:87,  top:401, color:"#ce93d8", type:"text" },
-    { key:"naz",         label:"Nazione",           x:350, top:401, color:"#ce93d8", type:"text" },
-    { key:"tel",         label:"Cellulare",         x:148, top:420, color:"#ce93d8", type:"cells" },
-    { key:"mai_lp",      label:"Email (locale)",    x:87,  top:441, color:"#ce93d8", type:"text" },
-    { key:"mai_dm",      label:"Email (dominio)",   x:318, top:439, color:"#ce93d8", type:"text" },
-    { key:"pec_lp",      label:"PEC (locale)",      x:87,  top:457, color:"#ce93d8", type:"text" },
-    { key:"pec_dm",      label:"PEC (dominio)",     x:318, top:457, color:"#ce93d8", type:"text" },
-    { key:"pod",         label:"POD",               x:83,  top:492, color:"#81c784", type:"cells" },
-    { key:"kwh",         label:"kWh/anno",          x:297, top:491, color:"#81c784", type:"cells" },
-    { key:"kw",          label:"Pot. kW",           x:418, top:492, color:"#81c784", type:"cells" },
-    { key:"ifn",         label:"Ind. Fornitura",    x:140, top:512, color:"#81c784", type:"text" },
-    { key:"nfn",         label:"N° Fornitura",      x:454, top:513, color:"#81c784", type:"text" },
-    { key:"cfn",         label:"CAP Fornitura",     x:515, top:513, color:"#81c784", type:"cells" },
-    { key:"cfm",         label:"Comune Fornitura",  x:87,  top:541, color:"#81c784", type:"text" },
-    { key:"cfp",         label:"Prov Fornitura",    x:544, top:542, color:"#81c784", type:"cells" },
-    { key:"ck_mono",     label:"☐ Monofase",        x:104, top:563, color:"#81c784", type:"check" },
-    { key:"ck_tri",      label:"☐ Trifase",         x:177, top:564, color:"#81c784", type:"check" },
-    { key:"ck_sing",     label:"☐ Singola",         x:321, top:563, color:"#81c784", type:"check" },
-    { key:"ck_multi",    label:"☐ Multisito",       x:356, top:563, color:"#81c784", type:"check" },
-    { key:"ck_prop",     label:"☐ Proprietà",       x:155, top:580, color:"#81c784", type:"check" },
-    { key:"ck_loc",      label:"☐ Locazione",       x:40,  top:593, color:"#81c784", type:"check" },
-    { key:"ck_alt",      label:"☐ Altro",           x:266, top:593, color:"#81c784", type:"check" },
-    { key:"int",         label:"Intestatario",      x:186, top:626, color:"#ffb74d", type:"text" },
-    { key:"rsp",         label:"Rag.Soc.Pag.",      x:390, top:627, color:"#ffb74d", type:"text" },
-    { key:"cfi",         label:"CF Intestatario",   x:94,  top:647, color:"#ffb74d", type:"cells" },
-    { key:"iban",        label:"IBAN",              x:270, top:644, color:"#ffb74d", type:"cells" },
-    { key:"pvp",         label:"PIVA Pag.",         x:103, top:668, color:"#ffb74d", type:"cells" },
-    { key:"ck_b2c",      label:"☐ B2C",            x:234, top:669, color:"#ffb74d", type:"check" },
-    { key:"ck_b2b",      label:"☐ B2B",            x:262, top:670, color:"#ffb74d", type:"check" },
-    { key:"sdi",         label:"SDI",               x:334, top:667, color:"#ffb74d", type:"cells" },
-    { key:"firma1",      label:"Data firma 1",      x:140, top:715, color:"#ef9a9a", type:"text" },
-    { key:"firma2",      label:"Data firma 2",      x:140, top:779, color:"#ef9a9a", type:"text" },
-  ],
-  multisito: [
-    { key:"m_rag",    label:"Ragione Sociale",  x:195, top:90,  color:"#4fc3f7", type:"text" },
-    { key:"m_ind",    label:"Indirizzo",         x:130, top:111, color:"#4fc3f7", type:"text" },
-    { key:"m_num",    label:"N°",               x:457, top:106, color:"#4fc3f7", type:"text" },
-    { key:"m_cap",    label:"CAP",              x:514, top:109, color:"#4fc3f7", type:"cells" },
-    { key:"m_com",    label:"Comune",           x:195, top:139, color:"#4fc3f7", type:"text" },
-    { key:"m_prv",    label:"Prov",             x:544, top:138, color:"#4fc3f7", type:"cells" },
-    { key:"m_cf",     label:"C.F.",             x:91,  top:158, color:"#4fc3f7", type:"cells" },
-    { key:"m_piv",    label:"P.IVA",            x:320, top:158, color:"#4fc3f7", type:"cells" },
-    { key:"m_tel",    label:"Tel",              x:107, top:177, color:"#4fc3f7", type:"cells" },
-    { key:"m_mai_lp", label:"Email locale",     x:87,  top:199, color:"#4fc3f7", type:"text" },
-    { key:"m_mai_dm", label:"Email dominio",    x:312, top:199, color:"#4fc3f7", type:"text" },
-    { key:"m_pec_lp", label:"PEC locale",       x:87,  top:215, color:"#4fc3f7", type:"text" },
-    { key:"m_pec_dm", label:"PEC dominio",      x:315, top:216, color:"#4fc3f7", type:"text" },
-    { key:"p1_pod",   label:"POD 1",            x:85,  top:255, color:"#81c784", type:"cells" },
-    { key:"p1_ifn",   label:"Ind.For.1",        x:256, top:276, color:"#81c784", type:"text" },
-    { key:"p1_nfn",   label:"N°For.1",          x:447, top:276, color:"#81c784", type:"text" },
-    { key:"p1_cfn",   label:"CAP For.1",        x:60,  top:294, color:"#81c784", type:"cells" },
-    { key:"p1_cfm",   label:"Comune For.1",     x:148, top:295, color:"#81c784", type:"text" },
-    { key:"p1_prv",   label:"Prov For.1",       x:543, top:295, color:"#81c784", type:"cells" },
-    { key:"p1_kw",    label:"kW 1",             x:126, top:316, color:"#81c784", type:"cells" },
-    { key:"p1_mono",  label:"☐ Mono 1",         x:245, top:317, color:"#81c784", type:"check" },
-    { key:"p1_tri",   label:"☐ Tri 1",          x:318, top:317, color:"#81c784", type:"check" },
-    { key:"p1_kwh",   label:"kWh 1",            x:455, top:315, color:"#81c784", type:"cells" },
-    { key:"p1_prop",  label:"☐ Prop 1",         x:154, top:333, color:"#81c784", type:"check" },
-    { key:"p1_loc",   label:"☐ Loc 1",          x:39,  top:347, color:"#81c784", type:"check" },
-    { key:"p1_alt",   label:"☐ Alt 1",          x:265, top:346, color:"#81c784", type:"check" },
-    { key:"p2_pod",   label:"POD 2",            x:84,  top:368, color:"#ce93d8", type:"cells" },
-    { key:"p2_ifn",   label:"Ind.For.2",        x:255, top:391, color:"#ce93d8", type:"text" },
-    { key:"p2_nfn",   label:"N°For.2",          x:447, top:391, color:"#ce93d8", type:"text" },
-    { key:"p2_cfn",   label:"CAP For.2",        x:60,  top:409, color:"#ce93d8", type:"cells" },
-    { key:"p2_cfm",   label:"Comune For.2",     x:148, top:410, color:"#ce93d8", type:"text" },
-    { key:"p2_prv",   label:"Prov For.2",       x:543, top:409, color:"#ce93d8", type:"cells" },
-    { key:"p2_kw",    label:"kW 2",             x:125, top:430, color:"#ce93d8", type:"cells" },
-    { key:"p2_mono",  label:"☐ Mono 2",         x:246, top:433, color:"#ce93d8", type:"check" },
-    { key:"p2_tri",   label:"☐ Tri 2",          x:318, top:432, color:"#ce93d8", type:"check" },
-    { key:"p2_kwh",   label:"kWh 2",            x:455, top:430, color:"#ce93d8", type:"cells" },
-    { key:"p2_prop",  label:"☐ Prop 2",         x:154, top:449, color:"#ce93d8", type:"check" },
-    { key:"p2_loc",   label:"☐ Loc 2",          x:39,  top:459, color:"#ce93d8", type:"check" },
-    { key:"p2_alt",   label:"☐ Alt 2",          x:265, top:459, color:"#ce93d8", type:"check" },
-    { key:"p3_pod",   label:"POD 3",            x:84,  top:485, color:"#ffb74d", type:"cells" },
-    { key:"p3_ifn",   label:"Ind.For.3",        x:256, top:506, color:"#ffb74d", type:"text" },
-    { key:"p3_nfn",   label:"N°For.3",          x:447, top:506, color:"#ffb74d", type:"text" },
-    { key:"p3_cfn",   label:"CAP For.3",        x:60,  top:524, color:"#ffb74d", type:"cells" },
-    { key:"p3_cfm",   label:"Comune For.3",     x:148, top:525, color:"#ffb74d", type:"text" },
-    { key:"p3_prv",   label:"Prov For.3",       x:543, top:524, color:"#ffb74d", type:"cells" },
-    { key:"p3_kw",    label:"kW 3",             x:124, top:545, color:"#ffb74d", type:"cells" },
-    { key:"p3_mono",  label:"☐ Mono 3",         x:246, top:547, color:"#ffb74d", type:"check" },
-    { key:"p3_tri",   label:"☐ Tri 3",          x:318, top:547, color:"#ffb74d", type:"check" },
-    { key:"p3_kwh",   label:"kWh 3",            x:455, top:545, color:"#ffb74d", type:"cells" },
-    { key:"p3_prop",  label:"☐ Prop 3",         x:153, top:564, color:"#ffb74d", type:"check" },
-    { key:"p3_loc",   label:"☐ Loc 3",          x:39,  top:574, color:"#ffb74d", type:"check" },
-    { key:"p3_alt",   label:"☐ Alt 3",          x:265, top:574, color:"#ffb74d", type:"check" },
-    { key:"p4_pod",   label:"POD 4",            x:83,  top:598, color:"#ef9a9a", type:"cells" },
-    { key:"p4_ifn",   label:"Ind.For.4",        x:255, top:621, color:"#ef9a9a", type:"text" },
-    { key:"p4_nfn",   label:"N°For.4",          x:447, top:621, color:"#ef9a9a", type:"text" },
-    { key:"p4_cfn",   label:"CAP For.4",        x:60,  top:639, color:"#ef9a9a", type:"cells" },
-    { key:"p4_cfm",   label:"Comune For.4",     x:148, top:640, color:"#ef9a9a", type:"text" },
-    { key:"p4_prv",   label:"Prov For.4",       x:543, top:639, color:"#ef9a9a", type:"cells" },
-    { key:"p4_kw",    label:"kW 4",             x:126, top:662, color:"#ef9a9a", type:"cells" },
-    { key:"p4_mono",  label:"☐ Mono 4",         x:244, top:662, color:"#ef9a9a", type:"check" },
-    { key:"p4_tri",   label:"☐ Tri 4",          x:318, top:662, color:"#ef9a9a", type:"check" },
-    { key:"p4_kwh",   label:"kWh 4",            x:455, top:660, color:"#ef9a9a", type:"cells" },
-    { key:"p4_prop",  label:"☐ Prop 4",         x:154, top:677, color:"#ef9a9a", type:"check" },
-    { key:"p4_loc",   label:"☐ Loc 4",          x:39,  top:689, color:"#ef9a9a", type:"check" },
-    { key:"p4_alt",   label:"☐ Alt 4",          x:265, top:689, color:"#ef9a9a", type:"check" },
-    { key:"m_firma",  label:"Data firma",       x:55,  top:751, color:"#ef9a9a", type:"text" },
-  ],
-};
-
-const customFields = { preventivo: [], multisito: [] };
-const overrides    = {};
-let currentPdf = "preventivo", scale = 1.5, selectedKey = null, pdfDoc = null;
-
-function allFields(p) { return [...BASE_FIELDS[p], ...customFields[p]]; }
-function findField(p, k) { return allFields(p).find(f => f.key === k); }
-function getPos(k) {
-  const f = findField(currentPdf, k); if (!f) return {x:0,top:0};
-  const ov = overrides[currentPdf+"."+k];
-  return ov ? {x:ov.x, top:ov.top} : {x:f.x, top:f.top};
+async function loadPDF(){
+  stat("Caricamento…");
+  try{pdfDoc=await pdfjsLib.getDocument(PDFS[cur]).promise;await renderPDF();}
+  catch(e){pdfDoc=null;renderFallback();}
 }
-function setPos(k,x,t) { overrides[currentPdf+"."+k] = {x:Math.round(x), top:Math.round(t)}; }
-function pdfX(x)   { return x*scale; }
-function pdfT(t)   { return t*scale; }
-function canX(cx)  { return cx/scale; }
-function canT(cy)  { return cy/scale; }
-
-const PDF_FILES = { preventivo:"Modulo_energia_preventivo.pdf", multisito:"Modulo_energia_multisito.pdf" };
-
-async function loadPDF(type) {
-  status("Caricamento PDF…");
-  try {
-    pdfDoc = await pdfjsLib.getDocument(PDF_FILES[type]).promise;
-    await renderPage();
-  } catch(e) { pdfDoc=null; renderFallback(); }
+async function renderPDF(){
+  const page=await pdfDoc.getPage(1);
+  const vp=page.getViewport({scale:sc});
+  const cv=document.getElementById("pcanv");
+  cv.width=vp.width;cv.height=vp.height;
+  await page.render({canvasContext:cv.getContext("2d"),viewport:vp}).promise;
+  rebuildAll();
+  stat(`${allF().length} campi — trascina pin · 📦 per misurare box`);
 }
-async function renderPage() {
-  if (!pdfDoc) return renderFallback();
-  const page = await pdfDoc.getPage(1);
-  const vp   = page.getViewport({scale});
-  const c    = document.getElementById("pdf-canvas");
-  c.width=vp.width; c.height=vp.height;
-  await page.render({canvasContext:c.getContext("2d"),viewport:vp}).promise;
-  status(`${allFields(currentPdf).length} campi — trascina i pin o clicca sul PDF per aggiungerne`);
-  rebuildPins();
+function renderFallback(){
+  const cv=document.getElementById("pcanv");
+  cv.width=Math.round(595*sc);cv.height=Math.round(841*sc);
+  const ctx=cv.getContext("2d");
+  ctx.fillStyle="#13152a";ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.fillStyle="#3a4060";ctx.font=`${11*sc}px sans-serif`;ctx.textAlign="center";
+  ctx.fillText("⚠ Avvia python3 -m http.server 8000",cv.width/2,cv.height/2);
+  rebuildAll();stat("⚠ PDF non disponibile");
 }
-function renderFallback() {
-  const c=document.getElementById("pdf-canvas");
-  c.width=Math.round(595*scale); c.height=Math.round(841*scale);
-  const ctx=c.getContext("2d");
-  ctx.fillStyle="#2a2d3a"; ctx.fillRect(0,0,c.width,c.height);
-  ctx.fillStyle="#666"; ctx.font=`${13*scale}px sans-serif`; ctx.textAlign="center";
-  ctx.fillText("⚠ PDF non raggiungibile in file:// — usa un web server",c.width/2,c.height/2-30*scale);
-  ctx.font=`${10*scale}px monospace`; ctx.fillStyle="#888";
-  ctx.fillText("python3 -m http.server 8000",c.width/2,c.height/2+10*scale);
-  status("⚠ PDF non caricato — i pin sono comunque spostabili"); rebuildPins();
+function rebuildAll(){
+  document.querySelectorAll(".fov,.pin").forEach(e=>e.remove());
+  const C=document.getElementById("pcont");
+  allF().forEach(f=>mkOv(f,C));
+  buildList();buildPvList();
 }
-
-function rebuildPins() {
-  document.querySelectorAll(".field-pin").forEach(p=>p.remove());
-  const C=document.getElementById("pdf-container");
-  allFields(currentPdf).forEach(f=>createPin(f,C));
-  buildSidebar();
-}
-function createPin(f,C) {
-  C=C||document.getElementById("pdf-container");
-  const pos=getPos(f.key);
+function mkOv(f,C){
+  C=C||document.getElementById("pcont");
+  const FSZ=FONT_PX*sc,xpx=px(f.x),tpx=px(f.top);
+  // pin
   const pin=document.createElement("div");
-  pin.className="field-pin"+(f.key===selectedKey?" selected":"");
-  pin.id="pin-"+f.key; pin.dataset.key=f.key;
-  pin.style.left=pdfX(pos.x)+"px"; pin.style.top=pdfT(pos.top)+"px";
-  pin.innerHTML=`<div class="pin-crossh"></div><div class="pin-crossv"></div><div class="pin-dot" style="background:${f.color}"></div><div class="pin-label" style="color:${f.color}">${f.label}</div>`;
-  makeDraggable(pin,f.key);
-  pin.addEventListener("click",e=>{e.stopPropagation();selectField(f.key);});
+  pin.className="pin";pin.id="pin-"+f.key;
+  pin.style.cssText=`left:${xpx}px;top:${tpx}px;background:${f.c}`;
+  const tip=document.createElement("div");
+  tip.className="pin-tip";tip.textContent=f.lbl;tip.style.color=f.c;
+  pin.appendChild(tip);makeDrag(pin,f.key);
+  pin.addEventListener("click",e=>{e.stopPropagation();sel(f.key);});
   C.appendChild(pin);
+  // overlay
+  const ov=document.createElement("div");
+  ov.className="fov";ov.id="ov-"+f.key;
+  ov.style.left=xpx+"px";ov.style.top=(tpx-FSZ)+"px";ov.style.height=FSZ+"px";
+  const tv=testOf(f.key);
+  if(f.type==="cells"&&f.cw&&f.n){
+    ov.classList.add("fov-cells");
+    ov.style.width=(f.cw*f.n*sc)+"px";
+    const chars=[...String(tv).replace(/\s/g,"").toUpperCase()];
+    for(let i=0;i<f.n;i++){
+      const cb=document.createElement("div");
+      cb.className="cell-box";cb.style.cssText=`width:${f.cw*sc}px;border-color:${f.c}44`;
+      if(prevOn&&chars[i]){
+        const cc=document.createElement("div");cc.className="cell-char";
+        cc.textContent=chars[i];cc.style.cssText=`font-size:${FSZ*0.82}px;color:${f.c}`;
+        cb.appendChild(cc);
+      }
+      ov.appendChild(cb);
+    }
+  }else if(f.type==="check"){
+    ov.style.cssText+=`;width:${FSZ}px;border-left:1.5px solid ${f.c}55`;
+    if(prevOn&&tv==="X"){
+      const xv=document.createElement("div");xv.className="xval";
+      xv.textContent="X";xv.style.cssText=`font-size:${FSZ}px;color:${f.c}`;
+      ov.appendChild(xv);
+    }
+  }else{
+    ov.style.cssText+=`;min-width:20px;border-left:1.5px solid ${f.c}55`;
+    if(prevOn&&tv){
+      const txv=document.createElement("div");txv.className="tval";
+      txv.textContent=tv;txv.style.cssText=`font-size:${FSZ*0.82}px;color:${f.c}`;
+      ov.appendChild(txv);
+    }
+  }
+  C.appendChild(ov);
 }
-function makeDraggable(el,key) {
-  let sx,sy,sl,st;
+function makeDrag(el,key){
+  let sx,sy,sl,st,moved=false;
   el.addEventListener("mousedown",e=>{
-    e.preventDefault(); selectField(key);
-    sx=e.clientX; sy=e.clientY; sl=parseFloat(el.style.left); st=parseFloat(el.style.top);
+    if(e.button!==0)return;e.preventDefault();moved=false;
+    sx=e.clientX;sy=e.clientY;sl=parseFloat(el.style.left);st=parseFloat(el.style.top);
     const mv=e=>{
-      const nl=Math.max(0,sl+e.clientX-sx), nt=Math.max(0,st+e.clientY-sy);
-      el.style.left=nl+"px"; el.style.top=nt+"px";
-      setPos(key,canX(nl),canT(nt)); updateDetail(key); updateSidebarRow(key);
+      const nl=Math.max(0,sl+e.clientX-sx),nt=Math.max(0,st+e.clientY-sy);
+      if(Math.abs(e.clientX-sx)>2||Math.abs(e.clientY-sy)>2)moved=true;
+      el.style.left=nl+"px";el.style.top=nt+"px";
+      const ov=document.getElementById("ov-"+key);
+      if(ov){ov.style.left=nl+"px";ov.style.top=(nt-FONT_PX*sc)+"px";}
+      const f=fnd(key);if(f){f.x=Math.round(pt(nl));f.top=Math.round(pt(nt));}
+      if(selKey===key)refreshDet(key);updateLC(key);
     };
-    const up=()=>{ document.removeEventListener("mousemove",mv); document.removeEventListener("mouseup",up); };
-    document.addEventListener("mousemove",mv); document.addEventListener("mouseup",up);
+    const up=()=>{document.removeEventListener("mousemove",mv);document.removeEventListener("mouseup",up);if(!moved)sel(key);};
+    document.addEventListener("mousemove",mv);document.addEventListener("mouseup",up);
   });
 }
-
-// Click-to-place
-document.getElementById("pdf-container").addEventListener("click",e=>{
-  if(e.target.closest(".field-pin")) return;
-  const rect=document.getElementById("pdf-canvas").getBoundingClientRect();
-  const px=Math.round(canX(e.clientX-rect.left)), pt=Math.round(canT(e.clientY-rect.top));
-  document.getElementById("new-x").value=px;
-  document.getElementById("new-top").value=pt;
+// rubber-band
+let rbActive=false,rbStart=null;
+const rb=document.getElementById("rubberband");
+document.getElementById("pcanv").addEventListener("mousedown",e=>{
+  if(!boxMode)return;e.preventDefault();
+  const r=e.currentTarget.getBoundingClientRect();
+  rbStart={cx:e.clientX-r.left,cy:e.clientY-r.top};
+  rb.style.cssText=`display:block;left:${rbStart.cx}px;top:${rbStart.cy}px;width:0;height:0`;
+  rbActive=true;
+});
+document.addEventListener("mousemove",e=>{
+  if(!rbActive||!rbStart)return;
+  const r=document.getElementById("pcanv").getBoundingClientRect();
+  const cx=e.clientX-r.left,cy=e.clientY-r.top;
+  rb.style.left=Math.min(cx,rbStart.cx)+"px";rb.style.top=Math.min(cy,rbStart.cy)+"px";
+  rb.style.width=Math.abs(cx-rbStart.cx)+"px";rb.style.height=Math.abs(cy-rbStart.cy)+"px";
+});
+document.addEventListener("mouseup",e=>{
+  if(!rbActive||!rbStart)return;
+  rbActive=false;rb.style.display="none";
+  const r=document.getElementById("pcanv").getBoundingClientRect();
+  const cx=e.clientX-r.left,cy=e.clientY-r.top;
+  const wpx=Math.abs(cx-rbStart.cx),hpx=Math.abs(cy-rbStart.cy);
+  const x0=Math.round(pt(Math.min(cx,rbStart.cx)));
+  const y0=Math.round(pt(Math.min(cy,rbStart.cy)+hpx));
+  const nCells=parseInt(document.getElementById("nn").value)||5;
+  const cwCalc=Math.round(wpx/sc/nCells*10)/10;
   switchTab("add");
-  document.getElementById("new-key").focus();
-  status(`📍 Click a x:${px} top:${pt} — compila il form e aggiungi`);
+  document.getElementById("nx").value=x0;
+  document.getElementById("ntop").value=y0;
+  if(document.getElementById("nt").value==="cells")document.getElementById("ncw").value=cwCalc;
+  stat(`📦 x=${x0} top=${y0}  largh=${Math.round(wpx/sc)}pt  cw≈${cwCalc} per ${nCells} celle`);
+  rbStart=null;
 });
-
-function selectField(key) {
-  selectedKey=key;
-  document.querySelectorAll(".field-pin").forEach(p=>p.classList.remove("selected"));
-  const pin=document.getElementById("pin-"+key); if(pin) pin.classList.add("selected");
-  document.querySelectorAll(".field-row").forEach(r=>r.classList.remove("active"));
-  const row=document.querySelector(`.field-row[data-key="${key}"]`);
-  if(row){row.classList.add("active");row.scrollIntoView({block:"nearest"});}
-  updateDetail(key); switchTab("fields");
+function sel(key){
+  selKey=key;
+  document.querySelectorAll(".pin").forEach(p=>p.style.outline="none");
+  document.getElementById("pin-"+key)?.style.setProperty("outline","2.5px solid #fff");
+  document.querySelectorAll(".fr").forEach(r=>r.classList.remove("on"));
+  document.querySelector(`.fr[data-key="${key}"]`)?.classList.add("on");
+  document.querySelector(`.fr[data-key="${key}"]`)?.scrollIntoView({block:"nearest"});
+  refreshDet(key);switchTab("list");
 }
-
-function updateDetail(key) {
-  const f=findField(currentPdf,key); if(!f) return;
-  const pos=getPos(key);
-  document.getElementById("detail").style.display="block";
-  document.getElementById("det-title").innerHTML=`<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${f.color};margin-right:5px"></span>${f.label}`;
-  document.getElementById("inp-label").value=f.label;
-  document.getElementById("inp-x").value=pos.x;
-  document.getElementById("inp-y").value=pos.top;
-  document.getElementById("inp-type").value=f.type;
-  document.getElementById("code-out").textContent=codeFor(key);
+function refreshDet(key){
+  const f=fnd(key);if(!f)return;
+  document.getElementById("det").style.display="block";
+  document.getElementById("dtitle").innerHTML=`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${f.c}"></span>${f.lbl}`;
+  document.getElementById("di-lbl").value=f.lbl;
+  document.getElementById("di-x").value=f.x;
+  document.getElementById("di-top").value=f.top;
+  document.getElementById("di-type").value=f.type;
+  const isC=f.type==="cells";
+  document.getElementById("di-cells-row").style.display=isC?"flex":"none";
+  if(isC){document.getElementById("di-n").value=f.n||5;document.getElementById("di-cw").value=f.cw||11;}
+  document.getElementById("codeout").textContent=jsLine(f);
 }
-function codeFor(key) {
-  const f=findField(currentPdf,key); const pos=getPos(key); if(!f) return "";
-  if(f.type==="check") return `CK(condition, ${pos.x}, ${pos.top});`;
-  if(f.type==="cells") return `CL(d.${f.key}, ${pos.x}, ${pos.top}, cw, n);`;
-  return `T(d.${f.key}, ${pos.x}, ${pos.top}, SZ);`;
+function jsLine(f){
+  if(f.type==="check")return`CK(condition, ${f.x}, ${f.top});`;
+  if(f.type==="cells")return`CL(d.${f.key}, ${f.x}, ${f.top}, ${f.cw||11}, ${f.n||5});`;
+  return`T(d.${f.key}, ${f.x}, ${f.top}, SZ);`;
 }
-function updateSidebarRow(key) {
-  const pos=getPos(key);
-  const el=document.querySelector(`.field-row[data-key="${key}"] .fr-coords`);
-  if(el) el.textContent=`x:${pos.x} t:${pos.top}`;
+["di-lbl","di-x","di-top","di-type","di-n","di-cw"].forEach(id=>{
+  document.getElementById(id).addEventListener("input",e=>{
+    if(!selKey)return;const f=fnd(selKey);if(!f)return;
+    const v=e.target.value;
+    if(id==="di-lbl")f.lbl=v;
+    if(id==="di-x"){f.x=parseFloat(v)||0;mvPinOv(selKey);}
+    if(id==="di-top"){f.top=parseFloat(v)||0;mvPinOv(selKey);}
+    if(id==="di-type"){f.type=v;document.getElementById("di-cells-row").style.display=(v==="cells")?"flex":"none";rebuildOne(selKey);}
+    if(id==="di-n"){f.n=parseInt(v)||5;rebuildOne(selKey);}
+    if(id==="di-cw"){f.cw=parseFloat(v)||11;rebuildOne(selKey);}
+    document.getElementById("codeout").textContent=jsLine(f);
+    updateLC(selKey);
+  });
+});
+function mvPinOv(key){
+  const f=fnd(key);if(!f)return;
+  const xpx=px(f.x),tpx=px(f.top);
+  const pin=document.getElementById("pin-"+key);
+  if(pin){pin.style.left=xpx+"px";pin.style.top=tpx+"px";}
+  const ov=document.getElementById("ov-"+key);
+  if(ov){ov.style.left=xpx+"px";ov.style.top=(tpx-FONT_PX*sc)+"px";}
 }
-
-document.getElementById("inp-label").addEventListener("input",e=>{
-  if(!selectedKey) return;
-  const f=findField(currentPdf,selectedKey); if(f) f.label=e.target.value;
-  const pin=document.getElementById("pin-"+selectedKey);
-  if(pin){const l=pin.querySelector(".pin-label");if(l) l.textContent=e.target.value;}
-  buildSidebar(); updateDetail(selectedKey);
-});
-document.getElementById("inp-x").addEventListener("input",e=>{
-  if(!selectedKey) return;
-  const v=parseFloat(e.target.value)||0, pos=getPos(selectedKey);
-  setPos(selectedKey,v,pos.top);
-  const pin=document.getElementById("pin-"+selectedKey); if(pin) pin.style.left=pdfX(v)+"px";
-  document.getElementById("code-out").textContent=codeFor(selectedKey); updateSidebarRow(selectedKey);
-});
-document.getElementById("inp-y").addEventListener("input",e=>{
-  if(!selectedKey) return;
-  const v=parseFloat(e.target.value)||0, pos=getPos(selectedKey);
-  setPos(selectedKey,pos.x,v);
-  const pin=document.getElementById("pin-"+selectedKey); if(pin) pin.style.top=pdfT(v)+"px";
-  document.getElementById("code-out").textContent=codeFor(selectedKey); updateSidebarRow(selectedKey);
-});
-document.getElementById("inp-type").addEventListener("change",e=>{
-  if(!selectedKey) return;
-  const f=findField(currentPdf,selectedKey); if(f) f.type=e.target.value;
-  document.getElementById("code-out").textContent=codeFor(selectedKey);
-});
-
-function buildSidebar(filter) {
-  const list=document.getElementById("field-list"); list.innerHTML="";
-  const q=(filter||"").toLowerCase();
-  allFields(currentPdf).forEach(f=>{
-    if(q&&!f.label.toLowerCase().includes(q)&&!f.key.toLowerCase().includes(q)) return;
-    const pos=getPos(f.key);
-    const row=document.createElement("div");
-    row.className="field-row"+(f.key===selectedKey?" active":""); row.dataset.key=f.key;
-    const isCustom=customFields[currentPdf].some(c=>c.key===f.key);
-    row.innerHTML=`<div class="fr-dot" style="background:${f.color}"></div><div class="fr-name">${f.label}</div><div class="fr-coords">x:${pos.x} t:${pos.top}</div>${isCustom?`<button class="fr-del" data-del="${f.key}">✕</button>`:""}`;
-    row.addEventListener("click",e=>{
-      if(e.target.dataset.del) return;
-      selectField(f.key);
-      const pin=document.getElementById("pin-"+f.key); if(pin) pin.scrollIntoView({block:"center",behavior:"smooth"});
-    });
-    const del=row.querySelector("[data-del]");
-    if(del) del.addEventListener("click",e=>{ e.stopPropagation(); deleteField(f.key); });
-    list.appendChild(row);
+function rebuildOne(key){
+  document.getElementById("ov-"+key)?.remove();
+  const f=fnd(key);if(!f)return;
+  mkOv(f,document.getElementById("pcont"));
+}
+function buildList(q){
+  const C=document.getElementById("frows");C.innerHTML="";
+  const ql=(q||"").toLowerCase();
+  allF().forEach(f=>{
+    if(ql&&!f.lbl.toLowerCase().includes(ql)&&!f.key.toLowerCase().includes(ql))return;
+    const r=document.createElement("div");
+    r.className="fr"+(f.key===selKey?" on":"");r.dataset.key=f.key;
+    r.innerHTML=`<div class="fd" style="background:${f.c}"></div><div class="fn">${f.lbl}</div><div class="ft" style="color:${f.c}99">${f.type}</div><div class="fco" id="lc-${f.key}">x:${f.x} t:${f.top}</div>`;
+    r.addEventListener("click",()=>{sel(f.key);document.getElementById("pin-"+f.key)?.scrollIntoView({block:"center",behavior:"smooth"});});
+    C.appendChild(r);
   });
 }
-document.getElementById("field-search").addEventListener("input",e=>buildSidebar(e.target.value));
-
-// Color palette
-const colorGrid=document.getElementById("color-grid");
-PALETTE.forEach(c=>{
-  const sw=document.createElement("div");
-  sw.className="color-swatch"+(c===newFieldColor?" selected":""); sw.style.background=c; sw.title=c;
-  sw.addEventListener("click",()=>{ newFieldColor=c; document.querySelectorAll(".color-swatch").forEach(s=>s.classList.remove("selected")); sw.classList.add("selected"); });
-  colorGrid.appendChild(sw);
-});
-
-document.getElementById("btn-add-field").addEventListener("click",()=>{
-  const key=document.getElementById("new-key").value.trim().replace(/\s+/g,"_");
-  const label=document.getElementById("new-label").value.trim();
-  const type=document.getElementById("new-type").value;
-  const x=parseInt(document.getElementById("new-x").value)||100;
-  const top=parseInt(document.getElementById("new-top").value)||100;
-  if(!key){alert("Inserisci una key."); return;}
-  if(!label){alert("Inserisci un'etichetta."); return;}
-  if(findField(currentPdf,key)){alert(`Key "${key}" già esistente.`); return;}
-  const nf={key,label,x,top,color:newFieldColor,type};
-  customFields[currentPdf].push(nf); setPos(key,x,top);
-  createPin(nf); buildSidebar(); selectField(key);
-  document.getElementById("new-key").value=""; document.getElementById("new-label").value="";
-  switchTab("fields"); status(`✅ Campo "${label}" aggiunto`);
-});
-
-function deleteField(key) {
-  const idx=customFields[currentPdf].findIndex(f=>f.key===key); if(idx===-1) return;
-  customFields[currentPdf].splice(idx,1); delete overrides[currentPdf+"."+key];
-  const pin=document.getElementById("pin-"+key); if(pin) pin.remove();
-  if(selectedKey===key){ selectedKey=null; document.getElementById("detail").style.display="none"; }
-  buildSidebar();
+function updateLC(key){
+  const f=fnd(key);if(!f)return;
+  const el=document.getElementById("lc-"+key);if(el)el.textContent=`x:${f.x} t:${f.top}`;
+  const fn=document.querySelector(`.fr[data-key="${key}"] .fn`);if(fn)fn.textContent=f.lbl;
 }
-
-function switchTab(tab) {
-  document.querySelectorAll(".stab").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
-  document.getElementById("tab-fields").classList.toggle("active",tab==="fields");
-  document.getElementById("tab-add").classList.toggle("active",tab==="add");
+document.getElementById("fsrch").addEventListener("input",e=>buildList(e.target.value));
+function buildPvList(){
+  const C=document.getElementById("pvrows");C.innerHTML="";
+  allF().filter(f=>f.type!=="check").forEach(f=>{
+    const r=document.createElement("div");r.className="pvr";
+    r.innerHTML=`<div class="pvd" style="background:${f.c}"></div><div class="pvn" title="${f.key}">${f.lbl}</div><input class="pvi" data-key="${f.key}" value="${testOf(f.key)}" placeholder="testo…">`;
+    r.querySelector(".pvi").addEventListener("input",e=>{testVals[cur+":"+f.key]=e.target.value;rebuildOne(f.key);});
+    C.appendChild(r);
+  });
 }
-document.querySelectorAll(".stab").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
-
+document.getElementById("nt").addEventListener("change",e=>{
+  document.getElementById("nadd-cells").style.display=(e.target.value==="cells")?"block":"none";
+});
+document.getElementById("btnadd").addEventListener("click",()=>{
+  const key=document.getElementById("nk").value.trim().replace(/\W+/g,"_");
+  const lbl=document.getElementById("nl").value.trim();
+  const type=document.getElementById("nt").value;
+  const x=parseFloat(document.getElementById("nx").value)||100;
+  const top=parseFloat(document.getElementById("ntop").value)||100;
+  const n=parseInt(document.getElementById("nn").value)||5;
+  const cw=parseFloat(document.getElementById("ncw").value)||11;
+  if(!key){alert("Inserisci una key");return;}
+  if(!lbl){alert("Inserisci un'etichetta");return;}
+  if(fnd(key)){alert(`Key "${key}" già esistente`);return;}
+  const nf={key,lbl,x,top,c:newCol,type,test:"",...(type==="cells"?{cw,n}:{})};
+  extra[cur].push(nf);mkOv(nf,document.getElementById("pcont"));
+  buildList();buildPvList();
+  document.getElementById("nk").value="";document.getElementById("nl").value="";
+  sel(key);switchTab("list");stat(`✅ "${lbl}" aggiunto`);
+});
+const palC=document.getElementById("pal");
+COLORS.forEach(c=>{
+  const sw=document.createElement("div");sw.className="sw"+(c===newCol?" on":"");sw.style.background=c;
+  sw.addEventListener("click",()=>{newCol=c;document.querySelectorAll(".sw").forEach(s=>s.classList.remove("on"));sw.classList.add("on");});
+  palC.appendChild(sw);
+});
+document.getElementById("btn-prev").addEventListener("click",()=>{
+  prevOn=!prevOn;
+  const b=document.getElementById("btn-prev");
+  b.textContent=prevOn?"👁 Anteprima ON":"👁 Anteprima OFF";
+  b.classList.toggle("on",prevOn);rebuildAll();
+});
+document.getElementById("mode-box").addEventListener("click",()=>{
+  boxMode=!boxMode;
+  const b=document.getElementById("mode-box");
+  b.textContent=boxMode?"📦 Disegna box ON":"📦 Disegna box OFF";
+  b.classList.toggle("on",boxMode);
+  document.getElementById("pcanv").style.cursor=boxMode?"crosshair":"default";
+  if(boxMode){switchTab("add");stat("📦 Trascina sul PDF per misurare un box");}
+  else stat("Modalità disegno disattivata");
+});
 document.getElementById("btn-copy").addEventListener("click",()=>{
-  const fn=currentPdf==="preventivo"?"_fillPreventivo":"_fillMultisito";
-  const lines=[`// ── Coordinate aggiornate — ${currentPdf} ──`,`// Copia in ${fn}()`,""];
-  allFields(currentPdf).forEach(f=>{lines.push(`// ${f.label}`); lines.push(codeFor(f.key));});
+  const fn=cur==="preventivo"?"_fillPreventivo":"_fillMultisito";
+  const lines=[`// ── Coordinate aggiornate — ${cur} ──`,`// Copia in ${fn}()`,""];
+  allF().forEach(f=>{lines.push(`// ${f.lbl}`);lines.push(jsLine(f));});
   navigator.clipboard.writeText(lines.join("\n")).then(()=>{
-    const b=document.getElementById("btn-copy"); b.textContent="✅ Copiato!";
+    const b=document.getElementById("btn-copy");b.textContent="✅ Copiato!";
     setTimeout(()=>b.textContent="📋 Copia JS",2000);
   });
 });
-
-document.getElementById("btn-export").addEventListener("click",()=>{
-  const data={overrides, custom_preventivo:customFields.preventivo, custom_multisito:customFields.multisito};
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}));
-  a.download="pdf-field-positions.json"; a.click();
-});
-
-document.getElementById("btn-reset").addEventListener("click",()=>{
-  if(!confirm("Reset coordinate modificate?")) return;
-  Object.keys(overrides).forEach(k=>{ if(k.startsWith(currentPdf+".")) delete overrides[k]; });
-  rebuildPins(); document.getElementById("detail").style.display="none"; selectedKey=null;
-  status("Coordinate resettate");
-});
-
+function switchTab(t){
+  document.querySelectorAll(".stab").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
+  ["list","prev","add"].forEach(id=>document.getElementById("t"+id)?.classList.toggle("on",id===t));
+}
+document.querySelectorAll(".stab").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
 document.getElementById("sel-pdf").addEventListener("change",async e=>{
-  currentPdf=e.target.value; selectedKey=null;
-  document.getElementById("detail").style.display="none";
-  document.getElementById("field-search").value="";
-  await loadPDF(currentPdf);
+  cur=e.target.value;selKey=null;
+  document.getElementById("det").style.display="none";
+  document.getElementById("fsrch").value="";
+  await loadPDF();
 });
 document.getElementById("sel-zoom").addEventListener("change",async e=>{
-  scale=parseFloat(e.target.value);
-  if(pdfDoc) await renderPage(); else renderFallback();
+  sc=parseFloat(e.target.value);
+  if(pdfDoc)await renderPDF();else renderFallback();
 });
-
-function status(msg) { document.getElementById("status").textContent=msg; }
-loadPDF(currentPdf);
+function stat(m){document.getElementById("stat").textContent=m;}
+loadPDF();
 </script>
 </body>
 </html>
