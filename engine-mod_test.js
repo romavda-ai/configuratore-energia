@@ -64,7 +64,6 @@
 }
 .hdr h2 { font-size: 17px; font-weight: 800; letter-spacing: -.3px; margin: 0 36px 2px 0; }
 .hdr p  { font-size: 11.5px; color: #7a8099; margin: 0 0 12px; }
-.hdr-logo { position: absolute; top: 18px; right: 48px; height: 26px; width: auto; }
 .btn-x  {
   position: absolute; top: 14px; right: 16px;
   background: none; border: none; font-size: 19px; cursor: pointer;
@@ -563,7 +562,6 @@
 
           <div class="hdr" id="hdr">
             <button class="btn-x" id="btn-x">✕</button>
-            <img class="hdr-logo" src="https://romavda-ai.github.io/configuratore-energia/logoFW.png" alt="Fastweb" onerror="this.style.display='none'">
             <h2>Compila Modulistica</h2>
             <p>Richiesta di Preventivo – Fastweb Energia Elettrica</p>
           </div>
