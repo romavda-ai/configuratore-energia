@@ -16,7 +16,7 @@
   /* ════════════════════════════════════════════════════════
      COSTANTI
   ════════════════════════════════════════════════════════ */
-  const ORANGE = "#F5A01E";
+  const ORANGE = "#FFC424";
   const STEPS  = [
     { id: "offerta",    lbl: "Offerta"    },
     { id: "anagrafica", lbl: "Anagrafica" },
@@ -122,10 +122,10 @@
 }
 .ef input:focus, .ef select:focus {
   border-color: ${ORANGE};
-  box-shadow: 0 0 0 3px rgba(245,160,30,.18);
+  box-shadow: 0 0 0 3px rgba(255,196,36,.18);
 }
 .ef input::placeholder { font-style: italic; color: #b0b8cc; font-weight: 400; opacity: 1; }
-.ef input.inh { background: #fffbf0; border-color: rgba(245,160,30,.45); }
+.ef input.inh { background: #fffbf0; border-color: rgba(255,196,36,.45); }
 .ef input[type=date] { font-size: 12px; }
 .ef select { appearance: none; -webkit-appearance: none; padding-right: 28px; cursor: pointer; }
 .ef-arr {
@@ -161,7 +161,7 @@
   border: 1.5px solid #e8eaf0; border-radius: 10px;
   padding: 11px 13px; transition: border-color .15s, background .15s;
 }
-.oc:has(input:checked) { border-color: ${ORANGE}; background: rgba(245,160,30,.06); }
+.oc:has(input:checked) { border-color: ${ORANGE}; background: rgba(255,196,36,.06); }
 .oc-title {
   font-size: 9.5px; font-weight: 800; text-transform: uppercase;
   letter-spacing: .1em; color: #7a8099; margin-bottom: 7px;
@@ -176,7 +176,7 @@
 /* ── Banner ereditato ── */
 .inh-banner {
   font-size: 11.5px; color: #a07010; background: #fffbf0;
-  border: 1px solid rgba(245,160,30,.35); border-radius: 8px;
+  border: 1px solid rgba(255,196,36,.35); border-radius: 8px;
   padding: 8px 12px; margin: -4px 0 12px; line-height: 1.5;
 }
 
@@ -193,7 +193,7 @@
 .btn-next {
   flex: 1; padding: 12px; border: none;
   background: linear-gradient(135deg, ${ORANGE}, #e08a00); color: #fff;
-  font-weight: 800; box-shadow: 0 4px 14px rgba(245,160,30,.38);
+  font-weight: 800; box-shadow: 0 4px 14px rgba(255,196,36,.38);
 }
 .btn-next:hover { filter: brightness(1.08); transform: translateY(-1px); }
 .btn-back {
@@ -241,7 +241,7 @@
   border: 1.5px solid #e8e8e8; border-radius: 12px;
   overflow: hidden; transition: box-shadow .18s;
 }
-.pod-card:focus-within { box-shadow: 0 0 0 3px rgba(245,160,30,.18); border-color: ${ORANGE}; }
+.pod-card:focus-within { box-shadow: 0 0 0 3px rgba(255,196,36,.18); border-color: ${ORANGE}; }
 
 .pod-card-hdr {
   display: flex; align-items: center; justify-content: space-between;
@@ -296,8 +296,8 @@
   transition: border-color .14s, box-shadow .14s;
   box-shadow: 0 1px 2px rgba(15,17,23,.05);
 }
-.pf input:focus { border-color: ${ORANGE}; box-shadow: 0 0 0 3px rgba(245,160,30,.18); }
-.pf input:hover:not(:focus) { border-color: rgba(245,160,30,.4); }
+.pf input:focus { border-color: ${ORANGE}; box-shadow: 0 0 0 3px rgba(255,196,36,.18); }
+.pf input:hover:not(:focus) { border-color: rgba(255,196,36,.4); }
 .pf input::placeholder { font-style: italic; color: #b0b8cc; font-weight: 400; opacity: 1; }
 .pf .pi {
   position: absolute; right: 9px; top: 50%; transform: translateY(-50%);
@@ -336,7 +336,7 @@
 .btn-add-pod:hover {
   background: #fff3d6; border-color: #d4860a;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(245,160,30,.18);
+  box-shadow: 0 4px 12px rgba(255,196,36,.18);
 }
 .btn-add-pod:active { transform: translateY(0); }
 .btn-add-pod .plus {
@@ -986,7 +986,7 @@ body{padding:3mm 7mm 20mm;}
 .off-grid{display:flex;gap:14pt;}
 .off-col-title{font-size:7.5pt;font-weight:700;margin-bottom:2.5pt;}
 .off-item{display:flex;align-items:center;gap:3pt;margin-bottom:2.5pt;font-size:7.5pt;}
-.sec{background:#F5A01E;color:#fff;font-size:8.5pt;font-weight:700;
+.sec{background:#FFC424;color:#fff;font-size:8.5pt;font-weight:700;
   text-transform:uppercase;letter-spacing:.06em;
   padding:3pt 6pt;margin-top:4pt;margin-bottom:3pt;}
 .frows{display:flex;flex-wrap:wrap;gap:0 4pt;margin-bottom:3pt;align-items:flex-end;}
@@ -1041,6 +1041,7 @@ body{padding:3mm 7mm 20mm;}
     <h1>RICHIESTA DI PREVENTIVO</h1>
     <div class="sub">Fastweb Energia - Energia Elettrica</div>
   </div>
+  <img src="https://romavda-ai.github.io/configuratore-energia/logoFW.png" alt="Fastweb" style="height:32pt;width:auto;" onerror="this.style.display='none'">
 </div>
 
 <p class="intro">
@@ -1285,7 +1286,7 @@ ${SEC("DATI DI PAGAMENTO")}
       const podBlocks = pods.map((p,i) =>
         '<div style="border:0.5pt solid #e8c060;border-radius:2pt;padding:4pt 6pt;margin-bottom:5pt;">'
         +'<div style="display:flex;align-items:center;gap:5pt;margin-bottom:3pt;">'
-          +'<span style="background:#F5A01E;color:#fff;border-radius:4pt;width:14pt;height:14pt;display:inline-flex;align-items:center;justify-content:center;font-size:8pt;font-weight:800">'+(i+1)+'</span>'
+          +'<span style="background:#FFC424;color:#fff;border-radius:4pt;width:14pt;height:14pt;display:inline-flex;align-items:center;justify-content:center;font-size:8pt;font-weight:800">'+(i+1)+'</span>'
           +'<span style="font-size:7pt;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em">POD</span>'
         +'</div>'
         +'<div style="'+rowS+'">'
@@ -1314,13 +1315,15 @@ ${SEC("DATI DI PAGAMENTO")}
         +'html{height:100%;}'
         +'body{font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#000;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;min-height:100%;display:flex;flex-direction:column;padding:4mm 8mm 0;}'
         +'.content{flex:1;}'
-        +'.sec{background:#F5A01E;color:#fff;font-size:8.5pt;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2.5pt 6pt;margin-bottom:4pt;}'
+        +'.sec{background:#FFC424;color:#fff;font-size:8.5pt;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2.5pt 6pt;margin-bottom:4pt;}'
         +'.footer{width:100%;padding:2.5pt 0 3pt;font-size:4.8pt;color:#555;text-align:center;border-top:0.4pt solid #bbb;margin-top:8pt;line-height:1.6;}'
         +'.sidedate{position:fixed;bottom:30mm;left:2mm;writing-mode:vertical-rl;transform:rotate(180deg);font-size:5pt;color:#999;letter-spacing:.3pt;}'
         +'</style></head><body>'
         +'<div class="content">'
-        +'<div style="margin-bottom:5pt;"><div style="font-size:15pt;font-weight:700;line-height:1.1;">ALLEGATO MULTISITO</div>'
+        +'<div style="margin-bottom:5pt;display:flex;align-items:flex-start;justify-content:space-between;"><div><div style="font-size:15pt;font-weight:700;line-height:1.1;">ALLEGATO MULTISITO</div>'
         +'<div style="font-size:8.5pt;color:#444;">Contratto Fastweb Energia \u2022 Energia Elettrica</div></div>'
+        +'<img src="https://romavda-ai.github.io/configuratore-energia/logoFW.png" alt="Fastweb" style="height:32pt;width:auto;" onerror="this.style.display=\'none\'">'
+        +'</div>'
         +'<div class="sec">DATI ANAGRAFICI E DI RESIDENZA</div>'
         +'<div style="'+rowS+'"><div style="flex:1;"><div style="'+lblS+'">Nome e Cognome (Ragione Sociale se Impresa)</div><div style="'+botS+'font-size:8pt;">'+TX(d.rag,60)+'</div></div></div>'
         +'<div style="'+rowS+'">'
