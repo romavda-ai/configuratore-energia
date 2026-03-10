@@ -999,14 +999,15 @@
     page.drawText("✓", { x, y, size, font, color: PDFLib.rgb(0, 0, 0) });
   }
 
-  // Disegna caratteri in celle separate (stile codice fiscale)
+  // Disegna caratteri in celle separate — centrati orizzontalmente in ogni cella
   function _drawCells(page, value, x, y, cellWidth, count, font, size = 7) {
     const chars = String(value || "").replace(/\s/g, "").toUpperCase().split("");
+    const charW = size * 0.55; // stima larghezza char Helvetica
     for (let i = 0; i < count; i++) {
-      const cx = x + i * cellWidth;
-      if (chars[i]) {
-        _drawText(page, chars[i], cx + cellWidth * 0.2, y, { font, size });
-      }
+      if (!chars[i]) continue;
+      const cellX = x + i * cellWidth;
+      const offsetX = (cellWidth - charW) / 2;
+      _drawText(page, chars[i], cellX + offsetX, y, { font, size });
     }
   }
 
@@ -1034,14 +1035,15 @@
     const CL = (val, x, top, cw, n)   => _drawCells(page, val, x, height - top, cw, n, font, SZ - 1);
 
     // ── NOME OFFERTA ──
+    // Coordinate x0,top rilevate dalle celle 5x5pt nel PDF
     const offerteMap = {
-      "Fastweb Energia Light":         [39,  176],
-      "Fastweb Energia Full":          [39,  188],
-      "Fastweb Energia Maxi":          [39,  199],
-      "Fastweb Energia Flex":          [168, 176],
-      "Fastweb Energia Fix":           [167, 187],
-      "Fastweb Energia Business Flex": [297, 176],
-      "Fastweb Energia Business Fix":  [298, 188],
+      "Fastweb Energia Light":         [36.9,  174.1],
+      "Fastweb Energia Full":          [36.9,  185.1],
+      "Fastweb Energia Maxi":          [36.9,  196.1],
+      "Fastweb Energia Flex":          [164.7, 173.4],
+      "Fastweb Energia Fix":           [164.7, 184.4],
+      "Fastweb Energia Business Flex": [295.1, 174.2],
+      "Fastweb Energia Business Fix":  [295.1, 185.2],
     };
     Object.entries(offerteMap).forEach(([name, [x, top]]) => {
       const sel = d.offerta === name || (d.consumerOffers && d.consumerOffers.includes(name));
@@ -1051,36 +1053,43 @@
     // ── DATI ANAGRAFICI ──
     T(d.rag,  204, 231, SZ);
     T(d.ind,  130, 251, SZ);
-    T(d.num,  457, 250, SZ);
-    CL(d.cap, 514, 251, 7.5, 5);
+    T(d.num,  457, 248, SZ);
+    // CAP: n=3, x0=519.8, cw=9.72  (top=248)
+    CL(d.cap, 519.8, 248, 9.72, 3);
     T(d.com,  111, 279, SZ);
-    CL(d.prv, 544, 280, 9, 2);
-    CL(d.cf,   91, 300, 7.5, 16);
-    CL(d.piv, 320, 300, 7.5, 11);
-    CL(d.ate, 504, 300, 7.5, 8);
+    T(d.prv,  544, 280, SZ);
+    // CF: n=14, x0=96.0, cw=9.70  (top=297)
+    CL(d.cf,   96.0, 297, 9.70, 14);
+    // PIVA: n=9, x0=324.9, cw=9.72  (top=297)
+    CL(d.piv, 324.9, 297, 9.72, 9);
+    // ATECO: n=4, x0=509.0, cw=9.72  (top=297)
+    CL(d.ate, 509.0, 297, 9.72, 4);
     T(d.leg,  234, 320, SZ);
-    CL(d.cfl, 183, 340, 7.5, 16);
+    // CF Legale: n=14, x0=188.2, cw=9.70  (top=337)
+    CL(d.cfl, 188.2, 337, 9.70, 14);
 
     // ── DOCUMENTO ──
     T(d.tdc,  107, 362, SZ);
     T(d.ndc,  367, 361, SZ);
+    // Date rilascio/scadenza: cw=24.28, x0=93.7 / 218.9
     const drl = _fmtDate(d.drl);
     if (drl) {
       const [dd, mm, yyyy] = drl.split("/");
-      CL(dd,    87, 380, 8.5, 2);
-      CL(mm,   112, 380, 8.5, 2);
-      CL(yyyy, 137, 380, 8.5, 4);
+      CL(dd,    93.7, 378, 24.28, 2);
+      CL(mm,   143.2, 378, 24.28, 2);
+      CL(yyyy, 192.7, 378, 24.28, 4);
     }
     const dsc = _fmtDate(d.dsc);
     if (dsc) {
       const [dd, mm, yyyy] = dsc.split("/");
-      CL(dd,   213, 380, 8.5, 2);
-      CL(mm,   238, 380, 8.5, 2);
-      CL(yyyy, 263, 380, 8.5, 4);
+      CL(dd,   218.9, 378, 24.28, 2);
+      CL(mm,   268.4, 378, 24.28, 2);
+      CL(yyyy, 317.9, 378, 24.28, 4);
     }
     T(d.rda,  87,  400, SZ);
     T(d.naz || "ITALIA", 350, 400, SZ);
-    CL((d.tel||"").replace(/[\s+]/g,""), 148, 420, 7.5, 13);
+    // Cellulare: 9 celle, x0=151.4, cw=9.92  (top=417)
+    CL((d.tel||"").replace(/[\s+]/g,""), 151.4, 417, 9.92, 9);
     // Email
     if (d.mai) {
       const [lp, dom] = d.mai.split("@");
@@ -1093,35 +1102,46 @@
     }
 
     // ── DATI TECNICI ──
+    // POD: n=12, x0=88.5, cw=9.67  (top=490)
+    // kWh: n=5,  x0=301.5, cw=9.71
+    // kW:  n=3,  x0=422.8, cw=9.69
     const isMulti = d.forn === "multisito";
     if (!isMulti) {
-      CL(d.pod,  83, 492, 7.5, 14);
-      CL(d.kwh, 297, 491, 7.5, 8);
-      CL(d.kw,  418, 492, 7.5, 6);
+      CL(d.pod,  88.5, 490, 9.67, 12);
+      CL(d.kwh, 301.5, 490, 9.71,  5);
+      CL(d.kw,  422.8, 490, 9.69,  3);
       T(d.ifn,  140, 512, SZ);
       T(d.nfn,  455, 512, SZ);
-      CL(d.cfn, 515, 513, 7.5, 5);
+      // CAP fornitura: n=3, x0=519.8, cw=9.72  (top=510)
+      CL(d.cfn, 519.8, 510, 9.72, 3);
       T(d.cfm,   87, 540, SZ);
-      CL(d.cfp, 544, 542, 9, 2);
+      T(d.cfp,  544, 542, SZ);
     }
-    CK(!isMulti && d.imp === "monofase", 104, 563);
-    CK(!isMulti && d.imp === "trifase",  177, 564);
-    CK(d.forn === "singola",   321, 563);
-    CK(d.forn === "multisito", 356, 563);
-    CK(!isMulti && d.tit === "proprieta", 155, 580);
-    CK(!isMulti && d.tit === "locazione",  40, 593);
-    CK(!isMulti && d.tit === "altro",     266, 593);
+    // Checkbox impianto/fornitura — coordinate x0 celle dal PDF (top=561.1)
+    CK(!isMulti && d.imp === "monofase", 100.7, 561.1);
+    CK(!isMulti && d.imp === "trifase",  174.3, 561.1);
+    CK(d.forn === "singola",   318.1, 561.1);
+    CK(d.forn === "multisito", 353.2, 561.1);
+    // Titolarità — celle: 152.2 (top=577.2) / 38.1, 263.6 (top=590.5)
+    CK(!isMulti && d.tit === "proprieta", 152.2, 577.2);
+    CK(!isMulti && d.tit === "locazione",  38.1, 590.5);
+    CK(!isMulti && d.tit === "altro",     263.6, 590.5);
 
     // ── DATI PAGAMENTO ──
     T(d.int,  186, 626, SZ);
     T(d.rsp,  390, 627, SZ);
-    CL(d.cfi,  94, 646, 7.5, 16);
+    // CF intestatario: n=14, x0=99.3, cw=9.70  (top=645)
+    CL(d.cfi,  99.3, 645, 9.70, 14);
+    // IBAN: 27 celle grandi, x0=266.9, cw=8.07  (top=636.7)
     const ibanClean = (d.iban||"").replace(/\s/g,"").toUpperCase();
-    _drawCells(page, ibanClean, 271, height - 644, 8.2, 27, font, SZ - 1);
-    CL(d.pvp, 103, 668, 7.5, 11);
-    CK(d.tip === "b2c", 234, 669);
-    CK(d.tip === "b2b", 262, 670);
-    CL(d.sdi, 334, 667, 7.5, 7);
+    _drawCells(page, ibanClean, 266.9, height - 636.7, 8.07, 27, font, SZ);
+    // PIVA pag: n=9, x0=108.0, cw=9.72  (top=665)
+    CL(d.pvp, 108.0, 665, 9.72, 9);
+    // B2C/B2B — celle x0: 230.9 / 259.7  (top=666.9)
+    CK(d.tip === "b2c", 230.9, 666.9);
+    CK(d.tip === "b2b", 259.7, 666.9);
+    // SDI: n=5, x0=338.3, cw=9.72  (top=665)
+    CL(d.sdi, 338.3, 665, 9.72, 5);
 
     // ── DATE FIRMA ──
     const todayStr = new Date().toLocaleDateString("it-IT", { day:"2-digit", month:"2-digit", year:"numeric" });
@@ -1150,16 +1170,21 @@
       const CL = (val, x, top, cw, n)   => _drawCells(page, val, x, height - top, cw, n, font, SZ - 1);
 
       // ── DATI ANAGRAFICI MULTISITO ──
+      // Coordinate rilevate dal PDF con pdfplumber
       T(d.rag,  202,  89, SZ);
       T(d.ind,  130, 107, SZ);
       T(d.num,  457, 108, SZ);
-      CL(d.cap, 515, 108, 7.5, 5);
+      // CAP: n=3, x0=519.8, cw=9.72  (top=106)
+      CL(d.cap, 519.8, 106, 9.72, 3);
       T(d.com,  163, 137, SZ);
-      CL(d.prv, 544, 138, 9, 2);
-      CL(d.cf,   91, 158, 7.5, 16);
-      CL(d.piv, 320, 158, 7.5, 11);
+      T(d.prv,  544, 138, SZ);
+      // CF: n=14, x0=96.0, cw=9.70  (top=155)
+      CL(d.cf,   96.0, 155, 9.70, 14);
+      // PIVA: n=9, x0=324.9, cw=9.72  (top=155)
+      CL(d.piv, 324.9, 155, 9.72, 9);
+      // Tel: 9 celle, x0=111.8+156.9, cw=9.92  (top=175)
       const tel2 = (d.tel||"").replace(/[\s+]/g,"");
-      CL(tel2,  107, 177, 7.5, 13);
+      CL(tel2,  111.8, 175, 9.92, 9);
       if (d.mai) {
         const [lp, dom] = d.mai.split("@");
         T(lp,  87, 199, SZ); if (dom) T(dom, 312, 199, SZ);
@@ -1170,31 +1195,37 @@
       }
 
       // ── BLOCCHI POD ──
+      // Coordinate esatte dal PDF multisito (pdfplumber):
+      // POD celle: x0=88.5, cw=9.67, n=12  (top per blocco: 252/367/482/597)
+      // CAP celle: x0=65.9, cw=9.72, n=3   (top: 292/407/522/637)
+      // kW  celle: x0=129.8, cw=9.69, n=3  (top: 312/427/542/657)
+      // kWh celle: x0=461.4, cw=9.71, n=5  (top: 312/427/542/657)
+      // Checkbox mono/tri: x0=? rilevate a 245/318 (top imp)
       const POD_ROWS = [
-        { pod:255, ifn:276, nfn_x:530, cfn_top:294, cfn_x:60,  com:295, prv_x:543, pot:315, imp:317, kwh_x:456, tit:333, loc:347, alt:346 },
-        { pod:369, ifn:391, nfn_x:530, cfn_top:409, cfn_x:60,  com:410, prv_x:542, pot:430, imp:433, kwh_x:456, tit:449, loc:461, alt:461 },
-        { pod:485, ifn:503, nfn_x:530, cfn_top:524, cfn_x:60,  com:525, prv_x:543, pot:545, imp:547, kwh_x:456, tit:564, loc:574, alt:576 },
-        { pod:598, ifn:619, nfn_x:530, cfn_top:639, cfn_x:60,  com:640, prv_x:543, pot:660, imp:662, kwh_x:455, tit:677, loc:691, alt:691 },
+        { pod:252, pod_x:88.5,  ifn:276, nfn_x:530, cfn_top:292, cfn_x:65.9,  com:295, prv_x:543, pot_top:312, kw_x:129.8, imp:317, kwh_x:461.4, tit:333, loc:347, alt:346 },
+        { pod:367, pod_x:88.5,  ifn:391, nfn_x:530, cfn_top:407, cfn_x:65.9,  com:410, prv_x:542, pot_top:427, kw_x:129.8, imp:433, kwh_x:461.4, tit:449, loc:461, alt:461 },
+        { pod:482, pod_x:88.5,  ifn:503, nfn_x:530, cfn_top:522, cfn_x:65.9,  com:525, prv_x:543, pot_top:542, kw_x:129.8, imp:547, kwh_x:461.4, tit:564, loc:574, alt:576 },
+        { pod:597, pod_x:88.5,  ifn:619, nfn_x:530, cfn_top:637, cfn_x:65.9,  com:640, prv_x:543, pot_top:657, kw_x:129.8, imp:662, kwh_x:461.4, tit:677, loc:691, alt:691 },
       ];
 
       chunk.forEach((p, i) => {
         const r = POD_ROWS[i];
-        CL(p.pod,   84,      r.pod,     7.5, 14);
-        T(p.ifn,   256,      r.ifn,     SZ);
-        T(p.nfn,   r.nfn_x, r.ifn,     SZ);
-        CL(p.cfn,  r.cfn_x, r.cfn_top, 7.5, 5);
-        T(p.cfm,   148,      r.com,     SZ);
-        CL(p.cfp,  r.prv_x, r.com - 1, 9, 2);
-        CL(p.kw,   125,      r.pot,     7.5, 6);
+        CL(p.pod,  r.pod_x, r.pod,     9.67, 12);
+        T(p.ifn,   256,     r.ifn,     SZ);
+        T(p.nfn,   r.nfn_x, r.ifn,    SZ);
+        CL(p.cfn,  r.cfn_x, r.cfn_top, 9.72, 3);
+        T(p.cfm,   148,     r.com,     SZ);
+        T(p.cfp,   r.prv_x, r.com,     SZ);
+        CL(p.kw,   r.kw_x,  r.pot_top, 9.69, 3);
         CK(p.imp === "monofase", 245, r.imp);
         CK(p.imp === "trifase",  318, r.imp);
-        CL(p.kwh,  r.kwh_x, r.pot,     7.5, 8);
+        CL(p.kwh,  r.kwh_x, r.pot_top, 9.71, 5);
         CK(p.tit === "proprieta", 154, r.tit);
         CK(p.tit === "locazione",  39, r.loc);
         CK(p.tit === "altro",     265, r.alt);
       });
 
-      // Data firma multisito
+      // Data firma multisito — celle x0=59.5, cw=22.33, n=2  (top=749)
       const todayStr = new Date().toLocaleDateString("it-IT", { day:"2-digit", month:"2-digit", year:"numeric" });
       T(todayStr, 55, 751, SZ);
 
