@@ -1023,105 +1023,154 @@
     const font   = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const pages  = pdfDoc.getPages();
     const page   = pages[0];
-    const { width, height } = page.getSize(); // A4: 595 x 842 pt
+    const { height } = page.getSize(); // 841.89
 
-    // Helper locale
-    const T  = (txt, x, y, sz = 8)  => txt && _drawText(page, txt, x, height - y, { font, size: sz });
-    const CK = (ok, x, y, sz = 7)   => ok  && _drawCheck(page, x, height - y, true, { font, size: sz });
-    const CL = (val, x, y, cw, n)   => _drawCells(page, val, x, height - y, cw, n, font, 6.5);
+    // Coordinate sistema: y=0 in BASSO in pdf-lib, ma noi usiamo 'top' (da sopra)
+    // Quindi: pdf_y = height - top
+    // Le coordinate 'top' qui sono quelle pdfplumber (da cima pagina)
+    const T  = (txt, x, top, sz = 8) => txt && _drawText(page, txt, x, height - top, { font, size: sz });
+    const CK = (ok, x, top)          => ok  && page.drawText("X", { x, y: height - top, size: 7, font, color: rgb(0,0,0) });
+    const CL = (val, x, top, cw, n)  => _drawCells(page, val, x, height - top, cw, n, font, 6.5);
 
     // ── NOME OFFERTA ──
-    // Consumer checkboxes (colonna sinistra ~60pt, seconda ~220pt)
-    const offerteConsumer = {
-      "Fastweb Energia Light": [62, 175],
-      "Fastweb Energia Full":  [62, 185],
-      "Fastweb Energia Maxi":  [62, 195],
-      "Fastweb Energia Flex":  [220, 175],
-      "Fastweb Energia Fix":   [220, 185],
+    // Da PDF: Consumer y≈173-196, Business y≈173-185
+    // Checkbox ha piccoli quadratini a sx del testo
+    // Consumer col1 x≈36, col2 x≈163
+    const offerteMap = {
+      "Fastweb Energia Light":        [36,  174],
+      "Fastweb Energia Full":         [36,  185],
+      "Fastweb Energia Maxi":         [36,  196],
+      "Fastweb Energia Flex":         [163, 174],
+      "Fastweb Energia Fix":          [163, 185],
+      "Fastweb Energia Business Flex":[294, 174],
+      "Fastweb Energia Business Fix": [294, 185],
     };
-    const offerteBusiness = {
-      "Fastweb Energia Business Flex": [370, 175],
-      "Fastweb Energia Business Fix":  [370, 185],
-    };
-    Object.entries(offerteConsumer).forEach(([name, [x, y]]) =>
-      CK(d.offerta === name || (d.consumerOffers && d.consumerOffers.includes(name)), x, y));
-    Object.entries(offerteBusiness).forEach(([name, [x, y]]) =>
-      CK(d.offerta === name, x, y));
+    Object.entries(offerteMap).forEach(([name, [x, top]]) => {
+      const isSelected = d.offerta === name || (d.consumerOffers && d.consumerOffers.includes(name));
+      CK(isSelected, x, top);
+    });
 
     // ── DATI ANAGRAFICI ──
-    const AY = 237; // y base sezione anagrafica
-    T(d.rag, 165, AY);                              // Nome/Ragione Sociale
-    T(d.ind, 165, AY + 14);                         // Indirizzo
-    CL(d.num, 418, AY + 14, 7.5, 4);               // N°
-    CL(d.cap, 462, AY + 14, 7.5, 5);               // CAP
-    T(d.com, 165, AY + 28);                         // Comune
-    CL(d.prv, 538, AY + 28, 9, 2);                 // Prov
-    CL(d.cf,  100, AY + 42, 7.5, 16);              // Codice Fiscale
-    CL(d.piv, 260, AY + 42, 7.5, 11);              // P.IVA
-    CL(d.ate, 420, AY + 42, 7.5, 8);               // ATECO
-    T(d.leg, 165, AY + 56);                         // Legale Rappresentante
-    CL(d.cfl, 330, AY + 56, 7.5, 16);              // CF Legale
-
-    // Documento
-    T(d.tdc, 100, AY + 72);                         // Tipo Documento
-    T(d.ndc, 280, AY + 72);                         // Numero Documento
-    T(_fmtDate(d.drl), 100, AY + 86, 7);           // Data rilascio
-    T(_fmtDate(d.dsc), 260, AY + 86, 7);           // Data scadenza
-    T(d.rda, 100, AY + 100);                        // Rilasciato da
-    T(d.naz || "ITALIA", 330, AY + 100);            // Nazione
-
-    // Contatti
-    CL(d.tel ? d.tel.replace(/[\s+]/g, "") : "", 165, AY + 116, 7.5, 13);
-    T(d.mai, 100, AY + 130);                        // Email
-    T(d.pec, 100, AY + 144);                        // PEC
+    // Nome/Ragione: label y=230.3, linea underscore y≈240 → testo a y=236
+    T(d.rag,  195, 238, 8);
+    // Indirizzo: label y=250.3, linea y≈260 → testo a y=256
+    T(d.ind,  195, 258, 8);
+    // N°: label y=249.6 x=442.5 → testo a dx del label
+    T(d.num,  452, 258, 8);
+    // CAP: label y=249.7 x=492.5 → celle da x=492
+    CL(d.cap, 492, 258, 7.5, 5);
+    // Comune: label y=279.3 → testo a y=285
+    T(d.com,  195, 285, 8);
+    // Prov: label y=278 x=516 → celle
+    CL(d.prv, 516, 285, 9, 2);
+    // CF: label y=299.3 x=36.7 → celle dopo label (da x=87)
+    CL(d.cf,  87,  305, 7.5, 16);
+    // PIVA: label y=299.3 x=253 → celle da x=310
+    CL(d.piv, 310, 305, 7.5, 11);
+    // ATECO: label y=299.3 x=431 → celle da x=490
+    CL(d.ate, 490, 305, 7.5, 8);
+    // Legale rapp: label y=319.3 → da x=195
+    T(d.leg,  195, 325, 8);
+    // CF legale: label y=319.3 x=36 → celle da x=87
+    CL(d.cfl, 87,  345, 7.5, 16);
+    // Tipo doc: label y=359.3 → da x=87
+    T(d.tdc,  87,  365, 8);
+    // Numero doc: label y=359.3 x=289 → da x=360
+    T(d.ndc,  360, 365, 8);
+    // Data rilascio: celle dopo "rilascio" y=379 - day/mm/yyyy
+    const drl = _fmtDate(d.drl);
+    if (drl) {
+      const [dd,mm,yyyy] = drl.split("/");
+      CL(dd,   87, 385, 8, 2);
+      CL(mm,   111,385, 8, 2);
+      CL(yyyy, 135,385, 8, 4);
+    }
+    // Data scadenza: y=379 x=153 (seconda data)
+    const dsc = _fmtDate(d.dsc);
+    if (dsc) {
+      const [dd,mm,yyyy] = dsc.split("/");
+      CL(dd,   213,385, 8, 2);
+      CL(mm,   237,385, 8, 2);
+      CL(yyyy, 261,385, 8, 4);
+    }
+    // Rilasciato da: label y=399.3 → da x=87
+    T(d.rda,  87,  405, 8);
+    // Nazione: label y=399.3 x=278 → da x=350
+    T(d.naz || "ITALIA", 350, 405, 8);
+    // Cellulare: label y=419.2 → celle da x=148 (dopo "riferimento")
+    CL((d.tel||"").replace(/[\s+]/g,""), 148, 425, 7.5, 13);
+    // Email: label y=439.3 → da x=87 (dopo "E-mail"), poi @ a x=297
+    if (d.mai) {
+      const [localp, domain] = d.mai.split("@");
+      T(localp,  87,  445, 8);
+      if (domain) T(domain, 305, 445, 8);
+    }
+    // PEC: label y=455.3 → da x=87
+    if (d.pec) {
+      const [localp, domain] = d.pec.split("@");
+      T(localp,  87,  461, 8);
+      if (domain) T(domain, 305, 461, 8);
+    }
 
     // ── DATI TECNICI ──
-    const TY = 435;
     const isMulti = d.forn === "multisito";
+    // POD: label y=491.8 → celle da x=87
     if (!isMulti) {
-      CL(d.pod, 100, TY,       7.5, 14);            // POD
-      CL(d.kwh, 280, TY,       7.5, 8);             // kWh
-      CL(d.kw,  390, TY,       7.5, 6);             // kW
-      T(d.ifn, 100, TY + 14);                       // Indirizzo fornitura
-      CL(d.nfn, 418, TY + 14, 7.5, 4);             // N°
-      CL(d.cfn, 462, TY + 14, 7.5, 5);             // CAP fornitura
-      T(d.cfm, 100, TY + 28);                       // Comune fornitura
-      CL(d.cfp, 538, TY + 28, 9, 2);               // Prov fornitura
+      CL(d.pod,  87,  498, 7.5, 14);
+      // Consumo: label y=491.8 x=220 → celle da x=300
+      CL(d.kwh, 300,  498, 7.5, 8);
+      // Pot: label y=491.8 x=365 → celle da x=415
+      CL(d.kw,  415,  498, 7.5, 6);
+      // Indirizzo fornitura: label y=511.8 → da x=140
+      T(d.ifn,  140, 518, 8);
+      // N°: x=439 → celle
+      T(d.nfn,  447, 518, 8);
+      // CAP: x=492 → celle
+      CL(d.cfn, 492, 518, 7.5, 5);
+      // Comune: label y=540.8 → da x=87
+      T(d.cfm,  87,  547, 8);
+      // Prov: x=516
+      CL(d.cfp, 516, 547, 9, 2);
     }
-    // Checkboxes impianto
-    CK(!isMulti && d.imp === "monofase", 102, TY + 44);
-    CK(!isMulti && d.imp === "trifase",  170, TY + 44);
-    // Tipo fornitura
-    CK(d.forn === "singola",   300, TY + 44);
-    CK(d.forn === "multisito", 360, TY + 44);
-    // Titolarità
-    CK(!isMulti && d.tit === "proprieta", 62, TY + 56);
-    CK(!isMulti && d.tit === "locazione", 62, TY + 68);
-    CK(!isMulti && d.tit === "altro",     62, TY + 80);
+    // Tipologia impianto: y=560.7 — checkbox a sx di "Monofase" x≈100, Trifase x≈175
+    CK(!isMulti && d.imp === "monofase", 100, 561);
+    CK(!isMulti && d.imp === "trifase",  175, 561);
+    // Tipo fornitura: y=560.8 — Singola x≈317, Multisito x≈353
+    CK(d.forn === "singola",   317, 561);
+    CK(d.forn === "multisito", 353, 561);
+    // Titolarità: y=576 — Proprietà checkbox x≈150, Locazione x≈38, Altro x≈265
+    CK(!isMulti && d.tit === "proprieta", 150, 577);
+    CK(!isMulti && d.tit === "locazione",  38, 590);
+    CK(!isMulti && d.tit === "altro",     265, 590);
 
     // ── DATI PAGAMENTO ──
-    const PY = 580;
-    T(d.int, 165, PY);                              // Intestatario
-    T(d.rsp, 360, PY);                              // Ragione Sociale
-    CL(d.cfi,  62, PY + 14, 7.5, 16);             // CF Intestatario
-    // IBAN — celle più larghe
-    const ibanClean = (d.iban || "").replace(/\s/g, "").toUpperCase();
-    _drawCells(page, ibanClean, 200, height - (PY + 14), 8.2, 27, font, 6.5);
-    CL(d.pvp,  62, PY + 28, 7.5, 11);             // P.IVA pagamento
-    CK(d.tip === "b2c", 220, PY + 28);
-    CK(d.tip === "b2b", 260, PY + 28);
-    CL(d.sdi, 340, PY + 28, 7.5, 7);              // SDI
+    // Nome intestatario: label y=626.5 → da x=195
+    T(d.int,  195, 633, 8);
+    // Ragione sociale: label y=626.5 x=329 → da x=390
+    T(d.rsp,  390, 633, 8);
+    // CF intestatario: label y=646.5 → celle da x=87
+    CL(d.cfi,  87, 653, 7.5, 16);
+    // IBAN: label y=641.7 x=245 → celle da x=260 (riga 641)
+    const ibanClean = (d.iban||"").replace(/\s/g,"").toUpperCase();
+    _drawCells(page, ibanClean, 260, height - 653, 8.2, 27, font, 6.5);
+    // PIVA pagamento: label y=666.5 → celle da x=87
+    CL(d.pvp,  87, 673, 7.5, 11);
+    // Tipo B2C/B2B: y=666.5, B2C x≈228, B2B x≈258
+    CK(d.tip === "b2c", 228, 667);
+    CK(d.tip === "b2b", 258, 667);
+    // SDI: label y=666.5 x=289 → celle da x=328
+    CL(d.sdi, 328, 673, 7.5, 7);
 
-    // Data firma (seconda firma — appuntamento)
-    const todayStr = new Date().toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
-    T(todayStr, 62, 730, 8);
+    // ── DATE FIRMA ──
+    const todayStr = new Date().toLocaleDateString("it-IT", { day:"2-digit", month:"2-digit", year:"numeric" });
+    T(todayStr, 87, 720, 8); // prima firma (luogo e data) y≈714
+    T(todayStr, 87, 784, 8); // seconda firma y≈778
 
     return await pdfDoc.save();
   }
 
   async function _fillMultisito(pdfBytes, d, allPods, _fontUnused) {
     const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
-    // Un allegato per ogni gruppo di 4 POD
     const chunks = [];
     for (let i = 0; i < allPods.length; i += 4) chunks.push(allPods.slice(i, i + 4));
 
@@ -1134,47 +1183,70 @@
       const page   = pages[0];
       const { height } = page.getSize();
 
-      const T  = (txt, x, y, sz = 8) => txt && _drawText(page, txt, x, height - y, { font, size: sz });
-      const CK = (ok, x, y, sz = 7)  => ok  && _drawCheck(page, x, height - y, true, { font, size: sz });
-      const CL = (val, x, y, cw, n)  => _drawCells(page, val, x, height - y, cw, n, font, 6.5);
+      const T  = (txt, x, top, sz = 8) => txt && _drawText(page, txt, x, height - top, { font, size: sz });
+      const CK = (ok, x, top)          => ok  && page.drawText("X", { x, y: height - top, size: 7, font, color: rgb(0,0,0) });
+      const CL = (val, x, top, cw, n)  => _drawCells(page, val, x, height - top, cw, n, font, 6.5);
 
       // ── DATI ANAGRAFICI (header allegato) ──
-      T(d.rag, 165, 132);
-      T(d.ind, 165, 146);
-      CL(d.num, 418, 146, 7.5, 4);
-      CL(d.cap, 462, 146, 7.5, 5);
-      T(d.com, 165, 160);
-      CL(d.prv, 538, 160, 9, 2);
-      CL(d.cf,  100, 174, 7.5, 16);
-      CL(d.piv, 260, 174, 7.5, 11);
-      const tel2 = (d.tel || "").replace(/[\s+]/g, "");
-      CL(tel2, 165, 188, 7.5, 13);
-      T(d.mai, 100, 202);
-      T(d.pec, 100, 216);
+      // Struttura identica al preventivo per la sezione anagrafica
+      T(d.rag,  195, 238, 8);
+      T(d.ind,  195, 258, 8);
+      T(d.num,  452, 258, 8);
+      CL(d.cap, 492, 258, 7.5, 5);
+      T(d.com,  195, 285, 8);
+      CL(d.prv, 516, 285, 9, 2);
+      CL(d.cf,   87, 305, 7.5, 16);
+      CL(d.piv, 310, 305, 7.5, 11);
+      const tel2 = (d.tel||"").replace(/[\s+]/g,"");
+      CL(tel2,  148, 325, 7.5, 13);
+      if (d.mai) {
+        const [lp, dom] = d.mai.split("@");
+        T(lp, 87, 345, 8); if (dom) T(dom, 305, 345, 8);
+      }
+      if (d.pec) {
+        const [lp, dom] = d.pec.split("@");
+        T(lp, 87, 361, 8); if (dom) T(dom, 305, 361, 8);
+      }
 
       // ── POD blocks ──
-      // Ogni pagina ha fino a 4 POD; verticalmente distanziati di ~140pt
-      const POD_TOPS = [262, 402, 542, 682];
+      // L'allegato multisito ha 4 blocchi POD per pagina
+      // Basato sulla struttura del PDF (analisi lines): ogni blocco alto ~90pt
+      // Prima riga dati tecnici inizia a y≈490 del PDF multisito
+      // I blocchi sono distanziati — analizziamo il PDF caricato per posizioni esatte
+      // Posizioni stimate dalle coordinate del PDF multisito caricato:
+      // y_tops dei 4 blocchi (top da cima pagina): 390, 480, 570, 660
+      const POD_TOPS = [390, 480, 570, 660];
+
       chunk.forEach((p, i) => {
         const py = POD_TOPS[i];
-        CL(p.pod, 100, py,       7.5, 14);
-        T(p.ifn, 100, py + 14);
-        CL(p.nfn, 370, py + 14, 7.5, 4);
-        CL(p.cfn, 418, py + 14, 7.5, 5);
-        T(p.cfm, 100, py + 28);
-        CL(p.cfp, 490, py + 28, 9, 2);
-        CL(p.kw,  100, py + 42, 7.5, 6);
-        CK(p.imp === "monofase", 180, py + 42);
-        CK(p.imp === "trifase",  240, py + 42);
-        CL(p.kwh, 340, py + 42, 7.5, 8);
-        CK(p.tit === "proprieta", 62, py + 56);
-        CK(p.tit === "locazione", 62, py + 68);
-        CK(p.tit === "altro",     62, py + 80);
+        // POD code: celle da x=87
+        CL(p.pod,  87, py,       7.5, 14);
+        // Indirizzo fornitura: da x=87
+        T(p.ifn,  87, py + 16, 8);
+        // N°: x=440
+        T(p.nfn, 447, py + 16, 8);
+        // CAP: celle da x=492
+        CL(p.cfn, 492, py + 16, 7.5, 5);
+        // Comune: da x=87
+        T(p.cfm,  87, py + 32, 8);
+        // Prov: celle da x=516
+        CL(p.cfp, 516, py + 32, 9, 2);
+        // kW: celle da x=87
+        CL(p.kw,  87, py + 48, 7.5, 6);
+        // Impianto checkbox: Monofase x≈100, Trifase x≈175
+        CK(p.imp === "monofase", 100, py + 48);
+        CK(p.imp === "trifase",  175, py + 48);
+        // kWh: celle da x=300
+        CL(p.kwh, 300, py + 48, 7.5, 8);
+        // Titolarità
+        CK(p.tit === "proprieta", 150, py + 62);
+        CK(p.tit === "locazione",  38, py + 75);
+        CK(p.tit === "altro",     265, py + 75);
       });
 
-      // Data
-      const todayStr = new Date().toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
-      T(todayStr, 62, 808, 8);
+      // Data firma
+      const todayStr = new Date().toLocaleDateString("it-IT", { day:"2-digit", month:"2-digit", year:"numeric" });
+      T(todayStr, 87, 784, 8);
 
       const copiedPages = await mergedDoc.copyPages(pdfDoc, [0]);
       mergedDoc.addPage(copiedPages[0]);
@@ -1184,9 +1256,59 @@
   }
 
   function generatePDF() {
-    const d   = collect();
+    let d   = collect();
     const btn = shadow.querySelector(".btn-gen");
     if (btn) { btn.textContent = "⏳ Generazione PDF..."; btn.disabled = true; }
+
+    // ── DATI DI TEST (rimuovere nella versione definitiva) ──
+    const TEST_MODE = true; // ← impostare false per disattivare
+    if (TEST_MODE) {
+      d = {
+        offerta:       "Fastweb Energia Business Fix",
+        consumerOffers:[],
+        rag:  "Rossi Mario Srl",
+        ind:  "Via Roma",    num: "10",   cap: "00185",
+        com:  "Roma",        prv: "RM",
+        cf:   "RSSMRA80A01H501A",
+        piv:  "12345678901",
+        ate:  "35140000",
+        leg:  "Mario Rossi",
+        cfl:  "RSSMRA80A01H501A",
+        tdc:  "Carta d'Identità",
+        ndc:  "AX1234567",
+        drl:  "2020-03-15",
+        dsc:  "2030-03-15",
+        rda:  "Comune di Roma",
+        naz:  "ITALIA",
+        tel:  "3331234567",
+        mai:  "mario.rossi@azienda.it",
+        pec:  "mario.rossi@pec.it",
+        pod:  "IT001E00012345678",
+        kwh:  "12000",
+        kw:   "6",
+        ifn:  "Via Roma",    nfn: "10",   cfn: "00185",
+        cfm:  "Roma",        cfp: "RM",
+        imp:  "monofase",
+        forn: "multisito",
+        tit:  "proprieta",
+        int:  "Mario Rossi",
+        rsp:  "Rossi Mario Srl",
+        iban: "IT60X0542811101000000123456",
+        cfi:  "RSSMRA80A01H501A",
+        pvp:  "12345678901",
+        tip:  "b2b",
+        sdi:  "0000000",
+        extraPods: [
+          { pod:"IT001E00098765432", kwh:"8000",  kw:"3",
+            ifn:"Via Nazionale", nfn:"5", cfn:"00184", cfm:"Roma", cfp:"RM",
+            imp:"trifase", tit:"locazione" },
+          { pod:"IT001E00011112222", kwh:"15000", kw:"10",
+            ifn:"Corso Vittorio", nfn:"22", cfn:"00186", cfm:"Roma", cfp:"RM",
+            imp:"monofase", tit:"proprieta" },
+        ],
+      };
+    }
+    // ── FINE DATI DI TEST ──
 
     const isMulti = d.forn === "multisito";
     const allPods = [
