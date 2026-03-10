@@ -1034,17 +1034,14 @@
     const CL = (val, x, top, cw, n)   => _drawCells(page, val, x, height - top, cw, n, font, SZ - 1);
 
     // ── NOME OFFERTA ──
-    // Checkbox a sx di ogni offerta (piccolo quadratino)
-    // Posizioni rilevate: Consumer col1 x≈36, col2 x≈163, Business x≈294
-    // y: Light=173.7, Full=184.7, Maxi=195.7, Flex=173.1, Fix=184.1, BizFlex=173.8, BizFix=184.8
     const offerteMap = {
-      "Fastweb Energia Light":         [36,  174],
-      "Fastweb Energia Full":          [36,  185],
-      "Fastweb Energia Maxi":          [36,  196],
-      "Fastweb Energia Flex":          [163, 174],
-      "Fastweb Energia Fix":           [163, 185],
-      "Fastweb Energia Business Flex": [294, 174],
-      "Fastweb Energia Business Fix":  [294, 185],
+      "Fastweb Energia Light":         [39,  176],
+      "Fastweb Energia Full":          [39,  188],
+      "Fastweb Energia Maxi":          [39,  199],
+      "Fastweb Energia Flex":          [168, 176],
+      "Fastweb Energia Fix":           [167, 187],
+      "Fastweb Energia Business Flex": [297, 176],
+      "Fastweb Energia Business Fix":  [298, 188],
     };
     Object.entries(offerteMap).forEach(([name, [x, top]]) => {
       const sel = d.offerta === name || (d.consumerOffers && d.consumerOffers.includes(name));
@@ -1052,25 +1049,21 @@
     });
 
     // ── DATI ANAGRAFICI ──
-    // NOTA: T() con top=label_y+1 → appare 1.4pt sotto la label (riga pari: label_y=xxx.3)
-    //       T() con top=label_y   → appare 0.6pt SOPRA la label (riga dispari) → serve +1 extra
-    // Regola: passare top = label_y + 2 per testo testo; CL (celle) = label_y + 1
-    T(d.rag,  195, 232, SZ);    // label y=230.3
-    T(d.ind,  195, 252, SZ);    // label y=250.3
-    T(d.num,  452, 252, SZ);
-    CL(d.cap, 492, 252, 7.5, 5);
-    T(d.com,  195, 281, SZ);    // label y=279.3 (era 280 → era 0.6pt sopra)
-    CL(d.prv, 516, 281, 9, 2);
-    CL(d.cf,   87, 300, 7.5, 16); // label y=299.3 — celle OK con +1
-    CL(d.piv, 310, 300, 7.5, 11);
-    CL(d.ate, 490, 300, 7.5, 8);
-    T(d.leg,  195, 321, SZ);    // label y=319.3 (era 320 → era 0.6pt sopra)
-    CL(d.cfl,  87, 340, 7.5, 16); // label y=339.3 — celle OK
+    T(d.rag,  204, 231, SZ);
+    T(d.ind,  130, 251, SZ);
+    T(d.num,  457, 250, SZ);
+    CL(d.cap, 514, 251, 7.5, 5);
+    T(d.com,  111, 279, SZ);
+    CL(d.prv, 544, 280, 9, 2);
+    CL(d.cf,   91, 300, 7.5, 16);
+    CL(d.piv, 320, 300, 7.5, 11);
+    CL(d.ate, 504, 300, 7.5, 8);
+    T(d.leg,  234, 320, SZ);
+    CL(d.cfl, 183, 340, 7.5, 16);
 
-    // Documento — label y=359.3
-    T(d.tdc,   87, 361, SZ);    // era 360 → 0.6pt sopra
-    T(d.ndc,  360, 361, SZ);
-    // Data rilascio — label y=379.3 — celle OK con +1
+    // ── DOCUMENTO ──
+    T(d.tdc,  107, 362, SZ);
+    T(d.ndc,  367, 361, SZ);
     const drl = _fmtDate(d.drl);
     if (drl) {
       const [dd, mm, yyyy] = drl.split("/");
@@ -1085,71 +1078,55 @@
       CL(mm,   238, 380, 8.5, 2);
       CL(yyyy, 263, 380, 8.5, 4);
     }
-    // Rilasciato da — label y=399.3
-    T(d.rda,   87, 401, SZ);    // era 400 → 0.6pt sopra
-    T(d.naz || "ITALIA", 350, 401, SZ);
-    // Cellulare — label y=419.2 — celle OK
+    T(d.rda,  87,  400, SZ);
+    T(d.naz || "ITALIA", 350, 400, SZ);
     CL((d.tel||"").replace(/[\s+]/g,""), 148, 420, 7.5, 13);
-    // Email — label y=439.3
+    // Email
     if (d.mai) {
       const [lp, dom] = d.mai.split("@");
-      T(lp,   87, 441, SZ);     // era 440 → 0.6pt sopra
-      if (dom) T(dom, 305, 441, SZ);
+      T(lp,  87, 439, SZ); if (dom) T(dom, 318, 438, SZ);
     }
-    // PEC — label y=455.3
+    // PEC
     if (d.pec) {
       const [lp, dom] = d.pec.split("@");
-      T(lp,   87, 457, SZ);     // era 456 → 0.6pt sopra
-      if (dom) T(dom, 305, 457, SZ);
+      T(lp,  87, 456, SZ); if (dom) T(dom, 318, 456, SZ);
     }
 
     // ── DATI TECNICI ──
-    // label POD y=491.8 → celle a 492
     const isMulti = d.forn === "multisito";
     if (!isMulti) {
-      CL(d.pod,  87, 492, 7.5, 14);
-      CL(d.kwh, 300, 492, 7.5, 8);
-      CL(d.kw,  415, 492, 7.5, 6);
-      // Indirizzo fornitura — label y=511.8 → testo a 512
+      CL(d.pod,  83, 492, 7.5, 14);
+      CL(d.kwh, 297, 491, 7.5, 8);
+      CL(d.kw,  418, 492, 7.5, 6);
       T(d.ifn,  140, 512, SZ);
-      T(d.nfn,  447, 512, SZ);
-      CL(d.cfn, 492, 513, 7.5, 5);
-      // Comune — label y=540.8 → testo a 541
-      T(d.cfm,   87, 541, SZ);
-      CL(d.cfp, 516, 541, 9, 2);
+      T(d.nfn,  455, 512, SZ);
+      CL(d.cfn, 515, 513, 7.5, 5);
+      T(d.cfm,   87, 540, SZ);
+      CL(d.cfp, 544, 542, 9, 2);
     }
-    // Tipologia impianto — label "Monofase" y=560.7, checkbox a x≈100 / x≈175
-    CK(!isMulti && d.imp === "monofase", 100, 561);
-    CK(!isMulti && d.imp === "trifase",  175, 561);
-    // Tipo fornitura — "Singola" y=560.8 x=325, "Multisito" x=360
-    CK(d.forn === "singola",   317, 561);
-    CK(d.forn === "multisito", 353, 561);
-    // Titolarità — label y=576.8, Proprietà x≈150; Locazione y=589.4 x≈38; Altro x≈265
-    CK(!isMulti && d.tit === "proprieta", 150, 577);
-    CK(!isMulti && d.tit === "locazione",  38, 590);
-    CK(!isMulti && d.tit === "altro",     265, 590);
+    CK(!isMulti && d.imp === "monofase", 104, 563);
+    CK(!isMulti && d.imp === "trifase",  177, 564);
+    CK(d.forn === "singola",   321, 563);
+    CK(d.forn === "multisito", 356, 563);
+    CK(!isMulti && d.tit === "proprieta", 155, 580);
+    CK(!isMulti && d.tit === "locazione",  40, 593);
+    CK(!isMulti && d.tit === "altro",     266, 593);
 
     // ── DATI PAGAMENTO ──
-    // label y=626.5 → testo a 627
-    T(d.int,  195, 627, SZ);
+    T(d.int,  186, 626, SZ);
     T(d.rsp,  390, 627, SZ);
-    // CF intestatario — label y=646.5 → celle a 647
-    CL(d.cfi,   87, 647, 7.5, 16);
-    // IBAN — label y=641.7 x=245 → celle da 260, stessa riga y=647
+    CL(d.cfi,  94, 646, 7.5, 16);
     const ibanClean = (d.iban||"").replace(/\s/g,"").toUpperCase();
-    _drawCells(page, ibanClean, 260, height - 647, 8.2, 27, font, SZ - 1);
-    // PIVA pag — label y=666.5 → celle a 667
-    CL(d.pvp,   87, 667, 7.5, 11);
-    // B2C/B2B checkbox — y=666.5, B2C x=228, B2B x=258
-    CK(d.tip === "b2c", 228, 667);
-    CK(d.tip === "b2b", 258, 667);
-    // SDI — celle da x=328
-    CL(d.sdi, 328, 667, 7.5, 7);
+    _drawCells(page, ibanClean, 271, height - 644, 8.2, 27, font, SZ - 1);
+    CL(d.pvp, 103, 668, 7.5, 11);
+    CK(d.tip === "b2c", 234, 669);
+    CK(d.tip === "b2b", 262, 670);
+    CL(d.sdi, 334, 667, 7.5, 7);
 
     // ── DATE FIRMA ──
     const todayStr = new Date().toLocaleDateString("it-IT", { day:"2-digit", month:"2-digit", year:"numeric" });
-    T(todayStr, 87, 714, SZ); // prima firma
-    T(todayStr, 87, 778, SZ); // seconda firma
+    T(todayStr, 140, 715, SZ); // prima firma
+    T(todayStr, 140, 779, SZ); // seconda firma
 
     return await pdfDoc.save();
   }
@@ -1173,65 +1150,53 @@
       const CL = (val, x, top, cw, n)   => _drawCells(page, val, x, height - top, cw, n, font, SZ - 1);
 
       // ── DATI ANAGRAFICI MULTISITO ──
-      // label y=87.9 → T() top=89 (label_y + 1 per righe "pari" .9)
-      // label y=107.9 → T() top=109 (label_y + 1, pari .9 → OK)
-      // label y=136.9 → T() top=138 (label_y + 1)
-      // label y=196.9 → T() top=198 (pari .9 → OK)
-      // label y=212.9 → T() top=214 (pari .9 → OK)
-      T(d.rag,  195,  90, SZ);   // label=87.9
-      T(d.ind,  195, 110, SZ);   // label=107.9
-      T(d.num,  452, 110, SZ);
-      CL(d.cap, 492, 109, 7.5, 5);
-      T(d.com,  195, 139, SZ);   // label=136.9
-      CL(d.prv, 516, 137, 9, 2);
-      CL(d.cf,   87, 158, 7.5, 16);
-      CL(d.piv, 310, 158, 7.5, 11);
+      T(d.rag,  202,  89, SZ);
+      T(d.ind,  130, 107, SZ);
+      T(d.num,  457, 108, SZ);
+      CL(d.cap, 515, 108, 7.5, 5);
+      T(d.com,  163, 137, SZ);
+      CL(d.prv, 544, 138, 9, 2);
+      CL(d.cf,   91, 158, 7.5, 16);
+      CL(d.piv, 320, 158, 7.5, 11);
       const tel2 = (d.tel||"").replace(/[\s+]/g,"");
-      CL(tel2,  148, 178, 7.5, 13);
+      CL(tel2,  107, 177, 7.5, 13);
       if (d.mai) {
         const [lp, dom] = d.mai.split("@");
-        T(lp,  87, 199, SZ); if (dom) T(dom, 305, 199, SZ);  // label=196.9
+        T(lp,  87, 199, SZ); if (dom) T(dom, 312, 199, SZ);
       }
       if (d.pec) {
         const [lp, dom] = d.pec.split("@");
-        T(lp,  87, 215, SZ); if (dom) T(dom, 305, 215, SZ);  // label=212.9
+        T(lp,  87, 214, SZ); if (dom) T(dom, 315, 214, SZ);
       }
 
       // ── BLOCCHI POD ──
-      // Posizioni esatte dai label del PDF multisito:
-      // Blocco 1: POD=254.1, IFN=274.1, COM=294.1, POT=314.1, TIT=330.4, LOC=343.6
-      // Blocco 2: POD=369.0, IFN=389.0, COM=409.0, POT=429.0, TIT=445.3, LOC=458.4
-      // Blocco 3: POD=483.8, IFN=503.8, COM=523.8, POT=543.8, TIT=560.1, LOC=573.2
-      // Blocco 4: POD=598.7, IFN=618.7, COM=638.7, POT=658.7, TIT=674.9, LOC=688.1
       const POD_ROWS = [
-        { pod:255, ifn:275, nfn_x:447, cfn_x:492, com:295, prv_x:516, pot:315, imp:315, kwh_x:301, tit:331, loc:345, alt:345 },
-        { pod:370, ifn:390, nfn_x:447, cfn_x:492, com:410, prv_x:516, pot:430, imp:430, kwh_x:301, tit:446, loc:459, alt:459 },
-        { pod:485, ifn:505, nfn_x:447, cfn_x:492, com:525, prv_x:516, pot:545, imp:545, kwh_x:301, tit:561, loc:574, alt:574 },
-        { pod:600, ifn:620, nfn_x:447, cfn_x:492, com:640, prv_x:516, pot:660, imp:660, kwh_x:301, tit:676, loc:689, alt:689 },
+        { pod:255, ifn:276, nfn_x:530, cfn_top:294, cfn_x:60,  com:295, prv_x:543, pot:315, imp:317, kwh_x:456, tit:333, loc:347, alt:346 },
+        { pod:369, ifn:391, nfn_x:530, cfn_top:409, cfn_x:60,  com:410, prv_x:542, pot:430, imp:433, kwh_x:456, tit:449, loc:461, alt:461 },
+        { pod:485, ifn:503, nfn_x:530, cfn_top:524, cfn_x:60,  com:525, prv_x:543, pot:545, imp:547, kwh_x:456, tit:564, loc:574, alt:576 },
+        { pod:598, ifn:619, nfn_x:530, cfn_top:639, cfn_x:60,  com:640, prv_x:543, pot:660, imp:662, kwh_x:455, tit:677, loc:691, alt:691 },
       ];
 
       chunk.forEach((p, i) => {
         const r = POD_ROWS[i];
-        CL(p.pod,  87,      r.pod, 7.5, 14);
-        T(p.ifn,   87,      r.ifn + 1, SZ);  // T() needs +1 vs CL
-        T(p.nfn,   r.nfn_x, r.ifn + 1, SZ);
-        CL(p.cfn,  r.cfn_x, r.ifn, 7.5, 5);
-        T(p.cfm,   87,      r.com + 1, SZ);
-        CL(p.cfp,  r.prv_x, r.com, 9, 2);
-        CL(p.kw,   87,      r.pot, 7.5, 6);
-        // Impianto checkbox: "Monofase" x≈245, "Trifase" x≈320 (da label y=314.7 x=250/324)
-        CK(p.imp === "monofase", 243, r.imp);
-        CK(p.imp === "trifase",  322, r.imp);
-        CL(p.kwh,  r.kwh_x, r.pot, 7.5, 8);
-        // Titolarità: "Proprietà" x≈150, "Locazione" x≈38, "Altro" x≈265
-        CK(p.tit === "proprieta", 150, r.tit);
-        CK(p.tit === "locazione",  38, r.loc);
+        CL(p.pod,   84,      r.pod,     7.5, 14);
+        T(p.ifn,   256,      r.ifn,     SZ);
+        T(p.nfn,   r.nfn_x, r.ifn,     SZ);
+        CL(p.cfn,  r.cfn_x, r.cfn_top, 7.5, 5);
+        T(p.cfm,   148,      r.com,     SZ);
+        CL(p.cfp,  r.prv_x, r.com - 1, 9, 2);
+        CL(p.kw,   125,      r.pot,     7.5, 6);
+        CK(p.imp === "monofase", 245, r.imp);
+        CK(p.imp === "trifase",  318, r.imp);
+        CL(p.kwh,  r.kwh_x, r.pot,     7.5, 8);
+        CK(p.tit === "proprieta", 154, r.tit);
+        CK(p.tit === "locazione",  39, r.loc);
         CK(p.tit === "altro",     265, r.alt);
       });
 
       // Data firma multisito
       const todayStr = new Date().toLocaleDateString("it-IT", { day:"2-digit", month:"2-digit", year:"numeric" });
-      T(todayStr, 87, 751, SZ);
+      T(todayStr, 55, 751, SZ);
 
       const copiedPages = await mergedDoc.copyPages(pdfDoc, [0]);
       mergedDoc.addPage(copiedPages[0]);
