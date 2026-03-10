@@ -16,7 +16,7 @@
   /* ════════════════════════════════════════════════════════
      COSTANTI
   ════════════════════════════════════════════════════════ */
-  const ORANGE = "#F5A01E";
+  const ORANGE = "#FFC424";
   const STEPS  = [
     { id: "offerta",    lbl: "Offerta"    },
     { id: "anagrafica", lbl: "Anagrafica" },
@@ -64,6 +64,7 @@
 }
 .hdr h2 { font-size: 17px; font-weight: 800; letter-spacing: -.3px; margin: 0 36px 2px 0; }
 .hdr p  { font-size: 11.5px; color: #7a8099; margin: 0 0 12px; }
+.hdr-logo { position: absolute; top: 18px; right: 48px; height: 26px; width: auto; }
 .btn-x  {
   position: absolute; top: 14px; right: 16px;
   background: none; border: none; font-size: 19px; cursor: pointer;
@@ -122,10 +123,10 @@
 }
 .ef input:focus, .ef select:focus {
   border-color: ${ORANGE};
-  box-shadow: 0 0 0 3px rgba(245,160,30,.18);
+  box-shadow: 0 0 0 3px rgba(255,196,36,.18);
 }
 .ef input::placeholder { font-style: italic; color: #b0b8cc; font-weight: 400; opacity: 1; }
-.ef input.inh { background: #fffbf0; border-color: rgba(245,160,30,.45); }
+.ef input.inh { background: #fffbf0; border-color: rgba(255,196,36,.45); }
 .ef input[type=date] { font-size: 12px; }
 .ef select { appearance: none; -webkit-appearance: none; padding-right: 28px; cursor: pointer; }
 .ef-arr {
@@ -161,7 +162,7 @@
   border: 1.5px solid #e8eaf0; border-radius: 10px;
   padding: 11px 13px; transition: border-color .15s, background .15s;
 }
-.oc:has(input:checked) { border-color: ${ORANGE}; background: rgba(245,160,30,.06); }
+.oc:has(input:checked) { border-color: ${ORANGE}; background: rgba(255,196,36,.06); }
 .oc-title {
   font-size: 9.5px; font-weight: 800; text-transform: uppercase;
   letter-spacing: .1em; color: #7a8099; margin-bottom: 7px;
@@ -176,7 +177,7 @@
 /* ── Banner ereditato ── */
 .inh-banner {
   font-size: 11.5px; color: #a07010; background: #fffbf0;
-  border: 1px solid rgba(245,160,30,.35); border-radius: 8px;
+  border: 1px solid rgba(255,196,36,.35); border-radius: 8px;
   padding: 8px 12px; margin: -4px 0 12px; line-height: 1.5;
 }
 
@@ -193,7 +194,7 @@
 .btn-next {
   flex: 1; padding: 12px; border: none;
   background: linear-gradient(135deg, ${ORANGE}, #e08a00); color: #fff;
-  font-weight: 800; box-shadow: 0 4px 14px rgba(245,160,30,.38);
+  font-weight: 800; box-shadow: 0 4px 14px rgba(255,196,36,.38);
 }
 .btn-next:hover { filter: brightness(1.08); transform: translateY(-1px); }
 .btn-back {
@@ -241,7 +242,7 @@
   border: 1.5px solid #e8e8e8; border-radius: 12px;
   overflow: hidden; transition: box-shadow .18s;
 }
-.pod-card:focus-within { box-shadow: 0 0 0 3px rgba(245,160,30,.18); border-color: ${ORANGE}; }
+.pod-card:focus-within { box-shadow: 0 0 0 3px rgba(255,196,36,.18); border-color: ${ORANGE}; }
 
 .pod-card-hdr {
   display: flex; align-items: center; justify-content: space-between;
@@ -296,8 +297,8 @@
   transition: border-color .14s, box-shadow .14s;
   box-shadow: 0 1px 2px rgba(15,17,23,.05);
 }
-.pf input:focus { border-color: ${ORANGE}; box-shadow: 0 0 0 3px rgba(245,160,30,.18); }
-.pf input:hover:not(:focus) { border-color: rgba(245,160,30,.4); }
+.pf input:focus { border-color: ${ORANGE}; box-shadow: 0 0 0 3px rgba(255,196,36,.18); }
+.pf input:hover:not(:focus) { border-color: rgba(255,196,36,.4); }
 .pf input::placeholder { font-style: italic; color: #b0b8cc; font-weight: 400; opacity: 1; }
 .pf .pi {
   position: absolute; right: 9px; top: 50%; transform: translateY(-50%);
@@ -336,7 +337,7 @@
 .btn-add-pod:hover {
   background: #fff3d6; border-color: #d4860a;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(245,160,30,.18);
+  box-shadow: 0 4px 12px rgba(255,196,36,.18);
 }
 .btn-add-pod:active { transform: translateY(0); }
 .btn-add-pod .plus {
@@ -465,8 +466,9 @@
         ${F("a_drl","Data di Rilascio","date","")}
         ${F("a_dsc","Data di Scadenza","date","")}
       </div>
-      <div class="gr g1">
+      <div class="gr g2">
         ${F("a_rda","Rilasciato da","text","Es. Comune di Roma")}
+        ${F("a_naz","Nazione di Rilascio","text","Italia")}
       </div>`,
 
     tecnica: `
@@ -561,6 +563,7 @@
 
           <div class="hdr" id="hdr">
             <button class="btn-x" id="btn-x">✕</button>
+            <img class="hdr-logo" src="https://romavda-ai.github.io/configuratore-energia/logoFW.png" alt="Fastweb" onerror="this.style.display='none'">
             <h2>Compila Modulistica</h2>
             <p>Richiesta di Preventivo – Fastweb Energia Elettrica</p>
           </div>
@@ -775,7 +778,7 @@
       com: v("a_com"), prv: v("a_prv"), cf:  v("a_cf"),  piv: v("a_piv"), ate: v("a_ate"),
       leg: v("a_leg"), cfl: v("a_cfl"), tel: v("a_tel"), mai: v("a_mai"), pec: v("a_pec"),
       tdc: v("a_tdc"), ndc: v("a_ndc"), drl: v("a_drl"), dsc: v("a_dsc"),
-      rda: v("a_rda"),
+      rda: v("a_rda"), naz: v("a_naz"),
       pod: v("t_pod"), kwh: v("t_kwh"), kw:  v("t_kw"),
       ifn: v("t_ifn"), nfn: v("t_nfn"), cfn: v("t_cfn"), cfm: v("t_cfm"), cfp: v("t_cfp"),
       imp: r("t_imp"), forn: r("t_for"), tit: r("t_tit"),
@@ -947,390 +950,456 @@
   }
 
   /* ════════════════════════════════════════════════════════
-     GENERA PDF  — scrive direttamente sui PDF originali
-     I PDF blank devono essere nella stessa cartella GitHub:
-       - Modulo_energia_preventivo.pdf  (Richiesta Preventivo)
-       - Modulo_energia_multisito.pdf   (Allegato Multisito)
+     GENERA PDF  — identico a Modulo_energia_monosito.pdf
   ════════════════════════════════════════════════════════ */
-
-  // Percorso base: stessa cartella dello script
-  function _baseUrl() {
-    const scripts = document.querySelectorAll("script[src]");
-    for (const s of scripts) {
-      if (s.src && s.src.includes("engine-mod")) {
-        return s.src.substring(0, s.src.lastIndexOf("/") + 1);
-      }
-    }
-    return "./";
-  }
-
-  async function _loadPdfLib() {
-    if (window.PDFLib) return window.PDFLib;
-    return new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js";
-      s.onload = () => resolve(window.PDFLib);
-      s.onerror = () => reject(new Error("pdf-lib non caricata"));
-      document.head.appendChild(s);
-    });
-  }
-
-  async function _fetchPdf(url) {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`PDF non trovato: ${url}`);
-    return await res.arrayBuffer();
-  }
-
-  // Disegna testo su canvas pdf-lib con wrapping automatico
-  function _drawText(page, text, x, y, opts = {}) {
-    if (!text) return;
-    const { font, size = 8, color, maxWidth } = opts;
-    const PDFLib = window.PDFLib;
-    const rgb = color || PDFLib.rgb(0, 0, 0);
-    page.drawText(String(text), { x, y, size, font, color: rgb, maxWidth });
-  }
-
-  // Disegna una X (checkmark) in posizione
-  function _drawCheck(page, x, y, checked, opts = {}) {
-    if (!checked) return;
-    const PDFLib = window.PDFLib;
-    const { font, size = 7 } = opts;
-    page.drawText("✓", { x, y, size, font, color: PDFLib.rgb(0, 0, 0) });
-  }
-
-  // Disegna caratteri in celle separate (stile codice fiscale)
-  function _drawCells(page, value, x, y, cellWidth, count, font, size = 7) {
-    const chars = String(value || "").replace(/\s/g, "").toUpperCase().split("");
-    for (let i = 0; i < count; i++) {
-      const cx = x + i * cellWidth;
-      if (chars[i]) {
-        _drawText(page, chars[i], cx + cellWidth * 0.2, y, { font, size });
-      }
-    }
-  }
-
-  // Formatta data da YYYY-MM-DD a DD/MM/YYYY
-  function _fmtDate(s) {
-    if (!s) return "";
-    const p = s.split("-");
-    return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : s;
-  }
-
-  async function _fillPreventivo(pdfBytes, d, _fontUnused) {
-    const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
-    const pdfDoc = await PDFDocument.load(pdfBytes);
-    const font   = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const pages  = pdfDoc.getPages();
-    const page   = pages[0];
-    const { height } = page.getSize(); // 841.89
-
-    const SZ = 8; // font size base
-    const T  = (txt, x, top, sz = SZ) => txt && _drawText(page, txt, x, height - top, { font, size: sz });
-    const CK = (ok, x, top)           => ok  && page.drawText("X", { x, y: height - top, size: SZ, font, color: rgb(0,0,0) });
-    const CL = (val, x, top, cw, n)   => _drawCells(page, val, x, height - top, cw, n, font, SZ - 1);
-
-    // ── NOME OFFERTA ──
-    const offerteMap = {
-      "Fastweb Energia Light":         [39,  176],
-      "Fastweb Energia Full":          [39,  188],
-      "Fastweb Energia Maxi":          [39,  199],
-      "Fastweb Energia Flex":          [168, 176],
-      "Fastweb Energia Fix":           [167, 187],
-      "Fastweb Energia Business Flex": [297, 176],
-      "Fastweb Energia Business Fix":  [298, 188],
-    };
-    Object.entries(offerteMap).forEach(([name, [x, top]]) => {
-      const sel = d.offerta === name || (d.consumerOffers && d.consumerOffers.includes(name));
-      CK(sel, x, top);
-    });
-
-    // ── DATI ANAGRAFICI ──
-    // Larghezze celle calcolate sui box fisici del PDF:
-    //   CF(16): x=87→276 → 189pt/16 = 11.8pt  |  PIVA(11): x=278→395 → 117pt/11 = 10.6pt
-    //   ATECO(8): x=396→490 → 94pt/8 = 11.7pt
-    //   CAP(5): x=475→535 → 60pt/5 = 12pt      |  PRV(2): x=537→560 → 23pt/2 = 11.5pt
-    //   CF_legale(16): x=87→276                 |  Tel(10): x=148→248 → 100pt/10=10pt
-    // ── ANAGRAFICA ──
-    T(d.rag,  203, 235, SZ);
-    T(d.ind,  130, 251, SZ);
-    CL(d.num, 456, 255, 11,   2);
-    CL(d.cap, 508, 256, 10,   5);
-    T(d.com,  111, 279, SZ);
-    CL(d.prv, 544, 280, 11,   2);
-    CL(d.cf,   84, 305, 10,  16);
-    CL(d.piv, 313, 305, 10,  11);
-    CL(d.ate, 498, 305, 10,   6);
-    T(d.leg,  234, 323, SZ);
-    CL(d.cfl, 175, 345, 10,  16);
-
-    // ── DOCUMENTO ──
-    T(d.tdc,  107, 362, SZ);
-    T(d.ndc,  367, 361, SZ);
-    const drl = _fmtDate(d.drl);
-    if (drl) {
-      const [dd, mm, yyyy] = drl.split("/");
-      CL(dd,    84, 386, 10, 2);
-      CL(mm,   107, 386, 10, 2);
-      CL(yyyy, 131, 386, 10, 4);
-    }
-    const dsc = _fmtDate(d.dsc);
-    if (dsc) {
-      const [dd, mm, yyyy] = dsc.split("/");
-      CL(dd,   209, 386, 10, 2);
-      CL(mm,   234, 386, 10, 2);
-      CL(yyyy, 259, 386, 10, 4);
-    }
-    T(d.rda,   87, 400, SZ);
-    // Cellulare: 10 cifre
-    CL((d.tel||"").replace(/[\s+]/g,""), 186, 425, 10, 10);
-    // Email
-    if (d.mai) {
-      const [lp, dom] = d.mai.split("@");
-      T(lp,   87, 439, SZ);
-      if (dom) T(dom, 318, 438, SZ);
-    }
-    // PEC
-    if (d.pec) {
-      const [lp, dom] = d.pec.split("@");
-      T(lp,   87, 456, SZ);
-      if (dom) T(dom, 318, 456, SZ);
-    }
-
-    // ── DATI TECNICI ──
-    const isMulti = d.forn === "multisito";
-    if (!isMulti) {
-      CL(d.pod,  77, 497, 10,   14);
-      CL(d.kwh, 290, 497, 10,    7);
-      CL(d.kw,  412, 497, 10,    5);
-      T(d.ifn,  140, 517, SZ);
-      T(d.nfn,  455, 517, SZ);
-      CL(d.cfn, 509, 517, 10,    5);
-      T(d.cfm,   87, 540, SZ);
-      CL(d.cfp, 538, 546, 10,    2);
-    }
-    CK(!isMulti && d.imp === "monofase",  98, 568);
-    CK(!isMulti && d.imp === "trifase",  171, 570);
-    CK(d.forn === "singola",   317, 568);
-    CK(d.forn === "multisito", 352, 569);
-    CK(!isMulti && d.tit === "proprieta", 150, 585);
-    CK(!isMulti && d.tit === "locazione",  37, 598);
-    CK(!isMulti && d.tit === "altro",     263, 598);
-
-    // ── DATI PAGAMENTO ──
-    T(d.int,  186, 626, SZ);
-    T(d.rsp,  390, 627, SZ);
-    CL(d.cfi,  86, 652, 10,   16);
-    const ibanClean = (d.iban||"").replace(/\s/g,"").toUpperCase();
-    _drawCells(page, ibanClean, 265, height - 653, 9.7, 27, font, SZ - 1);
-    CL(d.pvp,  95, 672, 10,   11);
-    CK(d.tip === "b2c", 228, 674);
-    CK(d.tip === "b2b", 258, 674);
-    CL(d.sdi, 328, 672, 10,    7);
-
-    // ── DATE FIRMA ──
-    const todayStr = new Date().toLocaleDateString("it-IT", { day:"2-digit", month:"2-digit", year:"numeric" });
-    CL(todayStr, 140, 715, 11, 5);
-    T(todayStr,  140, 779, SZ);
-
-    return await pdfDoc.save();
-  }
-
-  async function _fillMultisito(pdfBytes, d, allPods, _fontUnused) {
-    const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
-    const chunks = [];
-    for (let i = 0; i < allPods.length; i += 4) chunks.push(allPods.slice(i, i + 4));
-    const mergedDoc = await PDFDocument.create();
-    const SZ = 8;
-
-    for (const chunk of chunks) {
-      const pdfDoc = await PDFDocument.load(pdfBytes);
-      const font   = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const pages  = pdfDoc.getPages();
-      const page   = pages[0];
-      const { height } = page.getSize();
-
-      const T  = (txt, x, top, sz = SZ) => txt && _drawText(page, txt, x, height - top, { font, size: sz });
-      const CK = (ok, x, top)           => ok  && page.drawText("X", { x, y: height - top, size: SZ, font, color: rgb(0,0,0) });
-      const CL = (val, x, top, cw, n)   => _drawCells(page, val, x, height - top, cw, n, font, SZ - 1);
-
-      // ── DATI ANAGRAFICI MULTISITO ──
-      T(d.rag,  201,  92, SZ);
-      T(d.ind,  130, 112, SZ);
-      T(d.num,  457, 108, SZ);
-      CL(d.cap, 509, 114, 10,   5);
-      T(d.com,  163, 141, SZ);
-      CL(d.prv, 539, 141, 10,   2);
-      CL(d.cf,   84, 163, 10,  16);
-      CL(d.piv, 313, 162, 10,  11);
-      const tel2 = (d.tel||"").replace(/[\s+]/g,"");
-      CL(tel2,  107, 177, 10,   10);
-      if (d.mai) {
-        const [lp, dom] = d.mai.split("@");
-        T(lp,  87, 199, SZ); if (dom) T(dom, 312, 199, SZ);
-      }
-      if (d.pec) {
-        const [lp, dom] = d.pec.split("@");
-        T(lp,  87, 214, SZ); if (dom) T(dom, 315, 214, SZ);
-      }
-
-      // ── BLOCCHI POD ──
-      const POD_ROWS = [
-        { pod:260, ifn:276, nfn_x:530, cfn_top:300, com:300, prv_x:537, pot:319, imp:322, kwh_x:450, tit:338, loc:352, alt:352 },
-        { pod:369, ifn:391, nfn_x:530, cfn_top:416, com:416, prv_x:538, pot:435, imp:436, kwh_x:451, tit:449, loc:467, alt:467 },
-        { pod:490, ifn:508, nfn_x:530, cfn_top:530, com:530, prv_x:538, pot:549, imp:552, kwh_x:450, tit:568, loc:582, alt:581 },
-        { pod:604, ifn:623, nfn_x:530, cfn_top:644, com:644, prv_x:538, pot:664, imp:666, kwh_x:451, tit:682, loc:696, alt:696 },
-      ];
-
-      chunk.forEach((p, i) => {
-        const r = POD_ROWS[i];
-        CL(p.pod,   76,      r.pod,     10,   14);
-        T(p.ifn,   256,      r.ifn,     SZ);
-        T(p.nfn,   r.nfn_x, r.ifn,     SZ);
-        CL(p.cfn,   55,      r.cfn_top, 10,    5);
-        T(p.cfm,   148,      r.com,     SZ);
-        CL(p.cfp,  r.prv_x, r.com,     10,    2);
-        CL(p.kw,   119,      r.pot,     10,    5);
-        CK(p.imp === "monofase", 241, r.imp);
-        CK(p.imp === "trifase",  314, r.imp);
-        CL(p.kwh,  r.kwh_x, r.pot,     10,    7);
-        CK(p.tit === "proprieta", 150, r.tit);
-        CK(p.tit === "locazione",  35, r.loc);
-        CK(p.tit === "altro",     260, r.alt);
-      });
-
-      // Data firma multisito
-      const todayStr = new Date().toLocaleDateString("it-IT", { day:"2-digit", month:"2-digit", year:"numeric" });
-      T(todayStr, 55, 751, SZ);
-
-      const copiedPages = await mergedDoc.copyPages(pdfDoc, [0]);
-      mergedDoc.addPage(copiedPages[0]);
-    }
-
-    return await mergedDoc.save();
-  }
-
-
   function generatePDF() {
-    let d   = collect();
+    const d        = collect();
+    const todayStr = new Date().toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit",year:"numeric"});
+    const e  = s => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    const fd = s => { if(!s)return""; const p=s.split("-"); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:s; };
+
+    const dots  = n => `<span class="dt">${Array(n+1).join(".")}</span>`;
+    const V     = (val,n=40) => val ? `<span class="fv">${e(val)}</span>` : dots(n);
+    const CELLS = (val,n) => {
+      const ch = (val||"").replace(/\s/g,"").split("");
+      return `<span class="cells">${Array.from({length:n},(_,i)=>`<span class="cell">${e(ch[i]||"")}</span>`).join("")}</span>`;
+    };
+    const IBAN  = val => {
+      const ch = (val||"").replace(/\s/g,"").toUpperCase().split("");
+      return `<span class="iban">${Array.from({length:27},(_,i)=>`<span class="ic">${e(ch[i]||"")}</span>`).join("")}</span>`;
+    };
+    const CHK   = ok => ok ? `<span class="chk chk1">&#x2713;</span>` : `<span class="chk chk0"></span>`;
+    const SEC   = t  => `<div class="sec">${e(t)}</div>`;
+
+    const html = `<!DOCTYPE html>
+<html lang="it"><head><meta charset="UTF-8">
+<title>Richiesta di Preventivo – Fastweb Energia</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#000;
+  background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+body{padding:3mm 7mm 20mm;}
+.top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:3pt;}
+.top-left h1{font-size:15pt;font-weight:700;line-height:1.1;margin-bottom:2pt;}
+.top-left .sub{font-size:9pt;margin-bottom:2pt;}
+.intro{font-size:7.5pt;line-height:1.5;margin-bottom:4pt;}
+.offerta-box{border:0.5pt solid #bbb;padding:4pt 6pt;margin-bottom:0;}
+.off-title{font-size:9pt;font-weight:700;margin-bottom:3pt;}
+.off-grid{display:flex;gap:14pt;}
+.off-col-title{font-size:7.5pt;font-weight:700;margin-bottom:2.5pt;}
+.off-item{display:flex;align-items:center;gap:3pt;margin-bottom:2.5pt;font-size:7.5pt;}
+.sec{background:#FFC424;color:#fff;font-size:8.5pt;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;
+  padding:3pt 6pt;margin-top:4pt;margin-bottom:3pt;}
+.frows{display:flex;flex-wrap:wrap;gap:0 4pt;margin-bottom:3pt;align-items:flex-end;}
+.fr{flex:1;min-width:0;}
+.fl{font-size:6.5pt;color:#444;margin-bottom:1pt;white-space:nowrap;}
+.fline{border-bottom:0.5pt solid #777;min-height:11pt;font-size:8.5pt;
+  padding-bottom:1pt;white-space:nowrap;overflow:hidden;}
+.dt{color:#bbb;letter-spacing:.5pt;}
+.fv{font-weight:400;}
+.cells{display:inline-flex;gap:0;}
+.cell{display:inline-block;width:7.5pt;height:9.5pt;border:0.4pt solid #888;
+  text-align:center;font-size:6.5pt;line-height:9.5pt;
+  font-family:'Courier New',monospace;font-weight:500;}
+.iban{display:inline-flex;gap:1.5pt;flex-wrap:nowrap;}
+.ic{display:inline-block;width:8.5pt;height:10.5pt;border:0.5pt solid #555;
+  text-align:center;font-size:7pt;line-height:10.5pt;
+  font-family:'Courier New',monospace;font-weight:600;}
+.chk{display:inline-block;width:7.5pt;height:7.5pt;border:0.5pt solid #555;
+  vertical-align:middle;margin-right:2pt;
+  text-align:center;font-size:6.5pt;line-height:7.5pt;font-weight:900;}
+.chk1{background:#000;color:#fff;border-color:#000;}
+.chk0{background:#fff;}
+.irow{font-size:7.5pt;margin-bottom:2.5pt;display:flex;flex-wrap:wrap;
+  align-items:center;gap:2pt 6pt;}
+.irow-nowrap{font-size:7.5pt;margin-bottom:2.5pt;display:flex;flex-wrap:nowrap;
+  align-items:center;gap:2pt 5pt;white-space:nowrap;}
+.isep{color:#bbb;margin:0 2pt;}
+.firma-wrap{margin-top:5pt;}
+.firma-txt{font-size:7pt;line-height:1.5;margin-bottom:3pt;}
+.firma-fields{display:flex;gap:10pt;align-items:flex-end;margin-top:3pt;}
+.firma-ld{flex:1.3;}
+.firma-ld .fl{font-size:7pt;color:#444;}
+.firma-ld .fline{border-bottom:0.5pt solid #000;}
+.firma-right{flex:1;display:flex;align-items:flex-end;gap:4pt;}
+.firma-right .firma-label{font-size:7pt;color:#444;white-space:nowrap;}
+.firma-right .fline{flex:1;border-bottom:0.5pt solid #000;}
+.firma-x{font-size:22pt;font-weight:900;line-height:1;
+  display:inline-block;vertical-align:middle;margin-left:6pt;}
+.side-date{position:fixed;bottom:30mm;left:2mm;
+  writing-mode:vertical-rl;transform:rotate(180deg);
+  font-size:5pt;color:#999;letter-spacing:.3pt;}
+.footer{position:fixed;bottom:4mm;left:11mm;right:11mm;
+  font-size:5.5pt;color:#555;text-align:center;
+  border-top:0.3pt solid #ccc;padding-top:2pt;line-height:1.6;}
+@media print{body{padding:2mm 10mm 18mm;}}
+</style></head><body>
+
+<div class="side-date">Settembre 2024</div>
+
+<div class="top">
+  <div class="top-left">
+    <h1>RICHIESTA DI PREVENTIVO</h1>
+    <div class="sub">Fastweb Energia - Energia Elettrica</div>
+  </div>
+  <img src="https://romavda-ai.github.io/configuratore-energia/logoFW.png" alt="Fastweb" style="height:32pt;width:auto;" onerror="this.style.display='none'">
+</div>
+
+<p class="intro">
+  Il cliente, di seguito indicato, richiede a Fastweb S.p.A. Società a socio unico e soggetta all'attività di
+  direzione e coordinamento di Swisscom AG, con sede legale e amministrativa in Piazza Adriano Olivetti 1,
+  20139 Milano, codice fiscale e partita IVA 12878470150 (di seguito anche solo "Fastweb") il seguente preventivo
+  per la fornitura di energia elettrica.
+</p>
+
+<div class="offerta-box">
+  <div class="off-title">NOME OFFERTA:</div>
+  <div class="off-grid">
+    <div>
+      <div class="off-col-title">Consumer:</div>
+      <div class="off-item">${CHK(d.offerta==="Fastweb Energia Light")} Fastweb Energia Light</div>
+      <div class="off-item">${CHK(d.offerta==="Fastweb Energia Full")} Fastweb Energia Full</div>
+      <div class="off-item">${CHK(d.offerta==="Fastweb Energia Maxi")} Fastweb Energia Maxi</div>
+    </div>
+    <div>
+      <div class="off-col-title">&nbsp;</div>
+      <div class="off-item">${CHK(d.consumerOffers&&d.consumerOffers.includes("Fastweb Energia Flex"))} Fastweb Energia Flex</div>
+      <div class="off-item">${CHK(d.consumerOffers&&d.consumerOffers.includes("Fastweb Energia Fix"))} Fastweb Energia Fix</div>
+    </div>
+    <div>
+      <div class="off-col-title">Business:</div>
+      <div class="off-item">${CHK(d.offerta==="Fastweb Energia Business Flex")} Fastweb Energia Business Flex</div>
+      <div class="off-item">${CHK(d.offerta==="Fastweb Energia Business Fix")} Fastweb Energia Business Fix</div>
+    </div>
+  </div>
+</div>
+
+${SEC("DATI ANAGRAFICI E DI RESIDENZA")}
+<div class="frows"><div class="fr"><div class="fl">Nome e Cognome (Ragione Sociale se Impresa)</div>
+  <div class="fline">${V(d.rag,70)}</div></div></div>
+<div class="frows">
+  <div class="fr" style="flex:3.5"><div class="fl">Indirizzo di Residenza (Sede Legale se Impresa)</div>
+    <div class="fline">${V(d.ind,45)}</div></div>
+  <div class="fr" style="flex:.45"><div class="fl">N°</div><div class="fline">${CELLS(d.num,4)}</div></div>
+  <div class="fr" style="flex:.75"><div class="fl">CAP</div><div class="fline">${CELLS(d.cap,5)}</div></div>
+</div>
+<div style="font-size:5pt;color:#555;margin-bottom:1pt;margin-top:-0.5pt">(Sede Legale se Impresa)</div>
+<div class="frows">
+  <div class="fr" style="flex:4"><div class="fl">Comune</div><div class="fline">${V(d.com,50)}</div></div>
+  <div class="fr" style="flex:.5"><div class="fl">Prov.</div><div class="fline">${CELLS(d.prv,2)}</div></div>
+</div>
+<div class="frows">
+  <div class="fr" style="flex:1.3"><div class="fl">Codice Fiscale</div><div class="fline">${CELLS(d.cf,16)}</div></div>
+  <div class="fr" style="flex:1.2"><div class="fl">P.IVA (se Impresa)</div><div class="fline">${CELLS(d.piv,11)}</div></div>
+  <div class="fr" style="flex:1"><div class="fl">ATECO (se Impresa)</div><div class="fline">${CELLS(d.ate,8)}</div></div>
+</div>
+<div class="frows">
+  <div class="fr" style="flex:1.6"><div class="fl">Nome e Cognome del Legale Rappresentante (se Impresa)</div>
+    <div class="fline">${V(d.leg,35)}</div></div>
+  <div class="fr" style="flex:1"><div class="fl">C.F. del legale rappresentante (se Impresa)</div>
+    <div class="fline">${CELLS(d.cfl,16)}</div></div>
+</div>
+<div class="frows">
+  <div class="fr"><div class="fl">Tipo di Documento</div><div class="fline">${V(d.tdc,28)}</div></div>
+  <div class="fr"><div class="fl">Numero Documento</div><div class="fline">${V(d.ndc,28)}</div></div>
+</div>
+<div class="frows">
+  <div class="fr" style="flex:none;margin-right:10pt">
+    <div class="fl">Data di rilascio</div>
+    <div class="fline">${d.drl?`<span class="fv">${e(fd(d.drl))}</span>`:`${CELLS("",2)}<span style="font-size:6pt;color:#aaa">/</span>${CELLS("",2)}<span style="font-size:6pt;color:#aaa">/</span>${CELLS("",4)}`}</div>
+  </div>
+  <div class="fr" style="flex:none">
+    <div class="fl">Data di scadenza</div>
+    <div class="fline">${d.dsc?`<span class="fv">${e(fd(d.dsc))}</span>`:`${CELLS("",2)}<span style="font-size:6pt;color:#aaa">/</span>${CELLS("",2)}<span style="font-size:6pt;color:#aaa">/</span>${CELLS("",4)}`}</div>
+  </div>
+</div>
+<div class="frows">
+  <div class="fr" style="flex:1.5"><div class="fl">Rilasciato da</div><div class="fline">${V(d.rda,30)}</div></div>
+  <div class="fr"><div class="fl">Nazione di Rilascio</div>
+    <div class="fline">${d.naz?V(d.naz):`<strong>ITALIA</strong>`}</div></div>
+</div>
+<div class="frows"><div class="fr"><div class="fl">Numero di cellulare di riferimento</div>
+  <div class="fline">${CELLS(d.tel.replace(/[\s+]/g,""),13)}</div></div></div>
+<div class="frows"><div class="fr"><div class="fl">E-mail</div>
+  <div class="fline">${d.mai?V(d.mai):`${dots(30)}<span style="color:#888">@</span>${dots(20)}`}</div></div></div>
+<div class="frows"><div class="fr"><div class="fl">PEC</div>
+  <div class="fline">${d.pec?V(d.pec):`${dots(30)}<span style="color:#888">@</span>${dots(20)}`}</div></div></div>
+
+${SEC("DATI TECNICI DI FORNITURA")}
+<div class="frows">
+  <div class="fr" style="flex:1.6"><div class="fl">Codice POD</div><div class="fline">${d.forn==="multisito" ? dots(14) : CELLS(d.pod,14)}</div></div>
+  <div class="fr" style="flex:1.2"><div class="fl">Consumo (kWh/anno)</div><div class="fline">${d.forn==="multisito" ? dots(8) : CELLS(d.kwh,8)}</div></div>
+  <div class="fr" style="flex:1"><div class="fl">Pot. Imp. (kW)</div><div class="fline">${d.forn==="multisito" ? dots(6) : CELLS(d.kw,6)}</div></div>
+  <div class="fr" style="flex:.5"><div class="fl">Tensione</div><div class="fline"><strong>BT</strong></div></div>
+</div>
+<div class="frows">
+  <div class="fr" style="flex:3.5"><div class="fl">Indirizzo di Fornitura</div><div class="fline">${d.forn==="multisito" ? dots(40) : V(d.ifn,40)}</div></div>
+  <div class="fr" style="flex:.45"><div class="fl">N°</div><div class="fline">${d.forn==="multisito" ? dots(4) : CELLS(d.nfn,4)}</div></div>
+  <div class="fr" style="flex:.75"><div class="fl">CAP</div><div class="fline">${d.forn==="multisito" ? dots(5) : CELLS(d.cfn,5)}</div></div>
+</div>
+<div style="font-size:5pt;color:#555;margin-bottom:1pt;margin-top:-0.5pt">(se diverso da Residenza)</div>
+<div class="frows">
+  <div class="fr" style="flex:4"><div class="fl">Comune</div><div class="fline">${d.forn==="multisito" ? dots(50) : V(d.cfm,50)}</div></div>
+  <div class="fr" style="flex:.5"><div class="fl">Prov.</div><div class="fline">${d.forn==="multisito" ? dots(2) : CELLS(d.cfp,2)}</div></div>
+</div>
+<div class="irow-nowrap">
+  <span>Tipologia impianto:</span>
+  ${d.forn==="multisito" ? `${CHK(false)}&nbsp;<span>Monofase (230 V)</span>&nbsp;${CHK(false)}&nbsp;<span>Trifase (400V)</span>` : `${CHK(d.imp==="monofase")}&nbsp;<span>Monofase (230 V)</span>&nbsp;${CHK(d.imp==="trifase")}&nbsp;<span>Trifase (400V)</span>`}
+  <span class="isep">|</span>
+  <span>Tipo di Fornitura:</span>
+  ${CHK(d.forn==="singola")}&nbsp;<span>Singola</span>
+  &nbsp;${CHK(d.forn==="multisito")}&nbsp;<span>Multisito (Compilare l'ALLEGATO MULTISITO)</span>
+</div>
+<div class="irow" style="margin-bottom:1pt">
+  <span>Tipologia di titolarità dell'immobile:</span>
+  ${d.forn==="multisito" ? CHK(false) : CHK(d.tit==="proprieta")} <span>Proprietà/ Usufrutto/ Abitazione per decesso del convivente di fatto</span>
+</div>
+<div class="irow">
+  ${d.forn==="multisito" ? CHK(false) : CHK(d.tit==="locazione")} <span>Locazione/ Comodato (Atto già registrato o in corso di registrazione)</span>
+  ${d.forn==="multisito" ? CHK(false) : CHK(d.tit==="altro")} <span>Altro documento che non necessita di registrazione</span>
+</div>
+
+${SEC("DATI DI PAGAMENTO")}
+<div class="frows">
+  <div class="fr" style="flex:1.5"><div class="fl">Nome e Cognome intestatario/Rapp. Legale</div>
+    <div class="fline">${V(d.int,30)}</div></div>
+  <div class="fr"><div class="fl">Ragione Sociale</div><div class="fline">${V(d.rsp,30)}</div></div>
+</div>
+<div class="frows" style="align-items:flex-end">
+  <div class="fr" style="flex:.9"><div class="fl">C.F. Intestatario</div><div class="fline">${CELLS(d.cfi,16)}</div></div>
+  <div class="fr" style="flex:1.3"><div class="fl">IBAN</div><div class="fline">${IBAN(d.iban)}</div></div>
+</div>
+<div class="frows" style="align-items:center">
+  <div class="fr" style="flex:1"><div class="fl">P.IVA (se impresa)</div><div class="fline">${CELLS(d.pvp,11)}</div></div>
+  <div class="fr" style="flex:1.4;padding-top:8pt">
+    <span>Tipo</span>&nbsp;
+    ${CHK(d.tip==="b2c")} <span style="margin-right:6pt">B2C</span>
+    ${CHK(d.tip==="b2b")} <span style="margin-right:10pt">B2B</span>
+    <span style="font-size:5.5pt;color:#444">Codice SDI</span>&nbsp;${CELLS(d.sdi,7)}
+  </div>
+</div>
+
+<div class="firma-wrap">
+  <p class="firma-txt">
+    Dichiaro di volere essere contattato telefonicamente da parte di operatore per conto di Fastweb, in esecuzione delle misure
+    precontrattuali, al fine di svolgere le attività amministrative necessarie a perfezionare la conclusione del contratto relativo
+    all'offerta sopra indicata.
+  </p>
+  <div class="firma-fields">
+    <div class="firma-ld">
+      <div class="fl">Luogo e data</div>
+      <div class="fline">${dots(14)}<span style="color:#aaa">/</span>${dots(6)}<span style="color:#aaa">/</span>${dots(8)}</div>
+    </div>
+    <div class="firma-right">
+      <div class="firma-label">Firma</div>
+      <div class="fline" style="border-bottom:0.5pt solid #000;flex:1;min-height:12pt">&nbsp;</div>
+    </div>
+  </div>
+</div>
+
+<div class="firma-wrap" style="margin-top:5pt">
+  <p class="firma-txt">
+    Dichiaro di volere essere contattato telefonicamente da parte di operatore per conto di Fastweb, in esecuzione delle misure
+    precontrattuali, al fine di svolgere le attività amministrative necessarie a perfezionare la conclusione del contratto la cui
+    proposta è avvenuta nell'ambito di un appuntamento per la proposizione dei servizi
+  </p>
+  <div style="font-size:6pt;margin-bottom:3pt">
+    Fastweb all'azienda&nbsp;<span style="border-bottom:0.4pt solid #000;display:inline-block;min-width:100pt;font-size:7pt">&nbsp;${d.rag?e(d.rag):""}</span>.
+  </div>
+  <div class="firma-fields">
+    <div class="firma-ld">
+      <div class="fl">Luogo e data</div>
+      <div class="fline"><span class="fv">${todayStr}</span></div>
+    </div>
+    <div class="firma-right">
+      <div class="firma-label">Firma &nbsp;&nbsp;&nbsp;&nbsp; <span class="firma-x">&#x2715;</span></div>
+      <div style="border-bottom:0.5pt solid #000;flex:1;min-height:20pt;width:100%">&nbsp;</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  Fastweb S.p.A. - Sede legale e amministrativa Piazza Adriano Olivetti, 1, 20139 Milano Tel. (+39) 02.45451 Capitale Sociale euro 41.344.209,40 i.v. -<br>
+  Codice Fiscale, Partita IVA e Iscrizione nel Registro Imprese di Milano 12878470157 Fastweb S.p.A. N. Iscr. Reg. AEE: IT08020000003838 - N. Iscr. Reg. Pile e Acc.: IT09100P00001900 -<br>
+  Contributo Ambientale CONAI assolto - Società soggetta all'attività di direzione e coordinamento di Swisscom AG
+</div>
+
+</body></html>`;
+
     const btn = shadow.querySelector(".btn-gen");
     if (btn) { btn.textContent = "⏳ Generazione PDF..."; btn.disabled = true; }
 
-    // ── DATI DI TEST (rimuovere nella versione definitiva) ──
-    const TEST_MODE = true; // ← impostare false per disattivare
-    if (TEST_MODE) {
-      d = {
-        offerta:       "Fastweb Energia Business Fix",
-        consumerOffers:[],
-        rag:  "Rossi Mario Srl",
-        ind:  "Via Roma",    num: "10",   cap: "00185",
-        com:  "Roma",        prv: "RM",
-        cf:   "RSSMRA80A01H501A",
-        piv:  "12345678901",
-        ate:  "35140000",
-        leg:  "Mario Rossi",
-        cfl:  "RSSMRA80A01H501A",
-        tdc:  "Carta d'Identità",
-        ndc:  "AX1234567",
-        drl:  "2020-03-15",
-        dsc:  "2030-03-15",
-        rda:  "Comune di Roma",
-        tel:  "3331234567",
-        mai:  "mario.rossi@azienda.it",
-        pec:  "mario.rossi@pec.it",
-        pod:  "IT001E00012345678",
-        kwh:  "12000",
-        kw:   "6",
-        ifn:  "Via Roma",    nfn: "10",   cfn: "00185",
-        cfm:  "Roma",        cfp: "RM",
-        imp:  "monofase",
-        forn: "multisito",
-        tit:  "proprieta",
-        int:  "Mario Rossi",
-        rsp:  "Rossi Mario Srl",
-        iban: "IT60X0542811101000000123456",
-        cfi:  "RSSMRA80A01H501A",
-        pvp:  "12345678901",
-        tip:  "b2b",
-        sdi:  "0000000",
-        extraPods: [
-          { pod:"IT001E00098765432", kwh:"8000",  kw:"3",
-            ifn:"Via Nazionale", nfn:"5", cfn:"00184", cfm:"Roma", cfp:"RM",
-            imp:"trifase", tit:"locazione" },
-          { pod:"IT001E00011112222", kwh:"15000", kw:"10",
-            ifn:"Corso Vittorio", nfn:"22", cfn:"00186", cfm:"Roma", cfp:"RM",
-            imp:"monofase", tit:"proprieta" },
-          { pod:"IT001E00033334444", kwh:"6000",  kw:"4",
-            ifn:"Piazza Venezia", nfn:"1", cfn:"00187", cfm:"Roma", cfp:"RM",
-            imp:"monofase", tit:"altro" },
-        ],
-      };
+    function renderPage(htmlStr, pdfInst, addPage, forceA4Height) {
+      return new Promise((resolve, reject) => {
+        const A4H = 1123; // px at 96dpi — altezza A4 per 794px di larghezza
+        const iframe = document.createElement("iframe");
+        iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:794px;height:" + A4H + "px;border:none;";
+        document.body.appendChild(iframe);
+        iframe.contentDocument.open();
+        iframe.contentDocument.write(htmlStr);
+        iframe.contentDocument.close();
+        const iDoc  = iframe.contentDocument;
+        const iBody = iDoc.body;
+        // Per pagine multisito: fissa l'altezza a A4 so che flexbox metta il footer in fondo
+        // Per pagina principale: usa scrollHeight (contenuto può essere più lungo)
+        const renderH = forceA4Height ? A4H : Math.max(iBody.scrollHeight, A4H);
+        iframe.style.height = renderH + "px";
+        // Forza anche html e body ad avere altezza fissa per le pagine A4
+        if (forceA4Height) {
+          iBody.style.minHeight = A4H + "px";
+          iDoc.documentElement.style.minHeight = A4H + "px";
+        }
+        setTimeout(() => {
+          window.html2canvas(iDoc.documentElement, {
+            scale:2, useCORS:true, allowTaint:true,
+            width:794, height:renderH,
+            windowWidth:794, windowHeight:renderH, logging:false
+          }).then(canvas => {
+            const pW  = 210;
+            const pH  = 297;
+            const trimH = Math.min(canvas.height, Math.round(canvas.width*(pH/pW)));
+            const tc = document.createElement("canvas");
+            tc.width=canvas.width; tc.height=trimH;
+            tc.getContext("2d").drawImage(canvas,0,0,canvas.width,trimH,0,0,canvas.width,trimH);
+            if (addPage) pdfInst.addPage();
+            pdfInst.addImage(tc.toDataURL("image/jpeg",0.95),"JPEG",0,0,pW,pW*(trimH/canvas.width));
+            document.body.removeChild(iframe);
+            resolve();
+          }).catch(err => { document.body.removeChild(iframe); reject(err); });
+        }, 700);
+      });
     }
-    // ── FINE DATI DI TEST ──
 
-    const isMulti = d.forn === "multisito";
-    const allPods = [
-      { pod: d.pod, kwh: d.kwh, kw: d.kw, ifn: d.ifn, nfn: d.nfn, cfn: d.cfn, cfm: d.cfm, cfp: d.cfp, imp: d.imp, tit: d.tit },
-      ...(d.extraPods || [])
-    ];
+    function buildMultisitoPage(pods) {
+      const e2 = s => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+      const TX = (v,n) => v?'<span style="font-weight:400">'+e2(v)+'</span>':'<span style="color:#bbb">'+'.'.repeat(n||40)+'</span>';
+      const CE = (v,n) => {
+        const ch=(v||"").replace(/\s/g,"").split("");
+        let r=""; for(let k=0;k<n;k++) r+='<span style="display:inline-block;width:7pt;height:9pt;border:0.4pt solid #888;text-align:center;font-size:6pt;line-height:9pt;font-family:Courier New,monospace">'+(ch[k]||"")+"</span>";
+        return '<span style="display:inline-flex;gap:0">'+r+"</span>";
+      };
+      const MK = ok => ok
+        ?'<span style="display:inline-block;width:8pt;height:8pt;border:0.5pt solid #555;background:#000;text-align:center;line-height:8pt;font-size:5.5pt;color:#fff">&#x2713;</span>'
+        :'<span style="display:inline-block;width:8pt;height:8pt;border:0.5pt solid #555;background:#fff"></span>';
+      const rowS='display:flex;gap:4pt;margin-bottom:2pt;align-items:flex-end;';
+      const lblS='font-size:5.5pt;color:#666;margin-bottom:1pt;';
+      const botS='border-bottom:0.5pt solid #777;';
+      const podBlocks = pods.map((p,i) =>
+        '<div style="border:0.5pt solid #e8c060;border-radius:2pt;padding:4pt 6pt;margin-bottom:5pt;">'
+        +'<div style="display:flex;align-items:center;gap:5pt;margin-bottom:3pt;">'
+          +'<span style="background:#FFC424;color:#fff;border-radius:4pt;width:14pt;height:14pt;display:inline-flex;align-items:center;justify-content:center;font-size:8pt;font-weight:800">'+(i+1)+'</span>'
+          +'<span style="font-size:7pt;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em">POD</span>'
+        +'</div>'
+        +'<div style="'+rowS+'">'
+          +'<div style="flex:2"><div style="'+lblS+'">Codice POD</div><div style="'+botS+'">'+CE(p.pod,14)+'</div></div>'
+          +'<div style="flex:0 0 30pt"><div style="'+lblS+'">Tensione</div><div style="font-size:8pt;font-weight:700;padding-bottom:1pt">BT</div></div>'
+        +'</div>'
+        +'<div style="'+rowS+'">'
+          +'<div style="flex:2.5"><div style="'+lblS+'">Indirizzo di Fornitura</div><div style="'+botS+'font-size:7pt">'+TX(p.ifn,30)+'</div></div>'
+          +'<div style="flex:1"><div style="'+lblS+'">N\u00b0</div><div style="'+botS+'font-size:7pt">'+TX(p.nfn,4)+'</div></div>'
+          +'<div style="flex:1"><div style="'+lblS+'">CAP</div><div style="'+botS+'">'+CE(p.cfn,5)+'</div></div>'
+          +'<div style="flex:2"><div style="'+lblS+'">Comune</div><div style="'+botS+'font-size:7pt">'+TX(p.cfm,20)+'</div></div>'
+          +'<div style="flex:0 0 22pt"><div style="'+lblS+'">Prov.</div><div style="'+botS+'">'+CE(p.cfp,2)+'</div></div>'
+        +'</div>'
+        +'<div style="'+rowS+'">'
+          +'<div style="flex:1"><div style="'+lblS+'">Pot. Impegnata (kW)</div><div style="'+botS+'">'+CE(p.kw,6)+'</div></div>'
+          +'<div style="flex:0 0 auto;font-size:7pt;padding-bottom:1pt">Tipologia impianto: '+MK(p.imp==="monofase")+' Monofase (230V) &nbsp;'+MK(p.imp==="trifase")+' Trifase (400V)</div>'
+          +'<div style="flex:1"><div style="'+lblS+'">Consumo (kWh/anno)</div><div style="'+botS+'">'+CE(p.kwh,8)+'</div></div>'
+        +'</div>'
+        +'<div style="font-size:6.5pt;margin-bottom:1.5pt">Tipologia di titolarit\u00e0 dell\u2019immobile: '+MK(p.tit==="proprieta")+' Propriet\u00e0/ Usufrutto/ Abitazione per decesso del convivente di fatto</div>'
+        +'<div style="font-size:6.5pt">'+MK(p.tit==="locazione")+' Locazione/ Comodato (Atto gi\u00e0 registrato o in corso di registrazione) &nbsp;&nbsp;'+MK(p.tit==="altro")+' Altro documento che non necessita di registrazione</div>'
+        +'</div>'
+      ).join("");
+      const tel2=(d.tel||"").replace(/[\s+]/g,"");
+      return '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Allegato Multisito</title><style>'
+        +'*{margin:0;padding:0;box-sizing:border-box;}'
+        +'html{height:100%;}'
+        +'body{font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#000;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;min-height:100%;display:flex;flex-direction:column;padding:4mm 8mm 0;}'
+        +'.content{flex:1;}'
+        +'.sec{background:#FFC424;color:#fff;font-size:8.5pt;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2.5pt 6pt;margin-bottom:4pt;}'
+        +'.footer{width:100%;padding:2.5pt 0 3pt;font-size:4.8pt;color:#555;text-align:center;border-top:0.4pt solid #bbb;margin-top:8pt;line-height:1.6;}'
+        +'.sidedate{position:fixed;bottom:30mm;left:2mm;writing-mode:vertical-rl;transform:rotate(180deg);font-size:5pt;color:#999;letter-spacing:.3pt;}'
+        +'</style></head><body>'
+        +'<div class="content">'
+        +'<div style="margin-bottom:5pt;display:flex;align-items:flex-start;justify-content:space-between;"><div><div style="font-size:15pt;font-weight:700;line-height:1.1;">ALLEGATO MULTISITO</div>'
+        +'<div style="font-size:8.5pt;color:#444;">Contratto Fastweb Energia \u2022 Energia Elettrica</div></div>'
+        +'<img src="https://romavda-ai.github.io/configuratore-energia/logoFW.png" alt="Fastweb" style="height:32pt;width:auto;" onerror="this.style.display=\'none\'">'
+        +'</div>'
+        +'<div class="sec">DATI ANAGRAFICI E DI RESIDENZA</div>'
+        +'<div style="'+rowS+'"><div style="flex:1;"><div style="'+lblS+'">Nome e Cognome (Ragione Sociale se Impresa)</div><div style="'+botS+'font-size:8pt;">'+TX(d.rag,60)+'</div></div></div>'
+        +'<div style="'+rowS+'">'
+          +'<div style="flex:2.5;"><div style="'+lblS+'">Indirizzo di Residenza (Sede Legale se Impresa)</div><div style="'+botS+'font-size:8pt;">'+TX(d.ind,40)+'</div></div>'
+          +'<div style="flex:0 0 auto;"><div style="'+lblS+'">N\u00b0</div><div style="'+botS+'">'+CE(d.num,4)+'</div></div>'
+          +'<div style="flex:0 0 auto;"><div style="'+lblS+'">CAP</div><div style="'+botS+'">'+CE(d.cap,5)+'</div></div>'
+        +'</div>'
+        +'<div style="'+rowS+'"><div style="flex:2;"><div style="'+lblS+'">Comune</div><div style="'+botS+'font-size:8pt;">'+TX(d.com,30)+'</div></div>'
+        +'<div style="flex:0 0 22pt;"><div style="'+lblS+'">Prov.</div><div style="'+botS+'">'+CE(d.prv,2)+'</div></div></div>'
+        +'<div style="'+rowS+'"><div style="flex:1;"><div style="'+lblS+'">Codice Fiscale</div><div style="'+botS+'">'+CE(d.cf,16)+'</div></div>'
+        +'<div style="flex:1;"><div style="'+lblS+'">P.IVA (se Impresa)</div><div style="'+botS+'">'+CE(d.piv,11)+'</div></div></div>'
+        +'<div style="'+rowS+'"><div style="flex:1;"><div style="'+lblS+'">Numero di cellulare</div><div style="'+botS+'">'+CE(tel2,13)+'</div></div></div>'
+        +'<div style="'+rowS+'"><div style="flex:1;"><div style="'+lblS+'">E-mail</div><div style="'+botS+'font-size:7.5pt;">'+TX(d.mai,50)+'</div></div></div>'
+        +'<div style="'+rowS+'margin-bottom:5pt;"><div style="flex:1;"><div style="'+lblS+'">PEC</div><div style="'+botS+'font-size:7.5pt;">'+TX(d.pec,50)+'</div></div></div>'
+        +'<div class="sec">DATI TECNICI DI FORNITURA</div>'
+        +'<div style="margin-top:4pt;">'+podBlocks+'</div>'
+        +'<div style="margin-top:5pt;border-top:0.5pt solid #ddd;padding-top:4pt;">'
+          +'<div style="font-size:7pt;margin-bottom:3pt;"><strong>Il cliente conferma di aver scelto l\u2019offerta</strong> '
+          +'<span style="border-bottom:0.5pt solid #000;display:inline-block;min-width:130pt;">&nbsp;</span></div>'
+          +'<div style="display:flex;gap:20pt;align-items:flex-end;">'
+            +'<div style="flex:0 0 auto;"><div style="font-size:5.5pt;color:#666;margin-bottom:1pt;">Data</div>'
+            +'<div style="border-bottom:0.5pt solid #777;font-size:7.5pt;min-width:50pt;padding-bottom:1pt;">'+todayStr+'</div></div>'
+            +'<div style="flex:1;font-size:7.5pt;font-weight:700;">TIMBRO E FIRMA DEL CLIENTE '
+            +'<span style="font-size:20pt;font-weight:900;vertical-align:middle;">&#x2715;</span>'
+            +'<span style="border-bottom:0.5pt solid #000;display:inline-block;min-width:110pt;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>'
+            +' &nbsp;&nbsp;Accettato in {data}</div>'
+          +'</div>'
+        +'</div>'
+        +'</div>'
+        +'<div class="footer">Fastweb S.p.A. - Sede legale e amministrativa Piazza Adriano Olivetti, 1, 20139 Milano Tel. (+39) 02.45451 Capitale Sociale euro 41.344.209,40 i.v. -<br>'
+        +'Codice Fiscale, Partita IVA e Iscrizione nel Registro Imprese di Milano 12878470157 Fastweb S.p.A. N. Iscr. Reg. AEE: IT08020000003838 - N. Iscr. Reg. Pile e Acc.: IT09100P00001900 -<br>'
+        +'Contributo Ambientale CONAI assolto - Societ\u00e0 soggetta all\u2019attivit\u00e0 di direzione e coordinamento di Swisscom AG</div>'
+        +'</div>'
+        +'</body></html>';
+    }
 
-    const base = _baseUrl();
-    const preventivoUrl = base + "Modulo_energia_preventivo.pdf";
-    const multisitoUrl  = base + "Modulo_energia_multisito.pdf";
+    function doDownload() {
+      const isMulti = d.forn === "multisito";
+      const allPods = [
+        {pod:d.pod,kwh:d.kwh,kw:d.kw,ifn:d.ifn,nfn:d.nfn,cfn:d.cfn,cfm:d.cfm,cfp:d.cfp,imp:d.imp,tit:d.tit},
+        ...(d.extraPods||[])
+      ];
+      const {jsPDF} = window.jspdf;
+      const pdf = new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
+      // Pagina 1 (Richiesta Preventivo): altezza libera (scrollHeight)
+      renderPage(html, pdf, false, false).then(() => {
+        if (!isMulti) { pdf.save("Modulo_FW_Energia.pdf"); closeModal(); return; }
+        const chunks = [];
+        for (let i=0;i<allPods.length;i+=4) chunks.push(allPods.slice(i,i+4));
+        // Pagine multisito: forceA4Height=true — footer sempre in fondo
+        return chunks.reduce((chain,chunk)=>chain.then(()=>renderPage(buildMultisitoPage(chunk),pdf,true,true)),Promise.resolve())
+          .then(()=>{ pdf.save("Modulo_FW_Energia.pdf"); closeModal(); });
+      }).catch(err=>{
+        console.error("PDF error:",err);
+        if (btn) { btn.textContent="📄 Genera PDF Modulistica"; btn.disabled=false; }
+        alert("Errore generazione PDF. Riprova.");
+      });
+    }
 
-    (async () => {
-      await _loadPdfLib();
+    function loadScript(src, cb) {
+      if (document.querySelector(`script[src="${src}"]`)) { cb(); return; }
+      const s = document.createElement("script");
+      s.src=src; s.onload=cb;
+      s.onerror=()=>alert("Errore caricamento librerie PDF.");
+      document.head.appendChild(s);
+    }
 
-      // ── Carica PDF blank ──
-      const prevBytes = await _fetchPdf(preventivoUrl);
-      const prevFilled = await _fillPreventivo(prevBytes, d, null);
-
-      let finalBytes;
-      if (!isMulti) {
-        finalBytes = prevFilled;
-      } else {
-        const multiBytes = await _fetchPdf(multisitoUrl);
-        const multiFilled = await _fillMultisito(multiBytes, d, allPods, null);
-
-        // Unisci i due PDF
-        const { PDFDocument: PD2 } = window.PDFLib;
-        const merged  = await PD2.create();
-        const doc1    = await PD2.load(prevFilled);
-        const doc2    = await PD2.load(multiFilled);
-        const pages1  = await merged.copyPages(doc1, doc1.getPageIndices());
-        const pages2  = await merged.copyPages(doc2, doc2.getPageIndices());
-        pages1.forEach(p => merged.addPage(p));
-        pages2.forEach(p => merged.addPage(p));
-        finalBytes = await merged.save();
-      }
-
-      // ── Download ──
-      const blob = new Blob([finalBytes], { type: "application/pdf" });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement("a");
-      a.href     = url;
-      a.download = "Modulo_FW_Energia.pdf";
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
-
-      if (btn) { btn.textContent = "📄 Genera PDF Modulistica"; btn.disabled = false; }
-      closeModal();
-    })().catch(err => {
-      console.error("PDF error:", err);
-      if (btn) { btn.textContent = "📄 Genera PDF Modulistica"; btn.disabled = false; }
-      alert("Errore generazione PDF: " + err.message + "\n\nAssicurati che i file PDF blank siano nella stessa cartella dello script su GitHub.");
-    });
-
-    /* ── NOTA: il vecchio codice html/canvas/jsPDF è stato rimosso.
-       La logica del form (collect, validazione, multisito, POD) rimane invariata.
-       I PDF blank da cui leggere sono:
-         - Modulo_energia_preventivo.pdf
-         - Modulo_energia_multisito.pdf
-       (stessa cartella di engine-mod.js su GitHub)
-    ── */
-
-  
-
+    if (window.html2canvas && window.jspdf) {
+      doDownload();
+    } else {
+      loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js", () => {
+        loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js", doDownload);
+      });
+    }
   }
 
   /* ════════════════════════════════════════════════════════
