@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Field Position Editor — Fastweb Energia</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1a1d2e; color: #e0e4f0; min-height: 100vh; }
+
+  /* ── Top bar ── */
+  #topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: #12141f; border-bottom: 1px solid #2a2d42;
+    padding: 10px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  #topbar h1 { font-size: 14px; font-weight: 700; color: #fff; white-space: nowrap; }
+  .tb-sep { width: 1px; height: 20px; background: #2a2d42; flex-shrink: 0; }
+  #topbar select, #topbar button {
+    font-family: inherit; font-size: 12px; border-radius: 7px; border: 1px solid #2e3250;
+    padding: 5px 10px; background: #1e2138; color: #c8cce8; cursor: pointer;
+  }
+  #topbar button { font-weight: 600; }
+  #topbar button:hover { background: #2a2e50; }
+  #btn-copy { background: #1a4a8a; color: #fff; border-color: #2255bb; }
+  #btn-copy:hover { background: #2255bb; }
+  #btn-reset { background: #5a1a1a; color: #ffaaaa; border-color: #992222; }
+  #status { font-size: 11px; color: #7a8099; margin-left: auto; }
+
+  /* ── Layout ── */
+  #main { display: flex; height: calc(100vh - 52px); overflow: hidden; }
+
+  /* ── Canvas area ── */
+  #canvas-wrap {
+    flex: 1; overflow: auto; position: relative;
+    background: #0d0f1a;
+    display: flex; justify-content: center; align-items: flex-start; padding: 20px;
+  }
+  #pdf-container { position: relative; display: inline-block; }
+  #pdf-canvas { display: block; box-shadow: 0 8px 40px rgba(0,0,0,.7); }
+
+  /* ── Field pins ── */
+  .field-pin {
+    position: absolute;
+    cursor: grab;
+    user-select: none;
+    z-index: 10;
+    transform: translate(-50%, 50%); /* anchor bottom-center = text baseline */
+  }
+  .field-pin:active { cursor: grabbing; }
+  .pin-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 2px solid #fff;
+    position: absolute;
+    left: 50%; top: 50%; transform: translate(-50%, -50%);
+  }
+  .pin-label {
+    position: absolute;
+    left: 50%; transform: translateX(-50%);
+    bottom: 12px;
+    background: rgba(10,12,25,0.88);
+    color: #fff; font-size: 9px; font-weight: 700;
+    padding: 2px 5px; border-radius: 4px; white-space: nowrap;
+    pointer-events: none; border: 1px solid rgba(255,255,255,0.15);
+  }
+  .field-pin.selected .pin-dot { box-shadow: 0 0 0 3px rgba(255,255,255,0.5); }
+  .field-pin .pin-crossh {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px; height: 1px; background: rgba(255,255,255,0.6);
+  }
+  .field-pin .pin-crossv {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    height: 18px; width: 1px; background: rgba(255,255,255,0.6);
+  }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: 320px; flex-shrink: 0; background: #12141f;
+    border-left: 1px solid #2a2d42; overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
+  #sidebar-head {
+    padding: 12px 14px; border-bottom: 1px solid #2a2d42;
+    font-size: 12px; font-weight: 700; color: #8a8fb0;
+    text-transform: uppercase; letter-spacing: .07em;
+  }
+  .field-row {
+    padding: 7px 14px; border-bottom: 1px solid #1e2138;
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    transition: background .12s;
+  }
+  .field-row:hover { background: #1e2138; }
+  .field-row.active { background: #1e2545; }
+  .fr-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .fr-name { font-size: 11.5px; font-weight: 600; color: #c8cce8; flex: 1; }
+  .fr-coords { font-size: 10px; color: #5a6080; font-family: monospace; white-space: nowrap; }
+
+  /* ── Detail panel ── */
+  #detail {
+    padding: 14px; border-top: 1px solid #2a2d42; margin-top: auto;
+    background: #0d0f1a;
+  }
+  #detail h3 { font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 10px; }
+  .det-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .det-label { font-size: 10px; color: #7a8099; width: 24px; }
+  .det-input {
+    flex: 1; background: #1e2138; border: 1px solid #2e3250; border-radius: 6px;
+    color: #c8cce8; font-size: 12px; font-family: monospace;
+    padding: 4px 8px; outline: none;
+  }
+  .det-input:focus { border-color: #4466cc; }
+  #code-out {
+    margin-top: 10px; background: #070810; border: 1px solid #2a2d42;
+    border-radius: 8px; padding: 10px; font-family: monospace; font-size: 10px;
+    color: #7a9ee0; line-height: 1.6; max-height: 200px; overflow-y: auto;
+    white-space: pre;
+  }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>🎯 PDF Field Positioner</h1>
+  <div class="tb-sep"></div>
+  <label style="font-size:12px;color:#8a8fb0">PDF:</label>
+  <select id="sel-pdf">
+    <option value="preventivo">Modulo_energia_preventivo.pdf</option>
+    <option value="multisito">Modulo_energia_multisito.pdf</option>
+  </select>
+  <div class="tb-sep"></div>
+  <label style="font-size:12px;color:#8a8fb0">Zoom:</label>
+  <select id="sel-zoom">
+    <option value="1">100%</option>
+    <option value="1.5" selected>150%</option>
+    <option value="2">200%</option>
+    <option value="0.75">75%</option>
+  </select>
+  <div class="tb-sep"></div>
+  <button id="btn-copy">📋 Copia codice JS</button>
+  <button id="btn-reset">↩ Reset posizioni</button>
+  <span id="status">Trascina i pin sui campi del PDF</span>
+</div>
+
+<div id="main">
+  <div id="canvas-wrap">
+    <div id="pdf-container">
+      <canvas id="pdf-canvas"></canvas>
+    </div>
+  </div>
+  <div id="sidebar">
+    <div id="sidebar-head">Campi</div>
+    <div id="field-list"></div>
+    <div id="detail" style="display:none">
+      <h3 id="det-title">Campo selezionato</h3>
+      <div class="det-row">
+        <span class="det-label">X</span>
+        <input class="det-input" id="inp-x" type="number">
+      </div>
+      <div class="det-row">
+        <span class="det-label">top</span>
+        <input class="det-input" id="inp-y" type="number">
+      </div>
+      <div id="code-out"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+// ─── PDF.js worker ───
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+// ─── Field definitions per PDF ───
+// Format: { key, label, x, top, color, type }
+// x and top = coords used in engine-mod.js (pdf-lib system: top = distance from page top)
+// Page height assumed 841.89 (A4)
+
+const FIELDS = {
+  preventivo: [
+    // OFFERTA
+    { key:"off_light",    label:"☐ Light",       x:36,  top:174, color:"#f5a01e", type:"check" },
+    { key:"off_full",     label:"☐ Full",         x:36,  top:185, color:"#f5a01e", type:"check" },
+    { key:"off_maxi",     label:"☐ Maxi",         x:36,  top:196, color:"#f5a01e", type:"check" },
+    { key:"off_flex",     label:"☐ Flex",         x:163, top:174, color:"#f5a01e", type:"check" },
+    { key:"off_fix",      label:"☐ Fix",          x:163, top:185, color:"#f5a01e", type:"check" },
+    { key:"off_bizflex",  label:"☐ Biz Flex",     x:294, top:174, color:"#f5a01e", type:"check" },
+    { key:"off_bizfix",   label:"☐ Biz Fix",      x:294, top:185, color:"#f5a01e", type:"check" },
+    // ANAGRAFICA
+    { key:"rag",   label:"Ragione Sociale",  x:195, top:232, color:"#4fc3f7", type:"text" },
+    { key:"ind",   label:"Indirizzo",        x:195, top:252, color:"#4fc3f7", type:"text" },
+    { key:"num",   label:"N°",               x:452, top:252, color:"#4fc3f7", type:"text" },
+    { key:"cap",   label:"CAP",              x:492, top:252, color:"#4fc3f7", type:"cells" },
+    { key:"com",   label:"Comune",           x:195, top:281, color:"#4fc3f7", type:"text" },
+    { key:"prv",   label:"Prov",             x:516, top:281, color:"#4fc3f7", type:"cells" },
+    { key:"cf",    label:"C.F.",             x:87,  top:300, color:"#4fc3f7", type:"cells" },
+    { key:"piv",   label:"P.IVA",            x:310, top:300, color:"#4fc3f7", type:"cells" },
+    { key:"ate",   label:"ATECO",            x:490, top:300, color:"#4fc3f7", type:"cells" },
+    { key:"leg",   label:"Legale Rappr.",    x:195, top:321, color:"#4fc3f7", type:"text" },
+    { key:"cfl",   label:"CF Legale",        x:87,  top:340, color:"#4fc3f7", type:"cells" },
+    // DOCUMENTO
+    { key:"tdc",   label:"Tipo Doc",         x:87,  top:361, color:"#ce93d8", type:"text" },
+    { key:"ndc",   label:"N° Doc",           x:360, top:361, color:"#ce93d8", type:"text" },
+    { key:"drl_dd",label:"Rilascio DD",      x:87,  top:380, color:"#ce93d8", type:"cells" },
+    { key:"drl_mm",label:"Rilascio MM",      x:112, top:380, color:"#ce93d8", type:"cells" },
+    { key:"drl_yy",label:"Rilascio YYYY",    x:137, top:380, color:"#ce93d8", type:"cells" },
+    { key:"dsc_dd",label:"Scadenza DD",      x:213, top:380, color:"#ce93d8", type:"cells" },
+    { key:"dsc_mm",label:"Scadenza MM",      x:238, top:380, color:"#ce93d8", type:"cells" },
+    { key:"dsc_yy",label:"Scadenza YYYY",    x:263, top:380, color:"#ce93d8", type:"cells" },
+    { key:"rda",   label:"Rilasciato da",    x:87,  top:401, color:"#ce93d8", type:"text" },
+    { key:"naz",   label:"Nazione",          x:350, top:401, color:"#ce93d8", type:"text" },
+    { key:"tel",   label:"Cellulare",        x:148, top:420, color:"#ce93d8", type:"cells" },
+    { key:"mai_lp",label:"Email (locale)",   x:87,  top:441, color:"#ce93d8", type:"text" },
+    { key:"mai_dm",label:"Email (dominio)",  x:305, top:441, color:"#ce93d8", type:"text" },
+    { key:"pec_lp",label:"PEC (locale)",     x:87,  top:457, color:"#ce93d8", type:"text" },
+    { key:"pec_dm",label:"PEC (dominio)",    x:305, top:457, color:"#ce93d8", type:"text" },
+    // TECNICA
+    { key:"pod",   label:"POD",              x:87,  top:492, color:"#81c784", type:"cells" },
+    { key:"kwh",   label:"kWh/anno",         x:300, top:492, color:"#81c784", type:"cells" },
+    { key:"kw",    label:"Pot. kW",          x:415, top:492, color:"#81c784", type:"cells" },
+    { key:"ifn",   label:"Ind. Fornitura",   x:140, top:512, color:"#81c784", type:"text" },
+    { key:"nfn",   label:"N° Fornitura",     x:447, top:512, color:"#81c784", type:"text" },
+    { key:"cfn",   label:"CAP Fornitura",    x:492, top:513, color:"#81c784", type:"cells" },
+    { key:"cfm",   label:"Comune Fornitura", x:87,  top:541, color:"#81c784", type:"text" },
+    { key:"cfp",   label:"Prov Fornitura",   x:516, top:541, color:"#81c784", type:"cells" },
+    { key:"ck_mono",label:"☐ Monofase",      x:100, top:561, color:"#81c784", type:"check" },
+    { key:"ck_tri", label:"☐ Trifase",       x:175, top:561, color:"#81c784", type:"check" },
+    { key:"ck_sing",label:"☐ Singola",       x:317, top:561, color:"#81c784", type:"check" },
+    { key:"ck_multi",label:"☐ Multisito",    x:353, top:561, color:"#81c784", type:"check" },
+    { key:"ck_prop",label:"☐ Proprietà",     x:150, top:577, color:"#81c784", type:"check" },
+    { key:"ck_loc", label:"☐ Locazione",     x:38,  top:590, color:"#81c784", type:"check" },
+    { key:"ck_alt", label:"☐ Altro",         x:265, top:590, color:"#81c784", type:"check" },
+    // PAGAMENTO
+    { key:"int",   label:"Intestatario",     x:195, top:627, color:"#ffb74d", type:"text" },
+    { key:"rsp",   label:"Rag.Soc.Pag.",     x:390, top:627, color:"#ffb74d", type:"text" },
+    { key:"cfi",   label:"CF Intestatario",  x:87,  top:647, color:"#ffb74d", type:"cells" },
+    { key:"iban",  label:"IBAN",             x:260, top:647, color:"#ffb74d", type:"cells" },
+    { key:"pvp",   label:"PIVA Pag.",        x:87,  top:667, color:"#ffb74d", type:"cells" },
+    { key:"ck_b2c",label:"☐ B2C",           x:228, top:667, color:"#ffb74d", type:"check" },
+    { key:"ck_b2b",label:"☐ B2B",           x:258, top:667, color:"#ffb74d", type:"check" },
+    { key:"sdi",   label:"SDI",              x:328, top:667, color:"#ffb74d", type:"cells" },
+    // FIRMA
+    { key:"firma1",label:"Data firma 1",     x:87,  top:714, color:"#ef9a9a", type:"text" },
+    { key:"firma2",label:"Data firma 2",     x:87,  top:778, color:"#ef9a9a", type:"text" },
+  ],
+  multisito: [
+    // ANAGRAFICA
+    { key:"m_rag",  label:"Ragione Sociale", x:195, top:90,  color:"#4fc3f7", type:"text" },
+    { key:"m_ind",  label:"Indirizzo",       x:195, top:110, color:"#4fc3f7", type:"text" },
+    { key:"m_num",  label:"N°",              x:452, top:110, color:"#4fc3f7", type:"text" },
+    { key:"m_cap",  label:"CAP",             x:492, top:109, color:"#4fc3f7", type:"cells" },
+    { key:"m_com",  label:"Comune",          x:195, top:139, color:"#4fc3f7", type:"text" },
+    { key:"m_prv",  label:"Prov",            x:516, top:137, color:"#4fc3f7", type:"cells" },
+    { key:"m_cf",   label:"C.F.",            x:87,  top:158, color:"#4fc3f7", type:"cells" },
+    { key:"m_piv",  label:"P.IVA",           x:310, top:158, color:"#4fc3f7", type:"cells" },
+    { key:"m_tel",  label:"Tel",             x:148, top:178, color:"#4fc3f7", type:"cells" },
+    { key:"m_mai_lp",label:"Email locale",   x:87,  top:199, color:"#4fc3f7", type:"text" },
+    { key:"m_mai_dm",label:"Email dominio",  x:305, top:199, color:"#4fc3f7", type:"text" },
+    { key:"m_pec_lp",label:"PEC locale",     x:87,  top:215, color:"#4fc3f7", type:"text" },
+    { key:"m_pec_dm",label:"PEC dominio",    x:305, top:215, color:"#4fc3f7", type:"text" },
+    // POD Blocco 1
+    { key:"p1_pod", label:"POD 1",           x:87,  top:255, color:"#81c784", type:"cells" },
+    { key:"p1_ifn", label:"Ind.For.1",       x:87,  top:276, color:"#81c784", type:"text" },
+    { key:"p1_nfn", label:"N°For.1",         x:447, top:276, color:"#81c784", type:"text" },
+    { key:"p1_cfn", label:"CAP For.1",       x:492, top:275, color:"#81c784", type:"cells" },
+    { key:"p1_cfm", label:"Comune For.1",    x:87,  top:296, color:"#81c784", type:"text" },
+    { key:"p1_prv", label:"Prov For.1",      x:516, top:295, color:"#81c784", type:"cells" },
+    { key:"p1_kw",  label:"kW 1",            x:87,  top:315, color:"#81c784", type:"cells" },
+    { key:"p1_mono",label:"☐ Mono 1",        x:243, top:315, color:"#81c784", type:"check" },
+    { key:"p1_tri", label:"☐ Tri 1",         x:322, top:315, color:"#81c784", type:"check" },
+    { key:"p1_kwh", label:"kWh 1",           x:301, top:315, color:"#81c784", type:"cells" },
+    { key:"p1_prop",label:"☐ Prop 1",        x:150, top:331, color:"#81c784", type:"check" },
+    { key:"p1_loc", label:"☐ Loc 1",         x:38,  top:345, color:"#81c784", type:"check" },
+    { key:"p1_alt", label:"☐ Alt 1",         x:265, top:345, color:"#81c784", type:"check" },
+    // POD Blocco 2
+    { key:"p2_pod", label:"POD 2",           x:87,  top:370, color:"#ce93d8", type:"cells" },
+    { key:"p2_ifn", label:"Ind.For.2",       x:87,  top:391, color:"#ce93d8", type:"text" },
+    { key:"p2_kw",  label:"kW 2",            x:87,  top:430, color:"#ce93d8", type:"cells" },
+    { key:"p2_mono",label:"☐ Mono 2",        x:243, top:430, color:"#ce93d8", type:"check" },
+    { key:"p2_tri", label:"☐ Tri 2",         x:322, top:430, color:"#ce93d8", type:"check" },
+    { key:"p2_prop",label:"☐ Prop 2",        x:150, top:446, color:"#ce93d8", type:"check" },
+    // POD Blocco 3
+    { key:"p3_pod", label:"POD 3",           x:87,  top:485, color:"#ffb74d", type:"cells" },
+    { key:"p3_ifn", label:"Ind.For.3",       x:87,  top:506, color:"#ffb74d", type:"text" },
+    { key:"p3_kw",  label:"kW 3",            x:87,  top:545, color:"#ffb74d", type:"cells" },
+    { key:"p3_mono",label:"☐ Mono 3",        x:243, top:545, color:"#ffb74d", type:"check" },
+    { key:"p3_prop",label:"☐ Prop 3",        x:150, top:561, color:"#ffb74d", type:"check" },
+    // POD Blocco 4
+    { key:"p4_pod", label:"POD 4",           x:87,  top:600, color:"#ef9a9a", type:"cells" },
+    { key:"p4_ifn", label:"Ind.For.4",       x:87,  top:621, color:"#ef9a9a", type:"text" },
+    { key:"p4_kw",  label:"kW 4",            x:87,  top:660, color:"#ef9a9a", type:"cells" },
+    { key:"p4_mono",label:"☐ Mono 4",        x:243, top:660, color:"#ef9a9a", type:"check" },
+    { key:"p4_prop",label:"☐ Prop 4",        x:150, top:676, color:"#ef9a9a", type:"check" },
+    // FIRMA
+    { key:"m_firma",label:"Data firma",      x:87,  top:751, color:"#ef9a9a", type:"text" },
+  ],
+};
+
+// ─── State ───
+let currentPdf  = "preventivo";
+let pdfPageH    = 841.89; // A4 default
+let scale       = 1.5;
+let selectedKey = null;
+let positions   = {};   // overrides: { key: {x, top} }
+
+function getPos(key) {
+  const f = FIELDS[currentPdf].find(f => f.key === key);
+  return positions[currentPdf + "." + key] || { x: f.x, top: f.top };
+}
+function setPos(key, x, top) {
+  positions[currentPdf + "." + key] = { x: Math.round(x), top: Math.round(top) };
+}
+
+// ─── PDF rendering ───
+let pdfDoc = null;
+let pdfRendering = false;
+
+const PDFS = {
+  preventivo: "Modulo_energia_preventivo.pdf",
+  multisito:  "Modulo_energia_multisito.pdf",
+};
+
+async function loadPDF(type) {
+  const url = PDFS[type];
+  document.getElementById("status").textContent = "Caricamento PDF...";
+  try {
+    pdfDoc = await pdfjsLib.getDocument(url).promise;
+    await renderPage();
+  } catch(e) {
+    document.getElementById("status").textContent = "⚠ PDF non trovato — serve servire i file da un web server. Vedi istruzioni sotto.";
+    showFallback(type);
+  }
+}
+
+async function renderPage() {
+  if (!pdfDoc) return;
+  const page = await pdfDoc.getPage(1);
+  const vp   = page.getViewport({ scale });
+  pdfPageH   = page.getViewport({ scale: 1 }).height; // unscaled height
+
+  const canvas = document.getElementById("pdf-canvas");
+  canvas.width  = vp.width;
+  canvas.height = vp.height;
+  const ctx = canvas.getContext("2d");
+  await page.render({ canvasContext: ctx, viewport: vp }).promise;
+
+  document.getElementById("status").textContent = `PDF caricato — ${FIELDS[currentPdf].length} campi | trascina i pin`;
+  rebuildPins();
+}
+
+function showFallback(type) {
+  const canvas = document.getElementById("pdf-canvas");
+  canvas.width  = Math.round(595 * scale);
+  canvas.height = Math.round(841 * scale);
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#f5f5f5";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = "#999";
+  ctx.font = "14px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("⚠ PDF non caricabile in modalità file://", canvas.width/2, canvas.height/2 - 30);
+  ctx.fillText("Avvia un server locale:", canvas.width/2, canvas.height/2);
+  ctx.font = "12px monospace";
+  ctx.fillStyle = "#555";
+  ctx.fillText("python3 -m http.server 8000", canvas.width/2, canvas.height/2 + 30);
+  ctx.fillText("oppure: npx serve .", canvas.width/2, canvas.height/2 + 50);
+  ctx.textAlign = "left";
+  pdfPageH = 841.89;
+  rebuildPins();
+}
+
+// ─── Pin system ───
+function pdfTopToCanvasY(top) {
+  // pdf-lib: y = height - top  (bottom-origin)
+  // canvas: y from top
+  // So canvas_y = top * scale
+  return top * scale;
+}
+function pdfXToCanvasX(x) {
+  return x * scale;
+}
+function canvasXToPdfX(cx) { return cx / scale; }
+function canvasYToPdfTop(cy) { return cy / scale; }
+
+function rebuildPins() {
+  // Remove old pins
+  document.querySelectorAll(".field-pin").forEach(p => p.remove());
+  const container = document.getElementById("pdf-container");
+
+  FIELDS[currentPdf].forEach(f => {
+    const pos = getPos(f.key);
+    const pin = document.createElement("div");
+    pin.className = "field-pin" + (f.key === selectedKey ? " selected" : "");
+    pin.id = "pin-" + f.key;
+    pin.dataset.key = f.key;
+
+    // Position
+    pin.style.left = pdfXToCanvasX(pos.x) + "px";
+    pin.style.top  = pdfTopToCanvasY(pos.top) + "px";
+
+    pin.innerHTML = `
+      <div class="pin-crossh"></div>
+      <div class="pin-crossv"></div>
+      <div class="pin-dot" style="background:${f.color}"></div>
+      <div class="pin-label" style="color:${f.color}">${f.label}</div>
+    `;
+
+    makeDraggable(pin, f.key);
+    pin.addEventListener("click", e => { e.stopPropagation(); selectField(f.key); });
+    container.appendChild(pin);
+  });
+
+  buildSidebar();
+}
+
+function makeDraggable(el, key) {
+  let startX, startY, startLeft, startTop;
+  el.addEventListener("mousedown", e => {
+    e.preventDefault();
+    selectField(key);
+    startX = e.clientX;
+    startY = e.clientY;
+    startLeft = parseFloat(el.style.left);
+    startTop  = parseFloat(el.style.top);
+
+    function onMove(e) {
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      const newLeft = Math.max(0, startLeft + dx);
+      const newTop  = Math.max(0, startTop  + dy);
+      el.style.left = newLeft + "px";
+      el.style.top  = newTop  + "px";
+      const pdfX   = Math.round(canvasXToPdfX(newLeft));
+      const pdfTop = Math.round(canvasYToPdfTop(newTop));
+      setPos(key, pdfX, pdfTop);
+      updateDetail(key);
+      updateSidebarRow(key);
+    }
+    function onUp() {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    }
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  });
+}
+
+function selectField(key) {
+  selectedKey = key;
+  document.querySelectorAll(".field-pin").forEach(p => p.classList.remove("selected"));
+  const pin = document.getElementById("pin-" + key);
+  if (pin) pin.classList.add("selected");
+  document.querySelectorAll(".field-row").forEach(r => r.classList.remove("active"));
+  const row = document.querySelector(`.field-row[data-key="${key}"]`);
+  if (row) { row.classList.add("active"); row.scrollIntoView({ block:"nearest" }); }
+  updateDetail(key);
+}
+
+function updateDetail(key) {
+  const f   = FIELDS[currentPdf].find(f => f.key === key);
+  const pos = getPos(key);
+  const det = document.getElementById("detail");
+  det.style.display = "block";
+  document.getElementById("det-title").textContent = f.label;
+  document.getElementById("inp-x").value = pos.x;
+  document.getElementById("inp-y").value = pos.top;
+  document.getElementById("code-out").textContent = generateCode(key);
+}
+
+function generateCode(key) {
+  const f   = FIELDS[currentPdf].find(f => f.key === key);
+  const pos = getPos(key);
+  if (f.type === "check")
+    return `CK(condition, ${pos.x}, ${pos.top});`;
+  if (f.type === "cells")
+    return `CL(d.${f.key}, ${pos.x}, ${pos.top}, cw, n);`;
+  return `T(d.${f.key}, ${pos.x}, ${pos.top}, SZ);`;
+}
+
+function updateSidebarRow(key) {
+  const pos = getPos(key);
+  const row = document.querySelector(`.field-row[data-key="${key}"] .fr-coords`);
+  if (row) row.textContent = `x:${pos.x} top:${pos.top}`;
+}
+
+function buildSidebar() {
+  const list = document.getElementById("field-list");
+  list.innerHTML = "";
+  FIELDS[currentPdf].forEach(f => {
+    const pos = getPos(f.key);
+    const row = document.createElement("div");
+    row.className = "field-row" + (f.key === selectedKey ? " active" : "");
+    row.dataset.key = f.key;
+    row.innerHTML = `
+      <div class="fr-dot" style="background:${f.color}"></div>
+      <div class="fr-name">${f.label}</div>
+      <div class="fr-coords">x:${pos.x} top:${pos.top}</div>
+    `;
+    row.addEventListener("click", () => {
+      selectField(f.key);
+      // Scroll canvas to pin
+      const pin = document.getElementById("pin-" + f.key);
+      if (pin) pin.scrollIntoView({ block:"center", behavior:"smooth" });
+    });
+    list.appendChild(row);
+  });
+}
+
+// ─── Manual coord inputs ───
+document.getElementById("inp-x").addEventListener("input", e => {
+  if (!selectedKey) return;
+  const x = parseFloat(e.target.value);
+  const pos = getPos(selectedKey);
+  setPos(selectedKey, x, pos.top);
+  const pin = document.getElementById("pin-" + selectedKey);
+  if (pin) pin.style.left = pdfXToCanvasX(x) + "px";
+  document.getElementById("code-out").textContent = generateCode(selectedKey);
+  updateSidebarRow(selectedKey);
+});
+document.getElementById("inp-y").addEventListener("input", e => {
+  if (!selectedKey) return;
+  const top = parseFloat(e.target.value);
+  const pos = getPos(selectedKey);
+  setPos(selectedKey, pos.x, top);
+  const pin = document.getElementById("pin-" + selectedKey);
+  if (pin) pin.style.top = pdfTopToCanvasY(top) + "px";
+  document.getElementById("code-out").textContent = generateCode(selectedKey);
+  updateSidebarRow(selectedKey);
+});
+
+// ─── Copy all JS code ───
+document.getElementById("btn-copy").addEventListener("click", () => {
+  const lines = [
+    `// ── Coordinate aggiornate — ${currentPdf} ──`,
+    `// Copia queste righe in _fill${currentPdf === "preventivo" ? "Preventivo" : "Multisito"}()`,
+    ""
+  ];
+  FIELDS[currentPdf].forEach(f => {
+    const pos = getPos(f.key);
+    lines.push(`// ${f.label}`);
+    lines.push(generateCode(f.key));
+  });
+  navigator.clipboard.writeText(lines.join("\n")).then(() => {
+    const btn = document.getElementById("btn-copy");
+    btn.textContent = "✅ Copiato!";
+    setTimeout(() => btn.textContent = "📋 Copia codice JS", 2000);
+  });
+});
+
+// ─── Reset ───
+document.getElementById("btn-reset").addEventListener("click", () => {
+  if (!confirm("Reset tutte le posizioni a quelle originali del codice?")) return;
+  FIELDS[currentPdf].forEach(f => {
+    delete positions[currentPdf + "." + f.key];
+  });
+  rebuildPins();
+  document.getElementById("detail").style.display = "none";
+  selectedKey = null;
+});
+
+// ─── PDF switcher ───
+document.getElementById("sel-pdf").addEventListener("change", async e => {
+  currentPdf  = e.target.value;
+  selectedKey = null;
+  document.getElementById("detail").style.display = "none";
+  await loadPDF(currentPdf);
+});
+
+// ─── Zoom ───
+document.getElementById("sel-zoom").addEventListener("change", async e => {
+  scale = parseFloat(e.target.value);
+  if (pdfDoc) await renderPage();
+  else rebuildPins();
+});
+
+// ─── Init ───
+loadPDF(currentPdf);
+</script>
+</body>
+</html>
