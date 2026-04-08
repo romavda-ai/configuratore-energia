@@ -1560,7 +1560,7 @@ function render() {
   // Calcoli
   const m1 = calcMonth({ mese:mese1, anno:anno1, isVodafone, fasce, kwh:kwh1, spesaAttuale:spesaAtt1 });
   document.getElementById("out_fw1").textContent = euro(m1.spesaFW);
-  document.getElementById("out_fw1_detail").textContent = `Fee ${isVodafone?5:20} € • kWh ${m1.kwhTot.toFixed(2)} • costo/kWh ${m1.costoKw.toFixed(5)}`;
+  document.getElementById("out_fw1_detail").textContent = `Fee ${isVodafone?10:20} € • kWh ${m1.kwhTot.toFixed(2)} • costo/kWh ${m1.costoKw.toFixed(5)}`;
   document.getElementById("out_delta1").textContent = euro(m1.delta);
   document.getElementById("out_esito1").textContent = m1.esito;
   document.getElementById("out_delta1_year").textContent = euro(m1.delta * 12);
@@ -1568,7 +1568,7 @@ function render() {
 
   
   document.getElementById("det_m1_label").textContent = `${mese1} ${anno1}`;
-  document.getElementById("d_fee").textContent = (isVodafone ? 5 : 20).toFixed(0);
+  document.getElementById("d_fee").textContent = (isVodafone ? 10 : 20).toFixed(0);
 setText("d_pun1", fmtVal(m1.pun));
   document.getElementById("d_ckw1").textContent = fmtVal(m1.costoKw);
   document.getElementById("d_spread1").textContent = fmtVal(m1.spread);
@@ -1581,7 +1581,7 @@ setText("d_pun1", fmtVal(m1.pun));
 if (mens === 2) {
     const m2 = calcMonth({ mese:mese2, anno:anno2, isVodafone, fasce, kwh:kwh2, spesaAttuale:spesaAtt2 });
     document.getElementById("out_fw2").textContent = euro(m2.spesaFW);
-    document.getElementById("out_fw2_detail").textContent = `Fee ${isVodafone?5:20} € • kWh ${m2.kwhTot.toFixed(2)} • costo/kWh ${m2.costoKw.toFixed(5)}`;
+    document.getElementById("out_fw2_detail").textContent = `Fee ${isVodafone?10:20} € • kWh ${m2.kwhTot.toFixed(2)} • costo/kWh ${m2.costoKw.toFixed(5)}`;
     document.getElementById("out_delta2").textContent = euro(m2.delta);
     document.getElementById("out_esito2").textContent = m2.esito;
     document.getElementById("out_delta2_year").textContent = euro(m2.delta * 12);
@@ -1594,7 +1594,7 @@ if (mens === 2) {
     // mese 1 (colonna sinistra)
     const m1Label2 = document.getElementById("det_m1_label_2");
     if(m1Label2) m1Label2.textContent = (mese1==="FIX") ? "FIX 2026" : `${mese1} ${anno1}`;
-    setText("d_fee_2a", (isVodafone ? 5 : 20).toFixed(0));
+    setText("d_fee_2a", (isVodafone ? 10 : 20).toFixed(0));
     setText("d_ckw1_2", fmtVal(m1.costoKw));
     setText("d_pun1_2", fmtVal(m1.pun));
     setText("d_spread1_2", fmtVal(m1.spread));
@@ -1607,7 +1607,7 @@ if (mens === 2) {
     // mese 2 (colonna destra)
     const m2Label2 = document.getElementById("det_m2_label_2");
     if(m2Label2) m2Label2.textContent = (mese2==="FIX") ? "FIX 2026" : `${mese2} ${anno2}`;
-    setText("d_fee2_2", (isVodafone ? 5 : 20).toFixed(0));
+    setText("d_fee2_2", (isVodafone ? 10 : 20).toFixed(0));
     setText("d_ckw2_2", fmtVal(m2.costoKw));
     setText("d_pun2_2", fmtVal(m2.pun));
     setText("d_spread2_2", fmtVal(m2.spread));
@@ -1619,7 +1619,7 @@ if (mens === 2) {
 
     // legacy ids for PDF
     setText("d_ckw2", fmtVal(m2.costoKw));
-    setText("d_fee2", (isVodafone ? 5 : 20).toFixed(0));
+    setText("d_fee2", (isVodafone ? 10 : 20).toFixed(0));
     setText("d_pun2", fmtVal(m2.pun));
 
     const _detM2lbl = document.getElementById("det_m2_label");
