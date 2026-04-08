@@ -618,8 +618,8 @@
 
 
       <div class="btnRow">
-        <a class="btn gray linkBtn" href="https://www.fastweb.it/downloads/PDF/business/energia/cte_fastweb_energia_fix.pdf?rel=20241001" target="_blank" rel="noopener">↓ CTE FIX</a>
-        <a class="btn gray linkBtn" href="https://www.fastweb.it/downloads/PDF/business/energia/cte_fastweb_energia_flex.pdf?rel=20241001" target="_blank" rel="noopener">↓ CTE FLEX</a>
+        <a class="btn gray linkBtn" href="https://www.fastweb.it/downloads/PDF/business/energia/cte_fastweb_luce_fix.pdf?rel=20260408" target="_blank" rel="noopener">↓ CTE FIX</a>
+        <a class="btn gray linkBtn" href="https://www.fastweb.it/downloads/PDF/business/energia/cte_fastweb_luce_flex.pdf?rel=20260408" target="_blank" rel="noopener">↓ CTE FLEX</a>
         <button class="btn modulisticaBtn" id="btnModulistica" type="button">📋 Compila Modulistica</button>
       </div>
       <p class="cte-hint">Condizioni tecniche ed economiche dell'offerta</p>
@@ -1378,7 +1378,7 @@ function calcMonth({ mese, anno, isVodafone, fasce, kwh, spesaAttuale }) {
   // B21/M21: SUM(spread..capAum) (F18/J18 si annulla)
   const extra = spread + perdita + disp + cap + capAum;
 
-  const fee = isVodafone ? 5 : 20;
+  const fee = isVodafone ? 10 : 20;
 
   let spesaFW = 0;
   let kwhTot = 0;
