@@ -2244,7 +2244,7 @@ function getDataForPdf() {
   const tipologia=(_val("fasce")||"").toUpperCase();
   const mese1=_val("mese1"),anno1=_val("anno1"),mese2=_val("mese2"),anno2=_val("anno2");
   const isMulti=tipologia.includes("MULTI"),isFlex=offerta.includes("FLEX");
-  const isVod=/^s/i.test(cltVod),fee=isVod?5:20;
+  const isVod=/^s/i.test(cltVod),fee=isVod?10:20;
   const kwh1=isMulti?(_num(_val("kwh1_f1"))+_num(_val("kwh1_f2"))+_num(_val("kwh1_f3"))):_num(_val("kwh1_tot"));
   const kwh2=isMulti?(_num(_val("kwh2_f1"))+_num(_val("kwh2_f2"))+_num(_val("kwh2_f3"))):_num(_val("kwh2_tot"));
   const spesaFw1=_rnum("out_fw1"),spesaFw2=_rnum("out_fw2");
